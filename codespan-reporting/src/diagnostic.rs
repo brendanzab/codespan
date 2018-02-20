@@ -7,7 +7,9 @@ use Severity;
 /// A style for the label
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum LabelStyle {
+    /// The main focus of the diagnostic
     Primary,
+    /// Supporting labels that may help to isolate the cause of the diagnostic
     Secondary,
 }
 
