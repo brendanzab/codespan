@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use std::{fmt, io};
 use std::path::PathBuf;
 
-use pos::{ByteOffset, BytePos, ColumnIndex, LineIndex, RawOffset, RawPos, Span};
+use pos::{ByteOffset, BytePos, ByteSpan, ColumnIndex, LineIndex, RawOffset, RawPos};
 
 #[derive(Clone, Debug)]
 pub enum FileName {
@@ -42,7 +42,7 @@ pub enum LineIndexError {
 #[derive(Debug, Fail, PartialEq)]
 pub enum BytePosError {
     #[fail(display = "Byte position out of bounds - given: {}, span: {}", given, span)]
-    OutOfBounds { given: BytePos, span: Span },
+    OutOfBounds { given: BytePos, span: ByteSpan },
     #[fail(display = "Byte position points within a character boundary - given: {}", given)]
     InvalidCharBoundary { given: BytePos },
 }
@@ -50,7 +50,7 @@ pub enum BytePosError {
 #[derive(Debug, Fail, PartialEq)]
 pub enum SpanError {
     #[fail(display = "Span out of bounds - given: {}, span: {}", given, span)]
-    OutOfBounds { given: Span, span: Span },
+    OutOfBounds { given: ByteSpan, span: ByteSpan },
 }
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ pub struct FileMap {
     /// The complete source code
     src: String,
     /// The span of the source in the `CodeMap`
-    span: Span,
+    span: ByteSpan,
     /// Offsets to the line beginnings in the source
     lines: Vec<ByteOffset>,
 }
@@ -71,7 +71,7 @@ impl FileMap {
     pub(crate) fn new(name: FileName, src: String, start_pos: BytePos) -> FileMap {
         use std::iter;
 
-        let span = Span::from_offset(start_pos, ByteOffset::from_str(&src));
+        let span = ByteSpan::from_offset(start_pos, ByteOffset::from_str(&src));
         let lines = {
             let newline_off = ByteOffset::from_char_utf8('\n');
             let offsets = src.match_indices('\n')
@@ -112,7 +112,7 @@ impl FileMap {
     }
 
     /// The span of the source in the `CodeMap`
-    pub fn span(&self) -> Span {
+    pub fn span(&self) -> ByteSpan {
         self.span
     }
 
@@ -134,14 +134,14 @@ impl FileMap {
     }
 
     /// Returns the byte offset to the start of `line`
-    pub fn line_span(&self, line: LineIndex) -> Result<Span, LineIndexError> {
+    pub fn line_span(&self, line: LineIndex) -> Result<ByteSpan, LineIndexError> {
         let lo = self.span.lo() + self.line_offset(line)?;
         let hi = match self.line_offset(LineIndex(line.0 + 1)) {
             Ok(offset_hi) => self.span.lo() + offset_hi,
             Err(_) => self.span.hi(),
         };
 
-        Ok(Span::new(hi, lo))
+        Ok(ByteSpan::new(hi, lo))
     }
 
     /// Returns the line and column location of `byte`
@@ -186,7 +186,7 @@ impl FileMap {
     /// Get the corresponding source string for a span
     ///
     /// Returns `Err` if the span is outside the bounds of the file
-    pub fn src_slice(&self, span: Span) -> Result<&str, SpanError> {
+    pub fn src_slice(&self, span: ByteSpan) -> Result<&str, SpanError> {
         if self.span.contains(span) {
             let lo = (span.lo() - self.span.lo()).to_usize();
             let hi = (span.hi() - self.span.lo()).to_usize();

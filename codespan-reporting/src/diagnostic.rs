@@ -1,6 +1,6 @@
 //! Diagnostic reporting support for the codespan crate
 
-use codespan::Span;
+use codespan::ByteSpan;
 
 use Severity;
 
@@ -15,7 +15,7 @@ pub enum LabelStyle {
 #[derive(Clone, Debug)]
 pub struct Label {
     /// The span we are going to include in the final snippet.
-    pub span: Span,
+    pub span: ByteSpan,
     /// A message to provide some additional information for the underlined code.
     pub message: Option<String>,
     /// The style to use for the label.

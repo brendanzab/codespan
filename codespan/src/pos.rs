@@ -261,18 +261,18 @@ impl Sub for BytePos {
 
 /// A region of code in a source file
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub struct Span {
+pub struct ByteSpan {
     lo: BytePos,
     hi: BytePos,
 }
 
-impl Span {
+impl ByteSpan {
     /// Create a new span
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let span = Span::new(BytePos(3), BytePos(6));
+    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
     /// assert_eq!(span.lo(), BytePos(3));
     /// assert_eq!(span.hi(), BytePos(6));
     /// ```
@@ -280,38 +280,38 @@ impl Span {
     /// `lo` are reordered `hi` to maintain the invariant that `lo <= hi`
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let span = Span::new(BytePos(6), BytePos(3));
+    /// let span = ByteSpan::new(BytePos(6), BytePos(3));
     /// assert_eq!(span.lo(), BytePos(3));
     /// assert_eq!(span.hi(), BytePos(6));
     /// ```
-    pub fn new(lo: BytePos, hi: BytePos) -> Span {
+    pub fn new(lo: BytePos, hi: BytePos) -> ByteSpan {
         if lo <= hi {
-            Span { lo, hi }
+            ByteSpan { lo, hi }
         } else {
-            Span { lo: hi, hi: lo }
+            ByteSpan { lo: hi, hi: lo }
         }
     }
 
     /// Create a new span from a byte start and an offset
-    pub fn from_offset(lo: BytePos, off: ByteOffset) -> Span {
-        Span::new(lo, lo + off)
+    pub fn from_offset(lo: BytePos, off: ByteOffset) -> ByteSpan {
+        ByteSpan::new(lo, lo + off)
     }
 
     /// A span that will never point to a valid byte range
-    pub fn none() -> Span {
-        Span {
+    pub fn none() -> ByteSpan {
+        ByteSpan {
             lo: BytePos::none(),
             hi: BytePos::none(),
         }
     }
 
     /// Makes a span from offsets relative to the start of this span.
-    pub fn subspan(&self, begin: ByteOffset, end: ByteOffset) -> Span {
+    pub fn subspan(&self, begin: ByteOffset, end: ByteOffset) -> ByteSpan {
         assert!(end >= begin);
         assert!(self.lo() + end <= self.hi());
-        Span {
+        ByteSpan {
             lo: self.lo() + begin,
             hi: self.lo() + end,
         }
@@ -330,48 +330,48 @@ impl Span {
     /// Return a new span with the low byte position replaced with the supplied byte position
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let span = Span::new(BytePos(3), BytePos(6));
-    /// assert_eq!(span.with_lo(BytePos(2)), Span::new(BytePos(2), BytePos(6)));
-    /// assert_eq!(span.with_lo(BytePos(5)), Span::new(BytePos(5), BytePos(6)));
-    /// assert_eq!(span.with_lo(BytePos(7)), Span::new(BytePos(6), BytePos(7)));
+    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
+    /// assert_eq!(span.with_lo(BytePos(2)), ByteSpan::new(BytePos(2), BytePos(6)));
+    /// assert_eq!(span.with_lo(BytePos(5)), ByteSpan::new(BytePos(5), BytePos(6)));
+    /// assert_eq!(span.with_lo(BytePos(7)), ByteSpan::new(BytePos(6), BytePos(7)));
     /// ```
-    pub fn with_lo(self, lo: BytePos) -> Span {
-        Span::new(lo, self.hi())
+    pub fn with_lo(self, lo: BytePos) -> ByteSpan {
+        ByteSpan::new(lo, self.hi())
     }
 
     /// Return a new span with the high byte position replaced with the supplied byte position
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let span = Span::new(BytePos(3), BytePos(6));
-    /// assert_eq!(span.with_hi(BytePos(7)), Span::new(BytePos(3), BytePos(7)));
-    /// assert_eq!(span.with_hi(BytePos(5)), Span::new(BytePos(3), BytePos(5)));
-    /// assert_eq!(span.with_hi(BytePos(2)), Span::new(BytePos(2), BytePos(3)));
+    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
+    /// assert_eq!(span.with_hi(BytePos(7)), ByteSpan::new(BytePos(3), BytePos(7)));
+    /// assert_eq!(span.with_hi(BytePos(5)), ByteSpan::new(BytePos(3), BytePos(5)));
+    /// assert_eq!(span.with_hi(BytePos(2)), ByteSpan::new(BytePos(2), BytePos(3)));
     /// ```
-    pub fn with_hi(self, hi: BytePos) -> Span {
-        Span::new(self.lo(), hi)
+    pub fn with_hi(self, hi: BytePos) -> ByteSpan {
+        ByteSpan::new(self.lo(), hi)
     }
 
     /// Return true if `self` fully encloses `other`.
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let a = Span::new(BytePos(5), BytePos(8));
+    /// let a = ByteSpan::new(BytePos(5), BytePos(8));
     ///
     /// assert_eq!(a.contains(a), true);
-    /// assert_eq!(a.contains(Span::new(BytePos(6), BytePos(7))), true);
-    /// assert_eq!(a.contains(Span::new(BytePos(6), BytePos(10))), false);
-    /// assert_eq!(a.contains(Span::new(BytePos(3), BytePos(6))), false);
+    /// assert_eq!(a.contains(ByteSpan::new(BytePos(6), BytePos(7))), true);
+    /// assert_eq!(a.contains(ByteSpan::new(BytePos(6), BytePos(10))), false);
+    /// assert_eq!(a.contains(ByteSpan::new(BytePos(3), BytePos(6))), false);
     /// ```
-    pub fn contains(self, other: Span) -> bool {
+    pub fn contains(self, other: ByteSpan) -> bool {
         self.lo() <= other.lo() && other.hi() <= self.hi()
     }
 
-    /// Return a `Span` that would enclose both `self` and `end`.
+    /// Return a `ByteSpan` that would enclose both `self` and `end`.
     ///
     /// ```plain
     /// self     ~~~~~~~
@@ -380,18 +380,18 @@ impl Span {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let a = Span::new(BytePos(2), BytePos(5));
-    /// let b = Span::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
+    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
     ///
-    /// assert_eq!(a.to(b), Span::new(BytePos(2), BytePos(14)));
+    /// assert_eq!(a.to(b), ByteSpan::new(BytePos(2), BytePos(14)));
     /// ```
-    pub fn to(self, end: Span) -> Span {
-        Span::new(cmp::min(self.lo(), end.lo()), cmp::max(self.hi(), end.hi()))
+    pub fn to(self, end: ByteSpan) -> ByteSpan {
+        ByteSpan::new(cmp::min(self.lo(), end.lo()), cmp::max(self.hi(), end.hi()))
     }
 
-    /// Return a `Span` between the end of `self` to the beginning of `end`.
+    /// Return a `ByteSpan` between the end of `self` to the beginning of `end`.
     ///
     /// ```plain
     /// self     ~~~~~~~
@@ -400,18 +400,18 @@ impl Span {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let a = Span::new(BytePos(2), BytePos(5));
-    /// let b = Span::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
+    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
     ///
-    /// assert_eq!(a.between(b), Span::new(BytePos(5), BytePos(10)));
+    /// assert_eq!(a.between(b), ByteSpan::new(BytePos(5), BytePos(10)));
     /// ```
-    pub fn between(self, end: Span) -> Span {
-        Span::new(self.hi(), end.lo())
+    pub fn between(self, end: ByteSpan) -> ByteSpan {
+        ByteSpan::new(self.hi(), end.lo())
     }
 
-    /// Return a `Span` between the beginning of `self` to the beginning of `end`.
+    /// Return a `ByteSpan` between the beginning of `self` to the beginning of `end`.
     ///
     /// ```plain
     /// self     ~~~~~~~
@@ -420,19 +420,19 @@ impl Span {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, Span};
+    /// use codespan::{BytePos, ByteSpan};
     ///
-    /// let a = Span::new(BytePos(2), BytePos(5));
-    /// let b = Span::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
+    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
     ///
-    /// assert_eq!(a.until(b), Span::new(BytePos(2), BytePos(10)));
+    /// assert_eq!(a.until(b), ByteSpan::new(BytePos(2), BytePos(10)));
     /// ```
-    pub fn until(self, end: Span) -> Span {
-        Span::new(self.lo(), end.lo())
+    pub fn until(self, end: ByteSpan) -> ByteSpan {
+        ByteSpan::new(self.lo(), end.lo())
     }
 }
 
-impl fmt::Display for Span {
+impl fmt::Display for ByteSpan {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.lo.fmt(f)?;
         write!(f, "..")?;
