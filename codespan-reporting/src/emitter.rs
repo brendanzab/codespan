@@ -17,7 +17,7 @@ pub fn emit(codemap: &CodeMap, diagnostic: &Diagnostic) {
                     None => println!(),
                     Some(ref label) => println!(": {}", label),
                 }
-            }
+            },
         }
     }
 }
