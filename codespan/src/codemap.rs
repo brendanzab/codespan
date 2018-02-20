@@ -19,7 +19,7 @@ impl CodeMap {
     fn next_start_pos(&self) -> BytePos {
         let end_pos = self.files
             .last()
-            .map(|x| x.span().hi())
+            .map(|x| x.span().end())
             .unwrap_or(BytePos::none());
 
         // Add one byte of padding between each file
@@ -46,8 +46,8 @@ impl CodeMap {
 
         self.files
             .binary_search_by(|file| match () {
-                () if file.span().lo() > pos => Ordering::Greater,
-                () if file.span().hi() < pos => Ordering::Less,
+                () if file.span().start() > pos => Ordering::Greater,
+                () if file.span().end() < pos => Ordering::Less,
                 () => Ordering::Equal,
             })
             .ok()

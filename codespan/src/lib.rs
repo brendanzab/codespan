@@ -13,5 +13,5 @@ mod pos;
 
 pub use self::codemap::CodeMap;
 pub use self::filemap::{FileMap, FileName};
-pub use self::pos::{ByteOffset, BytePos, ColumnIndex, ColumnNumber, LineIndex, LineNumber,
-                    RawOffset, RawPos, Span};
+pub use self::pos::{ByteOffset, BytePos, ByteSpan, ColumnIndex, ColumnNumber, LineIndex,
+                    LineNumber, RawOffset, RawPos};
