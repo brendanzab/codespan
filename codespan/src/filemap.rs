@@ -43,6 +43,8 @@ pub enum LineIndexError {
 pub enum BytePosError {
     #[fail(display = "Byte position out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: BytePos, span: Span },
+    #[fail(display = "Byte position points within a character boundary - given: {}", given)]
+    InvalidCharBoundary { given: BytePos },
 }
 
 #[derive(Debug, Fail, PartialEq)]
@@ -155,14 +157,29 @@ impl FileMap {
 
     /// Returns the line index that the byte position points to
     pub fn find_line_at_pos(&self, pos: BytePos) -> Result<LineIndex, BytePosError> {
-        let span = self.span;
-        match () {
-            () if pos < span.lo() => Err(BytePosError::OutOfBounds { given: pos, span }),
-            () if pos > span.hi() => Err(BytePosError::OutOfBounds { given: pos, span }),
-            () => match self.lines.binary_search(&(pos - span.lo())) {
-                Ok(i) => Ok(LineIndex(i as RawPos)),
-                Err(i) => Ok(LineIndex(i as RawPos - 1)),
-            },
+        if pos < self.span.lo() {
+            Err(BytePosError::OutOfBounds {
+                given: pos,
+                span: self.span,
+            })
+        } else if pos > self.span.hi() {
+            Err(BytePosError::OutOfBounds {
+                given: pos,
+                span: self.span,
+            })
+        } else {
+            let offset = pos - self.span.lo();
+
+            if self.src.is_char_boundary(offset.to_usize()) {
+                match self.lines.binary_search(&offset) {
+                    Ok(i) => Ok(LineIndex(i as RawPos)),
+                    Err(i) => Ok(LineIndex(i as RawPos - 1)),
+                }
+            } else {
+                Err(BytePosError::InvalidCharBoundary {
+                    given: self.span.lo(),
+                })
+            }
         }
     }
 
@@ -170,17 +187,17 @@ impl FileMap {
     ///
     /// Returns `Err` if the span is outside the bounds of the file
     pub fn src_slice(&self, span: Span) -> Result<&str, SpanError> {
-        match () {
-            () if !self.span.contains(span) => Err(SpanError::OutOfBounds {
+        if self.span.contains(span) {
+            let lo = (span.lo() - self.span.lo()).to_usize();
+            let hi = (span.hi() - self.span.lo()).to_usize();
+
+            // TODO: check char boundaries
+            Ok(&self.src[lo..hi])
+        } else {
+            Err(SpanError::OutOfBounds {
                 given: span,
                 span: self.span,
-            }),
-            () => {
-                let lo = (span.lo() - self.span.lo()).to_usize();
-                let hi = (span.hi() - self.span.lo()).to_usize();
-
-                Ok(&self.src[lo..hi])
-            },
+            })
         }
     }
 }
