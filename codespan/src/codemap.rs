@@ -1,8 +1,9 @@
 use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
-use {FileMap, FileName};
-use pos::{ByteIndex, ByteOffset};
+
+use filemap::{FileMap, FileName};
+use index::{ByteIndex, ByteOffset};
 
 #[derive(Debug)]
 pub struct CodeMap {

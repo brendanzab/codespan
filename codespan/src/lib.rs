@@ -9,9 +9,13 @@ extern crate pretty_assertions;
 
 mod codemap;
 mod filemap;
-mod pos;
+mod index;
+mod span;
 
-pub use self::codemap::CodeMap;
-pub use self::filemap::{FileMap, FileName};
-pub use self::pos::{ByteIndex, ByteOffset, ByteSpan, ColumnIndex, ColumnNumber, LineIndex,
-                    LineNumber, RawIndex, RawOffset};
+pub use codemap::CodeMap;
+pub use filemap::{FileMap, FileName};
+pub use index::{ByteIndex, ByteOffset};
+pub use index::{ColumnIndex, ColumnNumber};
+pub use index::{LineIndex, LineNumber};
+pub use index::{RawIndex, RawOffset};
+pub use span::ByteSpan;

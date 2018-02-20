@@ -4,7 +4,8 @@ use std::borrow::Cow;
 use std::{fmt, io};
 use std::path::PathBuf;
 
-use pos::{ByteIndex, ByteOffset, ByteSpan, ColumnIndex, LineIndex, RawIndex, RawOffset};
+use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, RawIndex, RawOffset};
+use span::ByteSpan;
 
 #[derive(Clone, Debug)]
 pub enum FileName {
