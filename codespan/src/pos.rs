@@ -442,8 +442,6 @@ impl fmt::Display for ByteSpan {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.start.fmt(f)?;
         write!(f, "..")?;
-        write!(f, "..")?;
-        write!(f, "..")?;
         self.end.fmt(f)?;
         Ok(())
     }
