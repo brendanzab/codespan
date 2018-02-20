@@ -3,16 +3,16 @@
 use std::{cmp, fmt};
 use std::ops::{Add, AddAssign, Neg, Sub};
 
-/// The raw, untyped position. We use a 32-bit integer here for space efficiency,
+/// The raw, untyped index. We use a 32-bit integer here for space efficiency,
 /// assuming we won't be working with sources larger than 4GB.
-pub type RawPos = u32;
+pub type RawIndex = u32;
 
 /// The raw, untyped offset.
 pub type RawOffset = i64;
 
 /// A zero-indexed line offest into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct LineIndex(pub RawPos);
+pub struct LineIndex(pub RawIndex);
 
 impl LineIndex {
     /// The 1-indexed line number. Useful for pretty printing source locations.
@@ -49,7 +49,7 @@ impl fmt::Debug for LineIndex {
 
 /// A 1-indexed line number. Useful for pretty printing source locations.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct LineNumber(RawPos);
+pub struct LineNumber(RawIndex);
 
 impl fmt::Debug for LineNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -67,7 +67,7 @@ impl fmt::Display for LineNumber {
 
 /// A zero-indexed column offest into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ColumnIndex(pub RawPos);
+pub struct ColumnIndex(pub RawIndex);
 
 impl ColumnIndex {
     /// The 1-indexed column number. Useful for pretty printing source locations.
@@ -104,7 +104,7 @@ impl fmt::Debug for ColumnIndex {
 
 /// A 1-indexed column number. Useful for pretty printing source locations.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ColumnNumber(RawPos);
+pub struct ColumnNumber(RawIndex);
 
 impl fmt::Debug for ColumnNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -122,12 +122,12 @@ impl fmt::Display for ColumnNumber {
 
 /// A byte position in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct BytePos(pub RawPos);
+pub struct ByteIndex(pub RawIndex);
 
-impl BytePos {
+impl ByteIndex {
     /// A byte position that will never point to a valid file
-    pub fn none() -> BytePos {
-        BytePos(0)
+    pub fn none() -> ByteIndex {
+        ByteIndex(0)
     }
 
     /// Convert the position into a `usize`, for use in array indexing
@@ -136,21 +136,21 @@ impl BytePos {
     }
 }
 
-impl Default for BytePos {
-    fn default() -> BytePos {
-        BytePos(0)
+impl Default for ByteIndex {
+    fn default() -> ByteIndex {
+        ByteIndex(0)
     }
 }
 
-impl fmt::Debug for BytePos {
+impl fmt::Debug for ByteIndex {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "BytePos(")?;
+        write!(f, "ByteIndex(")?;
         self.0.fmt(f)?;
         write!(f, ")")
     }
 }
 
-impl fmt::Display for BytePos {
+impl fmt::Display for ByteIndex {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
@@ -215,15 +215,15 @@ impl fmt::Display for ByteOffset {
     }
 }
 
-impl Add<ByteOffset> for BytePos {
-    type Output = BytePos;
+impl Add<ByteOffset> for ByteIndex {
+    type Output = ByteIndex;
 
-    fn add(self, rhs: ByteOffset) -> BytePos {
-        BytePos((self.0 as RawOffset + rhs.0) as RawPos)
+    fn add(self, rhs: ByteOffset) -> ByteIndex {
+        ByteIndex((self.0 as RawOffset + rhs.0) as RawIndex)
     }
 }
 
-impl AddAssign<ByteOffset> for BytePos {
+impl AddAssign<ByteOffset> for ByteIndex {
     fn add_assign(&mut self, rhs: ByteOffset) {
         *self = *self + rhs;
     }
@@ -251,10 +251,10 @@ impl AddAssign<ByteOffset> for ByteOffset {
     }
 }
 
-impl Sub for BytePos {
+impl Sub for ByteIndex {
     type Output = ByteOffset;
 
-    fn sub(self, rhs: BytePos) -> ByteOffset {
+    fn sub(self, rhs: ByteIndex) -> ByteOffset {
         ByteOffset(self.0 as RawOffset - rhs.0 as RawOffset)
     }
 }
@@ -262,31 +262,31 @@ impl Sub for BytePos {
 /// A region of code in a source file
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct ByteSpan {
-    start: BytePos,
-    end: BytePos,
+    start: ByteIndex,
+    end: ByteIndex,
 }
 
 impl ByteSpan {
     /// Create a new span
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
-    /// assert_eq!(span.start(), BytePos(3));
-    /// assert_eq!(span.end(), BytePos(6));
+    /// let span = ByteSpan::new(ByteIndex(3), ByteIndex(6));
+    /// assert_eq!(span.start(), ByteIndex(3));
+    /// assert_eq!(span.end(), ByteIndex(6));
     /// ```
     ///
-    /// `start` are reordered `end` to maintain the invariant that `start <= end`
+    /// `start` and `end` are reordered to maintain the invariant that `start <= end`
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let span = ByteSpan::new(BytePos(6), BytePos(3));
-    /// assert_eq!(span.start(), BytePos(3));
-    /// assert_eq!(span.end(), BytePos(6));
+    /// let span = ByteSpan::new(ByteIndex(6), ByteIndex(3));
+    /// assert_eq!(span.start(), ByteIndex(3));
+    /// assert_eq!(span.end(), ByteIndex(6));
     /// ```
-    pub fn new(start: BytePos, end: BytePos) -> ByteSpan {
+    pub fn new(start: ByteIndex, end: ByteIndex) -> ByteSpan {
         if start <= end {
             ByteSpan { start, end }
         } else {
@@ -298,15 +298,15 @@ impl ByteSpan {
     }
 
     /// Create a new span from a byte start and an offset
-    pub fn from_offset(start: BytePos, off: ByteOffset) -> ByteSpan {
+    pub fn from_offset(start: ByteIndex, off: ByteOffset) -> ByteSpan {
         ByteSpan::new(start, start + off)
     }
 
     /// A span that will never point to a valid byte range
     pub fn none() -> ByteSpan {
         ByteSpan {
-            start: BytePos::none(),
-            end: BytePos::none(),
+            start: ByteIndex::none(),
+            end: ByteIndex::none(),
         }
     }
 
@@ -320,55 +320,55 @@ impl ByteSpan {
         }
     }
 
-    /// Get the low byte position
-    pub fn start(self) -> BytePos {
+    /// Get the start index
+    pub fn start(self) -> ByteIndex {
         self.start
     }
 
-    /// Get the high byte position
-    pub fn end(self) -> BytePos {
+    /// Get the end index
+    pub fn end(self) -> ByteIndex {
         self.end
     }
 
     /// Return a new span with the low byte position replaced with the supplied byte position
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
-    /// assert_eq!(span.with_lo(BytePos(2)), ByteSpan::new(BytePos(2), BytePos(6)));
-    /// assert_eq!(span.with_lo(BytePos(5)), ByteSpan::new(BytePos(5), BytePos(6)));
-    /// assert_eq!(span.with_lo(BytePos(7)), ByteSpan::new(BytePos(6), BytePos(7)));
+    /// let span = ByteSpan::new(ByteIndex(3), ByteIndex(6));
+    /// assert_eq!(span.with_lo(ByteIndex(2)), ByteSpan::new(ByteIndex(2), ByteIndex(6)));
+    /// assert_eq!(span.with_lo(ByteIndex(5)), ByteSpan::new(ByteIndex(5), ByteIndex(6)));
+    /// assert_eq!(span.with_lo(ByteIndex(7)), ByteSpan::new(ByteIndex(6), ByteIndex(7)));
     /// ```
-    pub fn with_lo(self, start: BytePos) -> ByteSpan {
+    pub fn with_lo(self, start: ByteIndex) -> ByteSpan {
         ByteSpan::new(start, self.end())
     }
 
     /// Return a new span with the high byte position replaced with the supplied byte position
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let span = ByteSpan::new(BytePos(3), BytePos(6));
-    /// assert_eq!(span.with_hi(BytePos(7)), ByteSpan::new(BytePos(3), BytePos(7)));
-    /// assert_eq!(span.with_hi(BytePos(5)), ByteSpan::new(BytePos(3), BytePos(5)));
-    /// assert_eq!(span.with_hi(BytePos(2)), ByteSpan::new(BytePos(2), BytePos(3)));
+    /// let span = ByteSpan::new(ByteIndex(3), ByteIndex(6));
+    /// assert_eq!(span.with_hi(ByteIndex(7)), ByteSpan::new(ByteIndex(3), ByteIndex(7)));
+    /// assert_eq!(span.with_hi(ByteIndex(5)), ByteSpan::new(ByteIndex(3), ByteIndex(5)));
+    /// assert_eq!(span.with_hi(ByteIndex(2)), ByteSpan::new(ByteIndex(2), ByteIndex(3)));
     /// ```
-    pub fn with_hi(self, end: BytePos) -> ByteSpan {
+    pub fn with_hi(self, end: ByteIndex) -> ByteSpan {
         ByteSpan::new(self.start(), end)
     }
 
     /// Return true if `self` fully encloses `other`.
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let a = ByteSpan::new(BytePos(5), BytePos(8));
+    /// let a = ByteSpan::new(ByteIndex(5), ByteIndex(8));
     ///
     /// assert_eq!(a.contains(a), true);
-    /// assert_eq!(a.contains(ByteSpan::new(BytePos(6), BytePos(7))), true);
-    /// assert_eq!(a.contains(ByteSpan::new(BytePos(6), BytePos(10))), false);
-    /// assert_eq!(a.contains(ByteSpan::new(BytePos(3), BytePos(6))), false);
+    /// assert_eq!(a.contains(ByteSpan::new(ByteIndex(6), ByteIndex(7))), true);
+    /// assert_eq!(a.contains(ByteSpan::new(ByteIndex(6), ByteIndex(10))), false);
+    /// assert_eq!(a.contains(ByteSpan::new(ByteIndex(3), ByteIndex(6))), false);
     /// ```
     pub fn contains(self, other: ByteSpan) -> bool {
         self.start() <= other.start() && other.end() <= self.end()
@@ -383,12 +383,12 @@ impl ByteSpan {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
-    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(ByteIndex(2), ByteIndex(5));
+    /// let b = ByteSpan::new(ByteIndex(10), ByteIndex(14));
     ///
-    /// assert_eq!(a.to(b), ByteSpan::new(BytePos(2), BytePos(14)));
+    /// assert_eq!(a.to(b), ByteSpan::new(ByteIndex(2), ByteIndex(14)));
     /// ```
     pub fn to(self, end: ByteSpan) -> ByteSpan {
         ByteSpan::new(
@@ -406,12 +406,12 @@ impl ByteSpan {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
-    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(ByteIndex(2), ByteIndex(5));
+    /// let b = ByteSpan::new(ByteIndex(10), ByteIndex(14));
     ///
-    /// assert_eq!(a.between(b), ByteSpan::new(BytePos(5), BytePos(10)));
+    /// assert_eq!(a.between(b), ByteSpan::new(ByteIndex(5), ByteIndex(10)));
     /// ```
     pub fn between(self, end: ByteSpan) -> ByteSpan {
         ByteSpan::new(self.end(), end.start())
@@ -426,12 +426,12 @@ impl ByteSpan {
     /// ```
     ///
     /// ```rust
-    /// use codespan::{BytePos, ByteSpan};
+    /// use codespan::{ByteIndex, ByteSpan};
     ///
-    /// let a = ByteSpan::new(BytePos(2), BytePos(5));
-    /// let b = ByteSpan::new(BytePos(10), BytePos(14));
+    /// let a = ByteSpan::new(ByteIndex(2), ByteIndex(5));
+    /// let b = ByteSpan::new(ByteIndex(10), ByteIndex(14));
     ///
-    /// assert_eq!(a.until(b), ByteSpan::new(BytePos(2), BytePos(10)));
+    /// assert_eq!(a.until(b), ByteSpan::new(ByteIndex(2), ByteIndex(10)));
     /// ```
     pub fn until(self, end: ByteSpan) -> ByteSpan {
         ByteSpan::new(self.start(), end.start())

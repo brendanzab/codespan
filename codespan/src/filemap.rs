@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use std::{fmt, io};
 use std::path::PathBuf;
 
-use pos::{ByteOffset, BytePos, ByteSpan, ColumnIndex, LineIndex, RawOffset, RawPos};
+use pos::{ByteIndex, ByteOffset, ByteSpan, ColumnIndex, LineIndex, RawIndex, RawOffset};
 
 #[derive(Clone, Debug)]
 pub enum FileName {
@@ -40,11 +40,11 @@ pub enum LineIndexError {
 }
 
 #[derive(Debug, Fail, PartialEq)]
-pub enum BytePosError {
-    #[fail(display = "Byte position out of bounds - given: {}, span: {}", given, span)]
-    OutOfBounds { given: BytePos, span: ByteSpan },
-    #[fail(display = "Byte position points within a character boundary - given: {}", given)]
-    InvalidCharBoundary { given: BytePos },
+pub enum ByteIndexError {
+    #[fail(display = "Byte index out of bounds - given: {}, span: {}", given, span)]
+    OutOfBounds { given: ByteIndex, span: ByteSpan },
+    #[fail(display = "Byte index points within a character boundary - given: {}", given)]
+    InvalidCharBoundary { given: ByteIndex },
 }
 
 #[derive(Debug, Fail, PartialEq)]
@@ -68,10 +68,10 @@ pub struct FileMap {
 
 impl FileMap {
     /// Construct a new filemap, creating an index of line start locations
-    pub(crate) fn new(name: FileName, src: String, start_pos: BytePos) -> FileMap {
+    pub(crate) fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
         use std::iter;
 
-        let span = ByteSpan::from_offset(start_pos, ByteOffset::from_str(&src));
+        let span = ByteSpan::from_offset(start, ByteOffset::from_str(&src));
         let lines = {
             let newline_off = ByteOffset::from_char_utf8('\n');
             let offsets = src.match_indices('\n')
@@ -89,7 +89,7 @@ impl FileMap {
     }
 
     /// Read some source code from a file, loading it into a filemap
-    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start_pos: BytePos) -> io::Result<FileMap> {
+    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap> {
         use std::fs::File;
         use std::io::Read;
 
@@ -98,7 +98,7 @@ impl FileMap {
         let mut src = String::new();
         file.read_to_string(&mut src)?;
 
-        Ok(FileMap::new(FileName::Real(name), src, start_pos))
+        Ok(FileMap::new(FileName::Real(name), src, start))
     }
 
     /// The name of the file that the source came from
@@ -123,12 +123,12 @@ impl FileMap {
             .cloned()
             .ok_or_else(|| LineIndexError::OutOfBounds {
                 given: index,
-                max: LineIndex(self.lines.len() as RawPos - 1),
+                max: LineIndex(self.lines.len() as RawIndex - 1),
             })
     }
 
-    /// Returns the byte offset to the start of `line`
-    pub fn line_pos(&self, index: LineIndex) -> Result<BytePos, LineIndexError> {
+    /// Returns the byte index of the start of `line`
+    pub fn line_byte_index(&self, index: LineIndex) -> Result<ByteIndex, LineIndexError> {
         self.line_offset(index)
             .map(|offset| self.span.start() + offset)
     }
@@ -145,38 +145,39 @@ impl FileMap {
     }
 
     /// Returns the line and column location of `byte`
-    pub fn location(&self, pos: BytePos) -> Result<(LineIndex, ColumnIndex), BytePosError> {
-        let line_index = self.find_line_at_pos(pos)?;
+    pub fn location(&self, index: ByteIndex) -> Result<(LineIndex, ColumnIndex), ByteIndexError> {
+        let line_index = self.find_line(index)?;
         let line_span = self.line_span(line_index).unwrap(); // line_index should be valid!
         let line_slice = self.src_slice(line_span).unwrap(); // line_span should be valid!
-        let byte_col = pos - line_span.start();
-        let column_index = ColumnIndex(line_slice[..byte_col.to_usize()].chars().count() as RawPos);
+        let byte_col = index - line_span.start();
+        let column_index =
+            ColumnIndex(line_slice[..byte_col.to_usize()].chars().count() as RawIndex);
 
         Ok((line_index, column_index))
     }
 
-    /// Returns the line index that the byte position points to
-    pub fn find_line_at_pos(&self, pos: BytePos) -> Result<LineIndex, BytePosError> {
-        if pos < self.span.start() {
-            Err(BytePosError::OutOfBounds {
-                given: pos,
+    /// Returns the line index that the byte index points to
+    pub fn find_line(&self, index: ByteIndex) -> Result<LineIndex, ByteIndexError> {
+        if index < self.span.start() {
+            Err(ByteIndexError::OutOfBounds {
+                given: index,
                 span: self.span,
             })
-        } else if pos > self.span.end() {
-            Err(BytePosError::OutOfBounds {
-                given: pos,
+        } else if index > self.span.end() {
+            Err(ByteIndexError::OutOfBounds {
+                given: index,
                 span: self.span,
             })
         } else {
-            let offset = pos - self.span.start();
+            let offset = index - self.span.start();
 
             if self.src.is_char_boundary(offset.to_usize()) {
                 match self.lines.binary_search(&offset) {
-                    Ok(i) => Ok(LineIndex(i as RawPos)),
-                    Err(i) => Ok(LineIndex(i as RawPos - 1)),
+                    Ok(i) => Ok(LineIndex(i as RawIndex)),
+                    Err(i) => Ok(LineIndex(i as RawIndex - 1)),
                 }
             } else {
-                Err(BytePosError::InvalidCharBoundary {
+                Err(ByteIndexError::InvalidCharBoundary {
                     given: self.span.start(),
                 })
             }
@@ -239,9 +240,9 @@ mod tests {
             byte_offsets
         }
 
-        fn byte_positions(&self) -> Vec<BytePos> {
-            let mut offsets = vec![BytePos::none()];
-            offsets.extend(self.byte_offsets().iter().map(|&off| BytePos(1) + off));
+        fn byte_indices(&self) -> Vec<ByteIndex> {
+            let mut offsets = vec![ByteIndex::none()];
+            offsets.extend(self.byte_offsets().iter().map(|&off| ByteIndex(1) + off));
             let out_of_bounds = *offsets.last().unwrap() + ByteOffset(1);
             offsets.push(out_of_bounds);
             offsets
@@ -249,7 +250,7 @@ mod tests {
 
         fn line_indices(&self) -> Vec<LineIndex> {
             (0..self.lines.len() + 2)
-                .map(|i| LineIndex(i as RawPos))
+                .map(|i| LineIndex(i as RawIndex))
                 .collect()
         }
     }
@@ -281,12 +282,12 @@ mod tests {
     }
 
     #[test]
-    fn line_pos() {
+    fn line_byte_index() {
         let test_data = TestData::new();
         let offsets: Vec<_> = test_data
             .line_indices()
             .iter()
-            .map(|&i| test_data.filemap.line_pos(i))
+            .map(|&i| test_data.filemap.line_byte_index(i))
             .collect();
 
         assert_eq!(
@@ -311,29 +312,29 @@ mod tests {
     //     let filemap = filemap();
     //     let start = filemap.span().start();
 
-    //     assert_eq!(filemap.line_pos(Li(0)), Some(start + BOff(0)));
-    //     assert_eq!(filemap.line_pos(Li(1)), Some(start + BOff(7)));
-    //     assert_eq!(filemap.line_pos(Li(2)), Some(start + BOff(13)));
-    //     assert_eq!(filemap.line_pos(Li(3)), Some(start + BOff(14)));
-    //     assert_eq!(filemap.line_pos(Li(4)), Some(start + BOff(20)));
-    //     assert_eq!(filemap.line_pos(Li(5)), Some(start + BOff(26)));
-    //     assert_eq!(filemap.line_pos(Li(6)), None);
+    //     assert_eq!(filemap.line_byte_index(Li(0)), Some(start + BOff(0)));
+    //     assert_eq!(filemap.line_byte_index(Li(1)), Some(start + BOff(7)));
+    //     assert_eq!(filemap.line_byte_index(Li(2)), Some(start + BOff(13)));
+    //     assert_eq!(filemap.line_byte_index(Li(3)), Some(start + BOff(14)));
+    //     assert_eq!(filemap.line_byte_index(Li(4)), Some(start + BOff(20)));
+    //     assert_eq!(filemap.line_byte_index(Li(5)), Some(start + BOff(26)));
+    //     assert_eq!(filemap.line_byte_index(Li(6)), None);
     // }
 
     #[test]
     fn location() {
         let test_data = TestData::new();
         let lines: Vec<_> = test_data
-            .byte_positions()
+            .byte_indices()
             .iter()
-            .map(|&pos| test_data.filemap.location(pos))
+            .map(|&index| test_data.filemap.location(index))
             .collect();
 
         assert_eq!(
             lines,
             vec![
-                Err(BytePosError::OutOfBounds {
-                    given: BytePos(0),
+                Err(ByteIndexError::OutOfBounds {
+                    given: ByteIndex(0),
                     span: test_data.filemap.span(),
                 }),
                 Ok((LineIndex(0), ColumnIndex(0))),
@@ -347,8 +348,8 @@ mod tests {
                 Ok((LineIndex(4), ColumnIndex(0))),
                 Ok((LineIndex(4), ColumnIndex(5))),
                 Ok((LineIndex(5), ColumnIndex(0))),
-                Err(BytePosError::OutOfBounds {
-                    given: BytePos(28),
+                Err(ByteIndexError::OutOfBounds {
+                    given: ByteIndex(28),
                     span: test_data.filemap.span(),
                 }),
             ],
@@ -356,19 +357,19 @@ mod tests {
     }
 
     #[test]
-    fn find_line_at_pos() {
+    fn find_line() {
         let test_data = TestData::new();
         let lines: Vec<_> = test_data
-            .byte_positions()
+            .byte_indices()
             .iter()
-            .map(|&pos| test_data.filemap.find_line_at_pos(pos))
+            .map(|&index| test_data.filemap.find_line(index))
             .collect();
 
         assert_eq!(
             lines,
             vec![
-                Err(BytePosError::OutOfBounds {
-                    given: BytePos(0),
+                Err(ByteIndexError::OutOfBounds {
+                    given: ByteIndex(0),
                     span: test_data.filemap.span(),
                 }),
                 Ok(LineIndex(0)),
@@ -382,8 +383,8 @@ mod tests {
                 Ok(LineIndex(4)),
                 Ok(LineIndex(4)),
                 Ok(LineIndex(5)),
-                Err(BytePosError::OutOfBounds {
-                    given: BytePos(28),
+                Err(ByteIndexError::OutOfBounds {
+                    given: ByteIndex(28),
                     span: test_data.filemap.span(),
                 }),
             ],
