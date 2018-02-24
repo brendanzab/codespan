@@ -24,6 +24,24 @@ pub struct Label {
     pub style: LabelStyle,
 }
 
+impl Label {
+    pub fn new_primary<S: Into<String>>(span: ByteSpan, message: S) -> Label {
+        Label {
+            span,
+            message: Some(message.into()),
+            style: LabelStyle::Primary,
+        }
+    }
+
+    pub fn new_secondary<S: Into<String>>(span: ByteSpan, message: S) -> Label {
+        Label {
+            span,
+            message: Some(message.into()),
+            style: LabelStyle::Primary,
+        }
+    }
+}
+
 /// Represents a diagnostic message and associated child messages.
 #[derive(Clone, Debug)]
 pub struct Diagnostic {
@@ -34,4 +52,47 @@ pub struct Diagnostic {
     /// The labelled spans marking the regions of code that cause this
     /// diagnostic to be raised
     pub labels: Vec<Label>,
+}
+
+impl Diagnostic {
+    pub fn new<S: Into<String>>(severity: Severity, message: S) -> Diagnostic {
+        Diagnostic {
+            severity,
+            message: message.into(),
+            labels: Vec::new(),
+        }
+    }
+
+    pub fn new_bug<S: Into<String>>(message: S) -> Diagnostic {
+        Diagnostic::new(Severity::Bug, message)
+    }
+
+    pub fn new_error<S: Into<String>>(message: S) -> Diagnostic {
+        Diagnostic::new(Severity::Error, message)
+    }
+
+    pub fn new_warning<S: Into<String>>(message: S) -> Diagnostic {
+        Diagnostic::new(Severity::Warning, message)
+    }
+
+    pub fn new_note<S: Into<String>>(message: S) -> Diagnostic {
+        Diagnostic::new(Severity::Note, message)
+    }
+
+    pub fn new_help<S: Into<String>>(message: S) -> Diagnostic {
+        Diagnostic::new(Severity::Help, message)
+    }
+
+    pub fn with_label(mut self, label: Label) -> Diagnostic {
+        self.labels.push(label);
+        self
+    }
+
+    pub fn with_primary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
+        self.with_label(Label::new_primary(span, message))
+    }
+
+    pub fn with_secondary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
+        self.with_label(Label::new_secondary(span, message))
+    }
 }
