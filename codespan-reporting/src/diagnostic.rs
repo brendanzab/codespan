@@ -25,20 +25,25 @@ pub struct Label {
 }
 
 impl Label {
-    pub fn new_primary<S: Into<String>>(span: ByteSpan, message: S) -> Label {
+    pub fn new(span: ByteSpan, style: LabelStyle) -> Label {
         Label {
             span,
-            message: Some(message.into()),
-            style: LabelStyle::Primary,
+            message: None,
+            style,
         }
     }
 
-    pub fn new_secondary<S: Into<String>>(span: ByteSpan, message: S) -> Label {
-        Label {
-            span,
-            message: Some(message.into()),
-            style: LabelStyle::Primary,
-        }
+    pub fn new_primary(span: ByteSpan) -> Label {
+        Label::new(span, LabelStyle::Primary)
+    }
+
+    pub fn new_secondary(span: ByteSpan) -> Label {
+        Label::new(span, LabelStyle::Primary)
+    }
+
+    pub fn with_message<S: Into<String>>(mut self, message: S) -> Label {
+        self.message = Some(message.into());
+        self
     }
 }
 
@@ -89,10 +94,10 @@ impl Diagnostic {
     }
 
     pub fn with_primary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
-        self.with_label(Label::new_primary(span, message))
+        self.with_label(Label::new_primary(span).with_message(message))
     }
 
     pub fn with_secondary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
-        self.with_label(Label::new_secondary(span, message))
+        self.with_label(Label::new_secondary(span).with_message(message))
     }
 }
