@@ -182,4 +182,5 @@ impl<I: fmt::Display> fmt::Display for Span<I> {
     }
 }
 
+/// A span of byte indices
 pub type ByteSpan = Span<ByteIndex>;
