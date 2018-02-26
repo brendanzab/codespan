@@ -18,4 +18,4 @@ pub use index::{ByteIndex, ByteOffset};
 pub use index::{ColumnIndex, ColumnNumber};
 pub use index::{LineIndex, LineNumber};
 pub use index::{RawIndex, RawOffset};
-pub use span::ByteSpan;
+pub use span::{ByteSpan, Span};

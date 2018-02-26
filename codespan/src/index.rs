@@ -1,7 +1,7 @@
 //! Wrapper types that specify positions in a source file
 
 use std::fmt;
-use std::ops::{Add, AddAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 /// The raw, untyped index. We use a 32-bit integer here for space efficiency,
 /// assuming we won't be working with sources larger than 4GB.
@@ -9,6 +9,23 @@ pub type RawIndex = u32;
 
 /// The raw, untyped offset.
 pub type RawOffset = i64;
+
+/// Index types
+///
+/// These can be thought of as 1-dimensional points
+pub trait Index: Copy + Ord
+where
+    Self: Add<<Self as Index>::Offset, Output = Self>,
+    Self: AddAssign<<Self as Index>::Offset>,
+    Self: Sub<<Self as Index>::Offset, Output = Self>,
+    Self: SubAssign<<Self as Index>::Offset>,
+    Self: Sub<Self, Output = <Self as Index>::Offset>,
+{
+    /// An offset beteen two indexes
+    ///
+    /// These can be thought of as 1-dimensional vectors
+    type Offset: Copy + Ord + Neg + Add + AddAssign + Sub + SubAssign;
+}
 
 /// A zero-indexed line offest into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -136,6 +153,10 @@ impl ByteIndex {
     }
 }
 
+impl Index for ByteIndex {
+    type Offset = ByteOffset;
+}
+
 impl Default for ByteIndex {
     fn default() -> ByteIndex {
         ByteIndex(0)
@@ -251,10 +272,38 @@ impl AddAssign<ByteOffset> for ByteOffset {
     }
 }
 
+impl Sub<ByteOffset> for ByteOffset {
+    type Output = ByteOffset;
+
+    fn sub(self, rhs: ByteOffset) -> ByteOffset {
+        ByteOffset(self.0 - rhs.0)
+    }
+}
+
+impl SubAssign<ByteOffset> for ByteOffset {
+    fn sub_assign(&mut self, rhs: ByteOffset) {
+        self.0 -= rhs.0;
+    }
+}
+
 impl Sub for ByteIndex {
     type Output = ByteOffset;
 
     fn sub(self, rhs: ByteIndex) -> ByteOffset {
         ByteOffset(self.0 as RawOffset - rhs.0 as RawOffset)
+    }
+}
+
+impl Sub<ByteOffset> for ByteIndex {
+    type Output = ByteIndex;
+
+    fn sub(self, rhs: ByteOffset) -> ByteIndex {
+        ByteIndex((self.0 as RawOffset - rhs.0 as RawOffset) as u32)
+    }
+}
+
+impl SubAssign<ByteOffset> for ByteIndex {
+    fn sub_assign(&mut self, rhs: ByteOffset) {
+        self.0 = (self.0 as RawOffset - rhs.0) as RawIndex;
     }
 }
