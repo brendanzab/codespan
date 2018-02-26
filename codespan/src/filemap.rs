@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use std::{fmt, io};
 use std::path::PathBuf;
 
-use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, RawIndex, RawOffset};
+use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
 #[derive(Clone, Debug)]
@@ -137,7 +137,7 @@ impl FileMap {
     /// Returns the byte offset to the start of `line`
     pub fn line_span(&self, line: LineIndex) -> Result<ByteSpan, LineIndexError> {
         let start = self.span.start() + self.line_offset(line)?;
-        let end = match self.line_offset(LineIndex(line.0 + 1)) {
+        let end = match self.line_offset(line + LineOffset(1)) {
             Ok(offset_hi) => self.span.start() + offset_hi,
             Err(_) => self.span.end(),
         };

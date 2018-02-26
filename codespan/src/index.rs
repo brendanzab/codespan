@@ -263,6 +263,20 @@ impl fmt::Display for ByteOffset {
     }
 }
 
+/// A relative offset beteen two indices
+///
+/// These can be thought of as 1-dimensional vectors
+pub trait Offset: Copy + Ord
+where
+    Self: Neg<Output = Self>,
+    Self: Add<Self, Output = Self>,
+    Self: AddAssign<Self>,
+    Self: Sub<Self, Output = Self>,
+    Self: SubAssign<Self>,
+{
+    const ZERO: Self;
+}
+
 /// Index types
 ///
 /// These can be thought of as 1-dimensional points
@@ -274,14 +288,15 @@ where
     Self: SubAssign<<Self as Index>::Offset>,
     Self: Sub<Self, Output = <Self as Index>::Offset>,
 {
-    /// An offset beteen two indexes
-    ///
-    /// These can be thought of as 1-dimensional vectors
-    type Offset: Copy + Ord + Neg + Add + AddAssign + Sub + SubAssign;
+    type Offset: Offset;
 }
 
 macro_rules! impl_index {
     ($Index:ident, $Offset:ident) => {
+        impl Offset for $Offset {
+            const ZERO: $Offset = $Offset(0);
+        }
+
         impl Index for $Index {
             type Offset = $Offset;
         }

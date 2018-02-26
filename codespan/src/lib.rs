@@ -14,7 +14,7 @@ mod span;
 
 pub use codemap::CodeMap;
 pub use filemap::{FileMap, FileName};
-pub use index::Index;
+pub use index::{Index, Offset};
 pub use index::{ByteIndex, ByteOffset};
 pub use index::{ColumnIndex, ColumnNumber, ColumnOffset};
 pub use index::{LineIndex, LineNumber, LineOffset};
