@@ -3,7 +3,7 @@ use std::{cmp, fmt};
 use index::{ByteIndex, Index};
 
 /// A region of code in a source file
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Span<I> {
     start: I,
     end: I,
