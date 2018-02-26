@@ -93,11 +93,8 @@ impl Diagnostic {
         self
     }
 
-    pub fn with_primary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
-        self.with_label(Label::new_primary(span).with_message(message))
-    }
-
-    pub fn with_secondary_label<S: Into<String>>(self, span: ByteSpan, message: S) -> Diagnostic {
-        self.with_label(Label::new_secondary(span).with_message(message))
+    pub fn with_labels<Labels: IntoIterator<Item = Label>>(mut self, labels: Labels) -> Diagnostic {
+        self.labels.extend(labels);
+        self
     }
 }
