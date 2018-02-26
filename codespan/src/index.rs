@@ -10,23 +10,6 @@ pub type RawIndex = u32;
 /// The raw, untyped offset.
 pub type RawOffset = i64;
 
-/// Index types
-///
-/// These can be thought of as 1-dimensional points
-pub trait Index: Copy + Ord
-where
-    Self: Add<<Self as Index>::Offset, Output = Self>,
-    Self: AddAssign<<Self as Index>::Offset>,
-    Self: Sub<<Self as Index>::Offset, Output = Self>,
-    Self: SubAssign<<Self as Index>::Offset>,
-    Self: Sub<Self, Output = <Self as Index>::Offset>,
-{
-    /// An offset beteen two indexes
-    ///
-    /// These can be thought of as 1-dimensional vectors
-    type Offset: Copy + Ord + Neg + Add + AddAssign + Sub + SubAssign;
-}
-
 /// A zero-indexed line offest into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct LineIndex(pub RawIndex);
@@ -77,6 +60,30 @@ impl fmt::Debug for LineNumber {
 }
 
 impl fmt::Display for LineNumber {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// A line offset in a source file
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct LineOffset(pub RawOffset);
+
+impl Default for LineOffset {
+    fn default() -> LineOffset {
+        LineOffset(0)
+    }
+}
+
+impl fmt::Debug for LineOffset {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "LineOffset(")?;
+        self.0.fmt(f)?;
+        write!(f, ")")
+    }
+}
+
+impl fmt::Display for LineOffset {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
@@ -137,6 +144,30 @@ impl fmt::Display for ColumnNumber {
     }
 }
 
+/// A column offset in a source file
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ColumnOffset(pub RawOffset);
+
+impl Default for ColumnOffset {
+    fn default() -> ColumnOffset {
+        ColumnOffset(0)
+    }
+}
+
+impl fmt::Debug for ColumnOffset {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ColumnOffset(")?;
+        self.0.fmt(f)?;
+        write!(f, ")")
+    }
+}
+
+impl fmt::Display for ColumnOffset {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 /// A byte position in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ByteIndex(pub RawIndex);
@@ -151,10 +182,6 @@ impl ByteIndex {
     pub fn to_usize(self) -> usize {
         self.0 as usize
     }
-}
-
-impl Index for ByteIndex {
-    type Offset = ByteOffset;
 }
 
 impl Default for ByteIndex {
@@ -236,74 +263,103 @@ impl fmt::Display for ByteOffset {
     }
 }
 
-impl Add<ByteOffset> for ByteIndex {
-    type Output = ByteIndex;
-
-    fn add(self, rhs: ByteOffset) -> ByteIndex {
-        ByteIndex((self.0 as RawOffset + rhs.0) as RawIndex)
-    }
+/// Index types
+///
+/// These can be thought of as 1-dimensional points
+pub trait Index: Copy + Ord
+where
+    Self: Add<<Self as Index>::Offset, Output = Self>,
+    Self: AddAssign<<Self as Index>::Offset>,
+    Self: Sub<<Self as Index>::Offset, Output = Self>,
+    Self: SubAssign<<Self as Index>::Offset>,
+    Self: Sub<Self, Output = <Self as Index>::Offset>,
+{
+    /// An offset beteen two indexes
+    ///
+    /// These can be thought of as 1-dimensional vectors
+    type Offset: Copy + Ord + Neg + Add + AddAssign + Sub + SubAssign;
 }
 
-impl AddAssign<ByteOffset> for ByteIndex {
-    fn add_assign(&mut self, rhs: ByteOffset) {
-        *self = *self + rhs;
-    }
+macro_rules! impl_index {
+    ($Index:ident, $Offset:ident) => {
+        impl Index for $Index {
+            type Offset = $Offset;
+        }
+
+        impl Add<$Offset> for $Index {
+            type Output = $Index;
+
+            fn add(self, rhs: $Offset) -> $Index {
+                $Index((self.0 as RawOffset + rhs.0) as RawIndex)
+            }
+        }
+
+        impl AddAssign<$Offset> for $Index {
+            fn add_assign(&mut self, rhs: $Offset) {
+                *self = *self + rhs;
+            }
+        }
+
+        impl Neg for $Offset {
+            type Output = $Offset;
+
+            fn neg(self) -> $Offset {
+                $Offset(-self.0)
+            }
+        }
+
+        impl Add<$Offset> for $Offset {
+            type Output = $Offset;
+
+            fn add(self, rhs: $Offset) -> $Offset {
+                $Offset(self.0 + rhs.0)
+            }
+        }
+
+        impl AddAssign<$Offset> for $Offset {
+            fn add_assign(&mut self, rhs: $Offset) {
+                self.0 += rhs.0;
+            }
+        }
+
+        impl Sub<$Offset> for $Offset {
+            type Output = $Offset;
+
+            fn sub(self, rhs: $Offset) -> $Offset {
+                $Offset(self.0 - rhs.0)
+            }
+        }
+
+        impl SubAssign<$Offset> for $Offset {
+            fn sub_assign(&mut self, rhs: $Offset) {
+                self.0 -= rhs.0;
+            }
+        }
+
+        impl Sub for $Index {
+            type Output = $Offset;
+
+            fn sub(self, rhs: $Index) -> $Offset {
+                $Offset(self.0 as RawOffset - rhs.0 as RawOffset)
+            }
+        }
+
+        impl Sub<$Offset> for $Index {
+            type Output = $Index;
+
+            fn sub(self, rhs: $Offset) -> $Index {
+                $Index((self.0 as RawOffset - rhs.0 as RawOffset) as u32)
+            }
+        }
+
+        impl SubAssign<$Offset> for $Index {
+            fn sub_assign(&mut self, rhs: $Offset) {
+                self.0 = (self.0 as RawOffset - rhs.0) as RawIndex;
+            }
+        }
+    };
 }
 
-impl Neg for ByteOffset {
-    type Output = ByteOffset;
-
-    fn neg(self) -> ByteOffset {
-        ByteOffset(-self.0)
-    }
-}
-
-impl Add<ByteOffset> for ByteOffset {
-    type Output = ByteOffset;
-
-    fn add(self, rhs: ByteOffset) -> ByteOffset {
-        ByteOffset(self.0 + rhs.0)
-    }
-}
-
-impl AddAssign<ByteOffset> for ByteOffset {
-    fn add_assign(&mut self, rhs: ByteOffset) {
-        self.0 += rhs.0;
-    }
-}
-
-impl Sub<ByteOffset> for ByteOffset {
-    type Output = ByteOffset;
-
-    fn sub(self, rhs: ByteOffset) -> ByteOffset {
-        ByteOffset(self.0 - rhs.0)
-    }
-}
-
-impl SubAssign<ByteOffset> for ByteOffset {
-    fn sub_assign(&mut self, rhs: ByteOffset) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl Sub for ByteIndex {
-    type Output = ByteOffset;
-
-    fn sub(self, rhs: ByteIndex) -> ByteOffset {
-        ByteOffset(self.0 as RawOffset - rhs.0 as RawOffset)
-    }
-}
-
-impl Sub<ByteOffset> for ByteIndex {
-    type Output = ByteIndex;
-
-    fn sub(self, rhs: ByteOffset) -> ByteIndex {
-        ByteIndex((self.0 as RawOffset - rhs.0 as RawOffset) as u32)
-    }
-}
-
-impl SubAssign<ByteOffset> for ByteIndex {
-    fn sub_assign(&mut self, rhs: ByteOffset) {
-        self.0 = (self.0 as RawOffset - rhs.0) as RawIndex;
-    }
-}
+impl_index!(LineIndex, LineOffset);
+impl_index!(ColumnIndex, ColumnOffset);
+impl_index!(ByteIndex, ByteOffset);
