@@ -21,7 +21,7 @@ impl CodeMap {
         let end_index = self.files
             .last()
             .map(|x| x.span().end())
-            .unwrap_or(ByteIndex::none());
+            .unwrap_or_else(ByteIndex::none);
 
         // Add one byte of padding between each file
         end_index + ByteOffset(1)
