@@ -159,12 +159,7 @@ impl FileMap {
 
     /// Returns the line index that the byte index points to
     pub fn find_line(&self, index: ByteIndex) -> Result<LineIndex, ByteIndexError> {
-        if index < self.span.start() {
-            Err(ByteIndexError::OutOfBounds {
-                given: index,
-                span: self.span,
-            })
-        } else if index > self.span.end() {
+        if index < self.span.start() || index > self.span.end() {
             Err(ByteIndexError::OutOfBounds {
                 given: index,
                 span: self.span,
