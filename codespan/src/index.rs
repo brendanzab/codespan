@@ -10,7 +10,7 @@ pub type RawIndex = u32;
 /// The raw, untyped offset.
 pub type RawOffset = i64;
 
-/// A zero-indexed line offest into a source file
+/// A zero-indexed line offset into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct LineIndex(pub RawIndex);
 
@@ -89,7 +89,7 @@ impl fmt::Display for LineOffset {
     }
 }
 
-/// A zero-indexed column offest into a source file
+/// A zero-indexed column offset into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ColumnIndex(pub RawIndex);
 
@@ -263,7 +263,7 @@ impl fmt::Display for ByteOffset {
     }
 }
 
-/// A relative offset beteen two indices
+/// A relative offset between two indices
 ///
 /// These can be thought of as 1-dimensional vectors
 pub trait Offset: Copy + Ord
