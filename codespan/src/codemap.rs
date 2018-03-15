@@ -5,7 +5,7 @@ use std::sync::Arc;
 use filemap::{FileMap, FileName};
 use index::{ByteIndex, ByteOffset};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CodeMap {
     files: Vec<Arc<FileMap>>,
 }
@@ -13,7 +13,7 @@ pub struct CodeMap {
 impl CodeMap {
     /// Creates an empty `CodeMap`.
     pub fn new() -> CodeMap {
-        CodeMap { files: Vec::new() }
+        CodeMap::default()
     }
 
     /// The next start index to use for a new filemap
@@ -21,7 +21,7 @@ impl CodeMap {
         let end_index = self.files
             .last()
             .map(|x| x.span().end())
-            .unwrap_or(ByteIndex::none());
+            .unwrap_or_else(ByteIndex::none);
 
         // Add one byte of padding between each file
         end_index + ByteOffset(1)
