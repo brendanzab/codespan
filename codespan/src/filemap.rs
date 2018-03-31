@@ -68,6 +68,10 @@ pub struct FileMap {
 }
 
 impl FileMap {
+    pub fn anonymous(src: String) -> FileMap {
+        Self::new(FileName::virtual_(""), src, ByteIndex::from(0))
+    }
+
     /// Construct a new filemap, creating an index of line start locations
     pub(crate) fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
         use std::iter;

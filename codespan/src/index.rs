@@ -293,6 +293,19 @@ where
 
 macro_rules! impl_index {
     ($Index:ident, $Offset:ident) => {
+
+        impl From<RawOffset> for $Offset {
+            fn from(i: RawOffset) -> Self {
+                $Offset(i)
+            }
+        }
+
+        impl From<RawIndex> for $Index {
+            fn from(i: RawIndex) -> Self {
+                $Index(i)
+            }
+        }
+
         impl Offset for $Offset {
             const ZERO: $Offset = $Offset(0);
         }

@@ -1,4 +1,5 @@
 use std::{cmp, fmt};
+use std::cmp::Ordering;
 
 use index::{ByteIndex, Index};
 
@@ -9,7 +10,7 @@ pub struct Span<I> {
     end: I,
 }
 
-impl<I: Index> Span<I> {
+impl<I: Ord> Span<I> {
     /// Create a new span
     ///
     /// ```rust
@@ -39,7 +40,21 @@ impl<I: Index> Span<I> {
             }
         }
     }
+}
 
+impl<I> Span<I> {
+    /// Get the start index
+    pub fn start(self) -> I {
+        self.start
+    }
+
+    /// Get the end index
+    pub fn end(self) -> I {
+        self.end
+    }
+}
+
+impl<I: Index> Span<I> {
     /// Makes a span from offsets relative to the start of this span.
     pub fn subspan(&self, begin: I::Offset, end: I::Offset) -> Span<I> {
         assert!(end >= begin);
@@ -53,16 +68,6 @@ impl<I: Index> Span<I> {
     /// Create a new span from a byte start and an offset
     pub fn from_offset(start: I, off: I::Offset) -> Span<I> {
         Span::new(start, start + off)
-    }
-
-    /// Get the start index
-    pub fn start(self) -> I {
-        self.start
-    }
-
-    /// Get the end index
-    pub fn end(self) -> I {
-        self.end
     }
 
     /// Return a new span with the low byte position replaced with the supplied byte position
@@ -107,6 +112,54 @@ impl<I: Index> Span<I> {
     /// ```
     pub fn contains(self, other: Span<I>) -> bool {
         self.start() <= other.start() && other.end() <= self.end()
+    }
+
+    /// Return `Equal` if `self` contains `pos`, otherwise it returns `Less` if `pos` is before
+    /// `start` or `Greater` if `pos` is after or at `end`.
+    ///
+    /// ```rust
+    /// use codespan::{ByteIndex, Span};
+    /// use std::cmp::Ordering::*;
+    ///
+    /// let a = Span::new(ByteIndex(5), ByteIndex(8));
+    ///
+    /// assert_eq!(a.containment(ByteIndex(4)), Less);
+    /// assert_eq!(a.containment(ByteIndex(5)), Equal);
+    /// assert_eq!(a.containment(ByteIndex(6)), Equal);
+    /// assert_eq!(a.containment(ByteIndex(8)), Equal);
+    /// assert_eq!(a.containment(ByteIndex(9)), Greater);
+    /// ```
+    pub fn containment(self, pos: I) -> Ordering {
+        use std::cmp::Ordering::*;
+
+        match (pos.cmp(&self.start), pos.cmp(&self.end)) {
+            (Equal, _) | (_, Equal) | (Greater, Less) => Equal,
+            (Less, _) => Less,
+            (_, Greater) => Greater,
+        }
+    }
+
+    /// Return `Equal` if `self` contains `pos`, otherwise it returns `Less` if `pos` is before
+    /// `start` or `Greater` if `pos` is *strictly* after `end`.
+    ///
+    /// ```rust
+    /// use codespan::{ByteIndex, Span};
+    /// use std::cmp::Ordering::*;
+    ///
+    /// let a = Span::new(ByteIndex(5), ByteIndex(8));
+    ///
+    /// assert_eq!(a.containment_exclusive(ByteIndex(4)), Less);
+    /// assert_eq!(a.containment_exclusive(ByteIndex(5)), Equal);
+    /// assert_eq!(a.containment_exclusive(ByteIndex(6)), Equal);
+    /// assert_eq!(a.containment_exclusive(ByteIndex(8)), Greater);
+    /// assert_eq!(a.containment_exclusive(ByteIndex(9)), Greater);
+    /// ```
+    pub fn containment_exclusive(self, pos: I) -> Ordering {
+        if self.end == pos {
+            Ordering::Greater
+        } else {
+            self.containment(pos)
+        }
     }
 
     /// Return a `Span` that would enclose both `self` and `end`.
