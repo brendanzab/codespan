@@ -2,7 +2,7 @@
 
 use std::borrow::Cow;
 use std::{fmt, io};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
@@ -13,6 +13,30 @@ pub enum FileName {
     Real(PathBuf),
     /// A synthetic file, eg. from the REPL
     Virtual(Cow<'static, str>),
+}
+
+impl From<PathBuf> for FileName {
+    fn from(name: PathBuf) -> FileName {
+        FileName::real(name)
+    }
+}
+
+impl<'a> From<&'a Path> for FileName {
+    fn from(name: &Path) -> FileName {
+        FileName::real(name)
+    }
+}
+
+impl From<String> for FileName {
+    fn from(name: String) -> FileName {
+        FileName::virtual_(name)
+    }
+}
+
+impl From<&'static str> for FileName {
+    fn from(name: &'static str) -> FileName {
+        FileName::virtual_(name)
+    }
 }
 
 impl FileName {
