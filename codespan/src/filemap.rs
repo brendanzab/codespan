@@ -93,7 +93,7 @@ pub struct FileMap {
 
 impl FileMap {
     pub fn anonymous(src: String) -> FileMap {
-        Self::new(FileName::virtual_(""), src, ByteIndex::from(0))
+        Self::new(FileName::virtual_(""), src, ByteIndex::from(1))
     }
 
     /// Construct a new filemap, creating an index of line start locations

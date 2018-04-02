@@ -40,6 +40,14 @@ impl<I: Ord> Span<I> {
             }
         }
     }
+
+    pub fn map<F, J>(self, mut f: F) -> Span<J>
+    where
+        F: FnMut(I) -> J,
+        J: Ord,
+    {
+        Span::new(f(self.start), f(self.end))
+    }
 }
 
 impl<I> Span<I> {
