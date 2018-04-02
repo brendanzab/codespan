@@ -145,6 +145,22 @@ impl FileMap {
         self.span
     }
 
+    pub fn offset(&self, line: LineIndex, column: ColumnIndex) -> Option<ByteOffset> {
+        self.line_offset(line).ok().and_then(|mut offset| {
+            offset += ByteOffset::from(column.0 as i64);
+            if offset.to_usize() >= self.src.len() {
+                None
+            } else {
+                Some(offset)
+            }
+        })
+    }
+
+    pub fn byte_index(&self, line: LineIndex, column: ColumnIndex) -> Option<ByteIndex> {
+        self.offset(line, column)
+            .map(|offset| self.span.start() + offset)
+    }
+
     /// Returns the byte offset to the start of `line`
     pub fn line_offset(&self, index: LineIndex) -> Result<ByteOffset, LineIndexError> {
         self.lines
