@@ -1,5 +1,5 @@
-use std::{cmp, fmt};
 use std::cmp::Ordering;
+use std::{cmp, fmt};
 
 use index::{ByteIndex, Index};
 
@@ -84,11 +84,11 @@ impl<I: Index> Span<I> {
     /// use codespan::{ByteIndex, Span};
     ///
     /// let span = Span::new(ByteIndex(3), ByteIndex(6));
-    /// assert_eq!(span.with_lo(ByteIndex(2)), Span::new(ByteIndex(2), ByteIndex(6)));
-    /// assert_eq!(span.with_lo(ByteIndex(5)), Span::new(ByteIndex(5), ByteIndex(6)));
-    /// assert_eq!(span.with_lo(ByteIndex(7)), Span::new(ByteIndex(6), ByteIndex(7)));
+    /// assert_eq!(span.with_start(ByteIndex(2)), Span::new(ByteIndex(2), ByteIndex(6)));
+    /// assert_eq!(span.with_start(ByteIndex(5)), Span::new(ByteIndex(5), ByteIndex(6)));
+    /// assert_eq!(span.with_start(ByteIndex(7)), Span::new(ByteIndex(6), ByteIndex(7)));
     /// ```
-    pub fn with_lo(self, start: I) -> Span<I> {
+    pub fn with_start(self, start: I) -> Span<I> {
         Span::new(start, self.end())
     }
 
@@ -98,11 +98,11 @@ impl<I: Index> Span<I> {
     /// use codespan::{ByteIndex, Span};
     ///
     /// let span = Span::new(ByteIndex(3), ByteIndex(6));
-    /// assert_eq!(span.with_hi(ByteIndex(7)), Span::new(ByteIndex(3), ByteIndex(7)));
-    /// assert_eq!(span.with_hi(ByteIndex(5)), Span::new(ByteIndex(3), ByteIndex(5)));
-    /// assert_eq!(span.with_hi(ByteIndex(2)), Span::new(ByteIndex(2), ByteIndex(3)));
+    /// assert_eq!(span.with_end(ByteIndex(7)), Span::new(ByteIndex(3), ByteIndex(7)));
+    /// assert_eq!(span.with_end(ByteIndex(5)), Span::new(ByteIndex(3), ByteIndex(5)));
+    /// assert_eq!(span.with_end(ByteIndex(2)), Span::new(ByteIndex(2), ByteIndex(3)));
     /// ```
-    pub fn with_hi(self, end: I) -> Span<I> {
+    pub fn with_end(self, end: I) -> Span<I> {
         Span::new(self.start(), end)
     }
 
