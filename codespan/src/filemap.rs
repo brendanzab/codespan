@@ -1,8 +1,8 @@
 //! Various source mapping utilities
 
 use std::borrow::Cow;
-use std::{fmt, io};
 use std::path::{Path, PathBuf};
+use std::{fmt, io};
 
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
@@ -148,7 +148,7 @@ impl FileMap {
     pub fn offset(&self, line: LineIndex, column: ColumnIndex) -> Option<ByteOffset> {
         self.line_offset(line).ok().and_then(|mut offset| {
             offset += ByteOffset::from(column.0 as i64);
-            if offset.to_usize() >= self.src.len() {
+            if offset.to_usize() > self.src.len() {
                 None
             } else {
                 Some(offset)
@@ -293,6 +293,29 @@ mod tests {
                 .map(|i| LineIndex(i as RawIndex))
                 .collect()
         }
+    }
+
+    #[test]
+    fn offset() {
+        let test_data = TestData::new();
+        assert!(
+            test_data
+                .filemap
+                .offset(
+                    (test_data.lines.len() as u32 - 1).into(),
+                    (test_data.lines.last().unwrap().len() as u32).into()
+                )
+                .is_some()
+        );
+        assert!(
+            test_data
+                .filemap
+                .offset(
+                    (test_data.lines.len() as u32 - 1).into(),
+                    (test_data.lines.last().unwrap().len() as u32 + 1).into()
+                )
+                .is_none()
+        );
     }
 
     #[test]
