@@ -73,6 +73,17 @@ pub enum ByteIndexError {
 }
 
 #[derive(Debug, Fail, PartialEq)]
+pub enum LocationError {
+    #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
+    LineOutOfBounds { given: LineIndex, max: LineIndex },
+    #[fail(display = "Column out of bounds - given: {:?}, max: {:?}", given, max)]
+    ColumnOutOfBounds {
+        given: ColumnIndex,
+        max: ColumnIndex,
+    },
+}
+
+#[derive(Debug, Fail, PartialEq)]
 pub enum SpanError {
     #[fail(display = "Span out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: ByteSpan, span: ByteSpan },
@@ -145,20 +156,38 @@ impl FileMap {
         self.span
     }
 
-    pub fn offset(&self, line: LineIndex, column: ColumnIndex) -> Option<ByteOffset> {
-        self.line_offset(line).ok().and_then(|mut offset| {
-            offset += ByteOffset::from(column.0 as i64);
-            if offset.to_usize() > self.src.len() {
-                None
-            } else {
-                Some(offset)
-            }
-        })
+    pub fn offset(
+        &self,
+        line: LineIndex,
+        column: ColumnIndex,
+    ) -> Result<ByteOffset, LocationError> {
+        self.byte_index(line, column)
+            .map(|index| index - self.span.start())
     }
 
-    pub fn byte_index(&self, line: LineIndex, column: ColumnIndex) -> Option<ByteIndex> {
-        self.offset(line, column)
-            .map(|offset| self.span.start() + offset)
+    pub fn byte_index(
+        &self,
+        line: LineIndex,
+        column: ColumnIndex,
+    ) -> Result<ByteIndex, LocationError> {
+        self.line_span(line)
+            .map_err(
+                |LineIndexError::OutOfBounds { given, max }| LocationError::LineOutOfBounds {
+                    given,
+                    max,
+                },
+            )
+            .and_then(|span| {
+                let distance = ColumnIndex(span.end().0 - span.start().0);
+                if column > distance {
+                    Err(LocationError::ColumnOutOfBounds {
+                        given: column,
+                        max: distance,
+                    })
+                } else {
+                    Ok(span.start() + ByteOffset::from(column.0 as i64))
+                }
+            })
     }
 
     /// Returns the byte offset to the start of `line`
@@ -305,7 +334,7 @@ mod tests {
                     (test_data.lines.len() as u32 - 1).into(),
                     (test_data.lines.last().unwrap().len() as u32).into()
                 )
-                .is_some()
+                .is_ok()
         );
         assert!(
             test_data
@@ -314,7 +343,7 @@ mod tests {
                     (test_data.lines.len() as u32 - 1).into(),
                     (test_data.lines.last().unwrap().len() as u32 + 1).into()
                 )
-                .is_none()
+                .is_err()
         );
     }
 
