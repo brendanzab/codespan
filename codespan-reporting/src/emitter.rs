@@ -10,6 +10,8 @@ pub fn emit<W>(mut writer: W, codemap: &CodeMap, diagnostic: &Diagnostic) -> io:
 where
     W: WriteColor,
 {
+    let supports_color = writer.supports_color();
+
     writer.set_color(ColorSpec::new().set_fg(Some(diagnostic.severity.color())))?;
     write!(writer, "{}", diagnostic.severity)?;
     writer.reset()?;
@@ -38,7 +40,8 @@ where
                     .expect("line_suffix");
 
                 writer.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
-                write!(writer, "{} | ", line.number())?;
+                let line_location_prefix = format!("{} | ", line.number());
+                write!(writer, "{}", line_location_prefix)?;
                 writer.reset()?;
 
                 write!(writer, "{}", line_prefix)?;
@@ -46,6 +49,17 @@ where
                 write!(writer, "{}", line_marked)?;
                 writer.reset()?;
                 write!(writer, "{}", line_suffix)?;
+
+                if !supports_color {
+                    writeln!(
+                        writer,
+                        "{:prefix$}{:^>marked$}",
+                        "",
+                        "",
+                        prefix = line_location_prefix.len() + line_prefix.len(),
+                        marked = line_marked.len()
+                    )?;
+                }
 
                 match label.message {
                     None => writeln!(writer)?,

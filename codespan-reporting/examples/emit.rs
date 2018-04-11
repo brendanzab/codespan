@@ -6,8 +6,6 @@ use codespan_reporting::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::{emit, Diagnostic, Label, Severity};
 
 fn main() {
-    let writer = StandardStream::stdout(ColorChoice::Auto);
-
     let mut code_map = CodeMap::new();
 
     let source = r##"
@@ -22,5 +20,14 @@ fn main() {
             Label::new_primary(Span::from_offset(str_start, 2.into()))
                 .with_message("Expected integer but got string"),
         );
+
+    let writer = StandardStream::stdout(ColorChoice::Auto);
+
+    emit(&mut writer.lock(), &code_map, &diagnostic).unwrap();
+
+    println!();
+
+    let writer = StandardStream::stdout(ColorChoice::Never);
+
     emit(&mut writer.lock(), &code_map, &diagnostic).unwrap();
 }
