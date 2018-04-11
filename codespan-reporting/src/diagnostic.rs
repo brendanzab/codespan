@@ -38,7 +38,7 @@ impl Label {
     }
 
     pub fn new_secondary(span: ByteSpan) -> Label {
-        Label::new(span, LabelStyle::Primary)
+        Label::new(span, LabelStyle::Secondary)
     }
 
     pub fn with_message<S: Into<String>>(mut self, message: S) -> Label {
