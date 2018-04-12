@@ -103,8 +103,13 @@ pub struct FileMap {
 }
 
 impl FileMap {
-    /// Construct a new filemap, creating an index of line start locations
-    pub fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
+    /// Construct a new, standalone filemap. Can be usefol for tests which consists of a single
+    /// source file
+    pub fn new(name: FileName, src: String) -> FileMap {
+        FileMap::with_index(name, src, ByteIndex(1))
+    }
+
+    pub(crate) fn with_index(name: FileName, src: String, start: ByteIndex) -> FileMap {
         use std::iter;
 
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(&src));
@@ -134,7 +139,7 @@ impl FileMap {
         let mut src = String::new();
         file.read_to_string(&mut src)?;
 
-        Ok(FileMap::new(FileName::Real(name), src, start))
+        Ok(FileMap::with_index(FileName::Real(name), src, start))
     }
 
     /// The name of the file that the source came from
