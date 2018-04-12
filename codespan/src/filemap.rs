@@ -103,12 +103,8 @@ pub struct FileMap {
 }
 
 impl FileMap {
-    pub fn anonymous(src: String) -> FileMap {
-        Self::new(FileName::virtual_(""), src, ByteIndex::from(1))
-    }
-
     /// Construct a new filemap, creating an index of line start locations
-    pub(crate) fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
+    pub fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
         use std::iter;
 
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(&src));
