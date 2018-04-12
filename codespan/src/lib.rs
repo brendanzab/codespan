@@ -7,6 +7,12 @@ extern crate failure;
 #[macro_use]
 extern crate pretty_assertions;
 
+#[cfg(feature = "serde_derive")]
+extern crate serde;
+#[cfg(feature = "serde_derive")]
+#[macro_use]
+extern crate serde_derive;
+
 mod codemap;
 mod filemap;
 mod index;

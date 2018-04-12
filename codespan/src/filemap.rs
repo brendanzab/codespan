@@ -1,8 +1,8 @@
 //! Various source mapping utilities
 
 use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 use std::{fmt, io};
-use std::path::PathBuf;
 
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
@@ -13,6 +13,30 @@ pub enum FileName {
     Real(PathBuf),
     /// A synthetic file, eg. from the REPL
     Virtual(Cow<'static, str>),
+}
+
+impl From<PathBuf> for FileName {
+    fn from(name: PathBuf) -> FileName {
+        FileName::real(name)
+    }
+}
+
+impl<'a> From<&'a Path> for FileName {
+    fn from(name: &Path) -> FileName {
+        FileName::real(name)
+    }
+}
+
+impl From<String> for FileName {
+    fn from(name: String) -> FileName {
+        FileName::virtual_(name)
+    }
+}
+
+impl From<&'static str> for FileName {
+    fn from(name: &'static str) -> FileName {
+        FileName::virtual_(name)
+    }
 }
 
 impl FileName {
@@ -49,6 +73,17 @@ pub enum ByteIndexError {
 }
 
 #[derive(Debug, Fail, PartialEq)]
+pub enum LocationError {
+    #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
+    LineOutOfBounds { given: LineIndex, max: LineIndex },
+    #[fail(display = "Column out of bounds - given: {:?}, max: {:?}", given, max)]
+    ColumnOutOfBounds {
+        given: ColumnIndex,
+        max: ColumnIndex,
+    },
+}
+
+#[derive(Debug, Fail, PartialEq)]
 pub enum SpanError {
     #[fail(display = "Span out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: ByteSpan, span: ByteSpan },
@@ -69,7 +104,7 @@ pub struct FileMap {
 
 impl FileMap {
     /// Construct a new filemap, creating an index of line start locations
-    pub(crate) fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
+    pub fn new(name: FileName, src: String, start: ByteIndex) -> FileMap {
         use std::iter;
 
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(&src));
@@ -115,6 +150,40 @@ impl FileMap {
     /// The span of the source in the `CodeMap`
     pub fn span(&self) -> ByteSpan {
         self.span
+    }
+
+    pub fn offset(
+        &self,
+        line: LineIndex,
+        column: ColumnIndex,
+    ) -> Result<ByteOffset, LocationError> {
+        self.byte_index(line, column)
+            .map(|index| index - self.span.start())
+    }
+
+    pub fn byte_index(
+        &self,
+        line: LineIndex,
+        column: ColumnIndex,
+    ) -> Result<ByteIndex, LocationError> {
+        self.line_span(line)
+            .map_err(
+                |LineIndexError::OutOfBounds { given, max }| LocationError::LineOutOfBounds {
+                    given,
+                    max,
+                },
+            )
+            .and_then(|span| {
+                let distance = ColumnIndex(span.end().0 - span.start().0);
+                if column > distance {
+                    Err(LocationError::ColumnOutOfBounds {
+                        given: column,
+                        max: distance,
+                    })
+                } else {
+                    Ok(span.start() + ByteOffset::from(column.0 as i64))
+                }
+            })
     }
 
     /// Returns the byte offset to the start of `line`
@@ -249,6 +318,29 @@ mod tests {
                 .map(|i| LineIndex(i as RawIndex))
                 .collect()
         }
+    }
+
+    #[test]
+    fn offset() {
+        let test_data = TestData::new();
+        assert!(
+            test_data
+                .filemap
+                .offset(
+                    (test_data.lines.len() as u32 - 1).into(),
+                    (test_data.lines.last().unwrap().len() as u32).into()
+                )
+                .is_ok()
+        );
+        assert!(
+            test_data
+                .filemap
+                .offset(
+                    (test_data.lines.len() as u32 - 1).into(),
+                    (test_data.lines.last().unwrap().len() as u32 + 1).into()
+                )
+                .is_err()
+        );
     }
 
     #[test]
