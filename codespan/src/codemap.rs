@@ -29,7 +29,7 @@ impl CodeMap {
 
     /// Adds a filemap to the codemap with the given name and source string
     pub fn add_filemap(&mut self, name: FileName, src: String) -> Arc<FileMap> {
-        let file = Arc::new(FileMap::new(name, src, self.next_start_index()));
+        let file = Arc::new(FileMap::with_index(name, src, self.next_start_index()));
         self.files.push(file.clone());
         file
     }
