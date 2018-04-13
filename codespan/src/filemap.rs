@@ -103,8 +103,10 @@ pub struct FileMap {
 }
 
 impl FileMap {
-    /// Construct a new, standalone filemap. Can be usefol for tests which consists of a single
-    /// source file
+    /// Construct a new, standalone filemap.
+    ///
+    /// This can be useful for tests that consist of a single source file. Production code should however 
+    /// use `CodeMap::add_filemap` or `CodeMap::add_filemap_from_disk` instead.
     pub fn new(name: FileName, src: String) -> FileMap {
         FileMap::with_index(name, src, ByteIndex(1))
     }
