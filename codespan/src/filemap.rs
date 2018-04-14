@@ -7,7 +7,7 @@ use std::{fmt, io};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum FileName {
     /// A real file on disk
     Real(PathBuf),
@@ -105,7 +105,7 @@ pub struct FileMap {
 impl FileMap {
     /// Construct a new, standalone filemap.
     ///
-    /// This can be useful for tests that consist of a single source file. Production code should however 
+    /// This can be useful for tests that consist of a single source file. Production code should however
     /// use `CodeMap::add_filemap` or `CodeMap::add_filemap_from_disk` instead.
     pub fn new(name: FileName, src: String) -> FileMap {
         FileMap::with_index(name, src, ByteIndex(1))

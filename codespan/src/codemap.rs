@@ -5,7 +5,7 @@ use std::sync::Arc;
 use filemap::{FileMap, FileName};
 use index::{ByteIndex, ByteOffset};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct CodeMap {
     files: Vec<Arc<FileMap>>,
 }
