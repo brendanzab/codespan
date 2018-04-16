@@ -5,7 +5,6 @@ readme = "README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
 description = "Diagnostic reporting support for the codespan crate"
-publish = false
 
 [dependencies]
 codespan = { path = "../codespan", version = "0.1.0" }
