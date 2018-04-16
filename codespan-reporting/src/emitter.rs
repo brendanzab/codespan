@@ -1,10 +1,19 @@
-use std::io;
-
 use codespan::CodeMap;
-
+use std::{fmt, io};
 use termcolor::{Color, ColorSpec, WriteColor};
 
 use Diagnostic;
+
+struct Pad<T>(T, usize);
+
+impl<T: fmt::Display> fmt::Display for Pad<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for _ in 0..(self.1) {
+            self.0.fmt(f)?;
+        }
+        Ok(())
+    }
+}
 
 pub fn emit<W>(mut writer: W, codemap: &CodeMap, diagnostic: &Diagnostic) -> io::Result<()>
 where
@@ -46,7 +55,7 @@ where
 
                 writer.set_color(&line_location_color)?;
                 let line_string = line.number().to_string();
-                let line_location_prefix = format!("{:prefix$} | ", "", prefix = line_string.len());
+                let line_location_prefix = format!("{} | ", Pad(' ', line_string.len()));
                 write!(writer, "{} | ", line_string)?;
                 writer.reset()?;
 
@@ -64,9 +73,9 @@ where
                     writer.set_color(&diagnostic_color)?;
                     write!(
                         writer,
-                        "{:prefix$}{:^>marked$}",
-                        prefix = line_prefix.len(),
-                        marked = line_marked.len()
+                        "{}{}",
+                        Pad(' ', line_prefix.len()),
+                        Pad('^', line_marked.len()),
                     )?;
                     writer.reset()?;
 
