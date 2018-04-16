@@ -28,10 +28,16 @@ where
         .set_fg(Some(diagnostic.severity.color()))
         .clone();
 
+    let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
+
     writer.set_color(&diagnostic_color)?;
     write!(writer, "{}", diagnostic.severity)?;
     writer.reset()?;
-    writeln!(writer, ": {}", diagnostic.message)?;
+    write!(writer, ":")?;
+    writer.set_color(&highlight_color)?;
+    writeln!(writer, " {}", diagnostic.message)?;
+    writer.reset()?;
+
     for label in &diagnostic.labels {
         match codemap.find_file(label.span.start()) {
             None => if let Some(ref message) = label.message {
