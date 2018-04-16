@@ -65,8 +65,6 @@ where
                     write!(
                         writer,
                         "{:prefix$}{:^>marked$}",
-                        "",
-                        "",
                         prefix = line_prefix.len(),
                         marked = line_marked.len()
                     )?;
