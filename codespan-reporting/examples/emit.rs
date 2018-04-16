@@ -16,10 +16,15 @@ fn main() {
     let file_map = code_map.add_filemap("test".into(), source.to_string());
 
     let str_start = file_map.byte_index(2.into(), 8.into()).unwrap();
-    let error = Diagnostic::new(Severity::Error, "Unexpected type in `+` application").with_label(
-        Label::new_primary(Span::from_offset(str_start, 2.into()))
-            .with_message("Expected integer but got string"),
-    );
+    let error = Diagnostic::new(Severity::Error, "Unexpected type in `+` application")
+        .with_label(
+            Label::new_primary(Span::from_offset(str_start, 2.into()))
+                .with_message("Expected integer but got string"),
+        )
+        .with_label(
+            Label::new_secondary(Span::from_offset(str_start, 2.into()))
+                .with_message("Expected integer but got string"),
+        );
 
     let line_start = file_map.byte_index(2.into(), 0.into()).unwrap();
     let warning = Diagnostic::new(
