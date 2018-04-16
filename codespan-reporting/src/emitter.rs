@@ -20,7 +20,10 @@ where
     W: WriteColor,
 {
     let supports_color = writer.supports_color();
-    let line_location_color = ColorSpec::new().set_fg(Some(Color::Blue)).clone();
+    let line_location_color = ColorSpec::new()
+        // Blue is really difficult to see on the standard windows command line
+        .set_fg(Some(if cfg!(windows) { Color::Cyan } else { Color::Blue }))
+        .clone();
     let diagnostic_color = ColorSpec::new()
         .set_fg(Some(diagnostic.severity.color()))
         .clone();
@@ -59,7 +62,13 @@ where
                 };
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
-                    LabelStyle::Secondary => ColorSpec::new().set_fg(Some(Color::Blue)).clone(),
+                    LabelStyle::Secondary => ColorSpec::new()
+                        .set_fg(Some(if cfg!(windows) {
+                            Color::Cyan
+                        } else {
+                            Color::Blue
+                        }))
+                        .clone(),
                 };
 
                 writer.set_color(&line_location_color)?;
@@ -99,9 +108,9 @@ where
                         writer.set_color(&label_color)?;
                         writeln!(writer, " {}", label)?;
                         writer.reset()?;
-                    },
+                    }
                 }
-            },
+            }
         }
     }
     Ok(())
