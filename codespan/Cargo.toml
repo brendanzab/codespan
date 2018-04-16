@@ -1,10 +1,13 @@
 [package]
 name = "codespan"
-version = "0.1.0"
+version = "0.1.1"
 readme = "README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
 description = "Data structures for tracking locations in source code"
+homepage = "https://github.com/brendanzab/codespan"
+repository = "https://github.com/brendanzab/codespan"
+documentation = "https://docs.rs/codespan"
 
 [dependencies]
 failure = "0.1.1"
