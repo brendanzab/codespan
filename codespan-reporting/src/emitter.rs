@@ -30,12 +30,12 @@ where
 
     let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
-    writer.set_color(&diagnostic_color)?;
+    writer.set_color(&highlight_color
+        .clone()
+        .set_fg(Some(diagnostic.severity.color())))?;
     write!(writer, "{}", diagnostic.severity)?;
-    writer.reset()?;
-    write!(writer, ":")?;
     writer.set_color(&highlight_color)?;
-    writeln!(writer, " {}", diagnostic.message)?;
+    writeln!(writer, ": {}", diagnostic.message)?;
     writer.reset()?;
 
     for label in &diagnostic.labels {
