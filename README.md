@@ -14,7 +14,28 @@
 [gitter-badge]: https://badges.gitter.im/codespan-rs/codespan.svg
 [gitter-lobby]: https://gitter.im/codespan-rs/Lobby
 
-Utilities for dealing with source code locations and pretty diagnostic formatting
+Utilities for dealing with source code locations.
+
+## Supporting crates
+
+Codespan also allows you to easily set up pretty diagnostic formatting for
+command line interfaces via the [`codespan-reporting`][codespan-reporting]
+crate. This will give you output that looks like the following:
+
+![screenshot](./codespan-reporting/assets/screenshot.png)
+
+In the future we would also like to make it easy for language developers to set
+up language server protocols and interface with browser-embedded editors like
+Ace or Monaco.
+
+[codespan-reporting]: https://crates.io/crates/codespan-reporting
+
+## Codespan in use
+
+Codespan is used in the following projects:
+
+- [Gluon](https://github.com/gluon-lang/gluon)
+- [Pikelet](https://github.com/brendanzab/pikelet)
 
 ## Acknowledgments
 
