@@ -12,3 +12,6 @@ documentation = "https://docs.rs/codespan-reporting"
 [dependencies]
 codespan = { path = "../codespan", version = "0.1.1" }
 termcolor = "0.3.4"
+
+[dev-dependencies]
+structopt = "0.2.7"

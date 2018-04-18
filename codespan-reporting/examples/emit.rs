@@ -1,11 +1,29 @@
 extern crate codespan;
 extern crate codespan_reporting;
+#[macro_use]
+extern crate structopt;
+
+use structopt::StructOpt;
 
 use codespan::{CodeMap, Span};
-use codespan_reporting::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::{emit, Diagnostic, Label, Severity};
+use codespan_reporting::termcolor::StandardStream;
+use codespan_reporting::{emit, ColorArg, Diagnostic, Label, Severity};
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "pikelet")]
+pub struct Opts {
+    /// Configure coloring of output
+    #[structopt(
+        long = "color",
+        parse(try_from_str),
+        default_value = "auto",
+        raw(possible_values = "ColorArg::VARIANTS", case_insensitive = "true")
+    )]
+    pub color: ColorArg,
+}
 
 fn main() {
+    let opts = Opts::from_args();
     let mut code_map = CodeMap::new();
 
     let source = r##"
@@ -34,14 +52,7 @@ fn main() {
 
     let diagnostics = [error, warning];
 
-    let writer = StandardStream::stdout(ColorChoice::Auto);
-    for diagnostic in &diagnostics {
-        emit(&mut writer.lock(), &code_map, &diagnostic).unwrap();
-        println!();
-    }
-
-    let writer = StandardStream::stdout(ColorChoice::Never);
-
+    let writer = StandardStream::stderr(opts.color.into());
     for diagnostic in &diagnostics {
         emit(&mut writer.lock(), &code_map, &diagnostic).unwrap();
         println!();
