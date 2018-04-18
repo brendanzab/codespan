@@ -32,6 +32,13 @@ You should see something like the following in your terminal:
 
 We're still working on the output - stay tuned for updates!
 
+## Codespan in use
+
+Codespan is used in the following projects:
+
+- [Gluon](https://github.com/gluon-lang/gluon)
+- [Pikelet](https://github.com/brendanzab/pikelet)
+
 ## Acknowledgments
 
 Inspired by rustc's error reporting infrastructure and the codemap crate
