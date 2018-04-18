@@ -10,7 +10,7 @@ use codespan_reporting::termcolor::StandardStream;
 use codespan_reporting::{emit, ColorArg, Diagnostic, Label, Severity};
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "pikelet")]
+#[structopt(name = "emit")]
 pub struct Opts {
     /// Configure coloring of output
     #[structopt(

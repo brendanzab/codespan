@@ -102,7 +102,7 @@ impl Severity {
 /// use codespan_reporting::ColorArg;
 ///
 /// #[derive(Debug, StructOpt)]
-/// #[structopt(name = "pikelet")]
+/// #[structopt(name = "groovey-app")]
 /// pub struct Opts {
 ///     /// Configure coloring of output
 ///     #[structopt(
