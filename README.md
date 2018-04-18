@@ -24,11 +24,14 @@ crate. This will give you output that looks like the following:
 
 ![screenshot](./codespan-reporting/assets/screenshot.png)
 
+[Rustdoc][codespan-reporting-docs]
+
 In the future we would also like to make it easy for language developers to set
 up language server protocols and interface with browser-embedded editors like
 Ace or Monaco.
 
 [codespan-reporting]: https://crates.io/crates/codespan-reporting
+[codespan-reporting-docs]: https://docs.rs/codespan-reporting
 
 ## Codespan in use
 
