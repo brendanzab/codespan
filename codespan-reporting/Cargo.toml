@@ -8,6 +8,7 @@ description = "Diagnostic reporting support for the codespan crate"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-reporting"
+exclude = ["assets/**"]
 
 [dependencies]
 codespan = { path = "../codespan", version = "0.1.1" }
