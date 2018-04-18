@@ -14,23 +14,21 @@
 [gitter-badge]: https://badges.gitter.im/codespan-rs/codespan.svg
 [gitter-lobby]: https://gitter.im/codespan-rs/Lobby
 
-Utilities for dealing with source code locations and pretty diagnostic formatting
+Utilities for dealing with source code locations.
 
-## Running the CLI example
+## Supporting crates
 
-To get an idea of what the colored CLI output looks like with
-`codespan-reporting`, clone the repository and run the following:
+Codespan also allows you to easily set up pretty diagnostic formatting for
+command line interfaces via the [`codespan-reporting`][codespan-reporting]
+crate. This will give you output that looks like the following:
 
-```sh
-cargo run -p codespan-reporting --example=emit
-cargo run -p codespan-reporting --example=emit -- --color never
-```
+![screenshot](./codespan-reporting/assets/screenshot.png)
 
-You should see something like the following in your terminal:
+In the future we would also like to make it easy for language developers to set
+up language server protocols and interface with browser-embedded editors like
+Ace or Monaco.
 
-![screenshot](./assets/screenshot.png)
-
-We're still working on the output - stay tuned for updates!
+[codespan-reporting]: https://crates.io/crates/codespan-reporting
 
 ## Codespan in use
 
