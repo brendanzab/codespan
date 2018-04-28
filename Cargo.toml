@@ -2,4 +2,5 @@
 members = [
     "./codespan",
     "./codespan-reporting",
+    "./codespan-lsp",
 ]

@@ -91,11 +91,11 @@ pub enum SpanError {
 
 #[derive(Debug)]
 /// Some source code
-pub struct FileMap {
+pub struct FileMap<S = String> {
     /// The name of the file that the source came from
     name: FileName,
     /// The complete source code
-    src: String,
+    src: S,
     /// The span of the source in the `CodeMap`
     span: ByteSpan,
     /// Offsets to the line beginnings in the source
@@ -103,21 +103,40 @@ pub struct FileMap {
 }
 
 impl FileMap {
+    /// Read some source code from a file, loading it into a filemap
+    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap> {
+        use std::fs::File;
+        use std::io::Read;
+
+        let name = name.into();
+        let mut file = File::open(&name)?;
+        let mut src = String::new();
+        file.read_to_string(&mut src)?;
+
+        Ok(FileMap::with_index(FileName::Real(name), src, start))
+    }
+}
+
+impl<S> FileMap<S>
+where
+    S: AsRef<str>,
+{
     /// Construct a new, standalone filemap.
     ///
     /// This can be useful for tests that consist of a single source file. Production code should however
     /// use `CodeMap::add_filemap` or `CodeMap::add_filemap_from_disk` instead.
-    pub fn new(name: FileName, src: String) -> FileMap {
+    pub fn new(name: FileName, src: S) -> FileMap<S> {
         FileMap::with_index(name, src, ByteIndex(1))
     }
 
-    pub(crate) fn with_index(name: FileName, src: String, start: ByteIndex) -> FileMap {
+    pub(crate) fn with_index(name: FileName, src: S, start: ByteIndex) -> FileMap<S> {
         use std::iter;
 
-        let span = ByteSpan::from_offset(start, ByteOffset::from_str(&src));
+        let span = ByteSpan::from_offset(start, ByteOffset::from_str(src.as_ref()));
         let lines = {
             let newline_off = ByteOffset::from_char_utf8('\n');
-            let offsets = src.match_indices('\n')
+            let offsets = src.as_ref()
+                .match_indices('\n')
                 .map(|(i, _)| ByteOffset(i as RawOffset) + newline_off);
 
             iter::once(ByteOffset(0)).chain(offsets).collect()
@@ -131,19 +150,6 @@ impl FileMap {
         }
     }
 
-    /// Read some source code from a file, loading it into a filemap
-    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap> {
-        use std::fs::File;
-        use std::io::Read;
-
-        let name = name.into();
-        let mut file = File::open(&name)?;
-        let mut src = String::new();
-        file.read_to_string(&mut src)?;
-
-        Ok(FileMap::with_index(FileName::Real(name), src, start))
-    }
-
     /// The name of the file that the source came from
     pub fn name(&self) -> &FileName {
         &self.name
@@ -151,7 +157,7 @@ impl FileMap {
 
     /// The underlying source code
     pub fn src(&self) -> &str {
-        &self.src
+        &self.src.as_ref()
     }
 
     /// The span of the source in the `CodeMap`
@@ -243,7 +249,7 @@ impl FileMap {
         } else {
             let offset = index - self.span.start();
 
-            if self.src.is_char_boundary(offset.to_usize()) {
+            if self.src.as_ref().is_char_boundary(offset.to_usize()) {
                 match self.lines.binary_search(&offset) {
                     Ok(i) => Ok(LineIndex(i as RawIndex)),
                     Err(i) => Ok(LineIndex(i as RawIndex - 1)),
@@ -265,7 +271,7 @@ impl FileMap {
             let end = (span.end() - self.span.start()).to_usize();
 
             // TODO: check char boundaries
-            Ok(&self.src[start..end])
+            Ok(&self.src.as_ref()[start..end])
         } else {
             Err(SpanError::OutOfBounds {
                 given: span,
