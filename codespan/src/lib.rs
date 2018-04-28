@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate failure;
+extern crate itertools;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
