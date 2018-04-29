@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate failure;
+extern crate itertools;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
@@ -20,6 +21,7 @@ mod span;
 
 pub use codemap::CodeMap;
 pub use filemap::{FileMap, FileName};
+pub use filemap::{ByteIndexError, LineIndexError, LocationError, SpanError};
 pub use index::{Index, Offset};
 pub use index::{ByteIndex, ByteOffset};
 pub use index::{ColumnIndex, ColumnNumber, ColumnOffset};
