@@ -1,0 +1,19 @@
+[package]
+name = "codespan-lsp"
+version = "0.1.0"
+license = "Apache-2.0"
+authors = ["Markus Westerlind <marwes91@gmail.com>"]
+description = "Conversions between codespan types and Language Server Protocol types"
+homepage = "https://github.com/brendanzab/codespan"
+repository = "https://github.com/brendanzab/codespan"
+documentation = "https://docs.rs/codespan-lsp"
+
+[dependencies]
+codespan = { version = "0.1", path = "../codespan" }
+codespan-reporting = { version = "0.1", path = "../codespan-reporting/" }
+
+failure = "0.1"
+failure_derive = "0.1"
+
+url = "1"
+languageserver-types = "0.39.0"

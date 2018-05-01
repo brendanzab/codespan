@@ -252,6 +252,7 @@ impl ByteOffset {
 }
 
 impl Default for ByteOffset {
+    #[inline]
     fn default() -> ByteOffset {
         ByteOffset(0)
     }
@@ -303,12 +304,14 @@ macro_rules! impl_index {
     ($Index:ident, $Offset:ident) => {
 
         impl From<RawOffset> for $Offset {
+            #[inline]
             fn from(i: RawOffset) -> Self {
                 $Offset(i)
             }
         }
 
         impl From<RawIndex> for $Index {
+            #[inline]
             fn from(i: RawIndex) -> Self {
                 $Index(i)
             }
@@ -325,12 +328,14 @@ macro_rules! impl_index {
         impl Add<$Offset> for $Index {
             type Output = $Index;
 
+            #[inline]
             fn add(self, rhs: $Offset) -> $Index {
                 $Index((self.0 as RawOffset + rhs.0) as RawIndex)
             }
         }
 
         impl AddAssign<$Offset> for $Index {
+            #[inline]
             fn add_assign(&mut self, rhs: $Offset) {
                 *self = *self + rhs;
             }
@@ -339,6 +344,7 @@ macro_rules! impl_index {
         impl Neg for $Offset {
             type Output = $Offset;
 
+            #[inline]
             fn neg(self) -> $Offset {
                 $Offset(-self.0)
             }
@@ -347,12 +353,14 @@ macro_rules! impl_index {
         impl Add<$Offset> for $Offset {
             type Output = $Offset;
 
+            #[inline]
             fn add(self, rhs: $Offset) -> $Offset {
                 $Offset(self.0 + rhs.0)
             }
         }
 
         impl AddAssign<$Offset> for $Offset {
+            #[inline]
             fn add_assign(&mut self, rhs: $Offset) {
                 self.0 += rhs.0;
             }
@@ -361,12 +369,14 @@ macro_rules! impl_index {
         impl Sub<$Offset> for $Offset {
             type Output = $Offset;
 
+            #[inline]
             fn sub(self, rhs: $Offset) -> $Offset {
                 $Offset(self.0 - rhs.0)
             }
         }
 
         impl SubAssign<$Offset> for $Offset {
+            #[inline]
             fn sub_assign(&mut self, rhs: $Offset) {
                 self.0 -= rhs.0;
             }
@@ -375,6 +385,7 @@ macro_rules! impl_index {
         impl Sub for $Index {
             type Output = $Offset;
 
+            #[inline]
             fn sub(self, rhs: $Index) -> $Offset {
                 $Offset(self.0 as RawOffset - rhs.0 as RawOffset)
             }
@@ -383,12 +394,14 @@ macro_rules! impl_index {
         impl Sub<$Offset> for $Index {
             type Output = $Index;
 
+            #[inline]
             fn sub(self, rhs: $Offset) -> $Index {
                 $Index((self.0 as RawOffset - rhs.0 as RawOffset) as u32)
             }
         }
 
         impl SubAssign<$Offset> for $Index {
+            #[inline]
             fn sub_assign(&mut self, rhs: $Offset) {
                 self.0 = (self.0 as RawOffset - rhs.0) as RawIndex;
             }
