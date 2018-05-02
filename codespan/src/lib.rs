@@ -1,5 +1,13 @@
 //! Utilities for working with source code and printing nicely formatted
 //! diagnostic information like warnings and errors.
+//!
+//! # Optional Features
+//!
+//! Extra functionality is accessible by enabling feature flags. The features
+//! currently available are:
+//!
+//! - **serialization** - Adds `Serialize` and `Deserialize` implementations
+//!   for use with `serde`
 
 #[macro_use]
 extern crate failure;
