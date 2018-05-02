@@ -8,6 +8,7 @@ use filemap::{FileMap, FileName};
 use index::{ByteIndex, ByteOffset, RawIndex};
 
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct CodeMap {
     files: Vec<Arc<FileMap>>,
 }

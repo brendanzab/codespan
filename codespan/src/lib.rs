@@ -8,9 +8,9 @@ extern crate itertools;
 #[macro_use]
 extern crate pretty_assertions;
 
-#[cfg(feature = "serde_derive")]
+#[cfg(feature = "serialization")]
 extern crate serde;
-#[cfg(feature = "serde_derive")]
+#[cfg(feature = "serialization")]
 #[macro_use]
 extern crate serde_derive;
 

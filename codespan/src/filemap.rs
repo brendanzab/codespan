@@ -8,6 +8,7 @@ use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex,
 use span::ByteSpan;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub enum FileName {
     /// A real file on disk
     Real(PathBuf),
@@ -90,6 +91,7 @@ pub enum SpanError {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 /// Some source code
 pub struct FileMap<S = String> {
     /// The name of the file that the source came from
