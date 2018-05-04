@@ -114,9 +114,9 @@ where
                         writer.set_color(&label_color)?;
                         writeln!(writer, " {}", label)?;
                         writer.reset()?;
-                    }
+                    },
                 }
-            }
+            },
         }
     }
     Ok(())

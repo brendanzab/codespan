@@ -28,11 +28,11 @@ mod index;
 mod span;
 
 pub use codemap::CodeMap;
-pub use filemap::{FileMap, FileName};
 pub use filemap::{ByteIndexError, LineIndexError, LocationError, SpanError};
-pub use index::{Index, Offset};
+pub use filemap::{FileMap, FileName};
 pub use index::{ByteIndex, ByteOffset};
 pub use index::{ColumnIndex, ColumnNumber, ColumnOffset};
+pub use index::{Index, Offset};
 pub use index::{LineIndex, LineNumber, LineOffset};
 pub use index::{RawIndex, RawOffset};
 pub use span::{ByteSpan, Span};
