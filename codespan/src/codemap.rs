@@ -89,7 +89,7 @@ impl CodeMap {
                             Arc::new(FileMap::with_index(file.name().clone(), src, start_index));
                         self.files.insert(j, new_file.clone());
                         new_file
-                    }
+                    },
                     None => self.add_filemap(file.name().clone(), src),
                 }
             }

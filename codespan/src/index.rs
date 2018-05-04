@@ -302,7 +302,6 @@ where
 
 macro_rules! impl_index {
     ($Index:ident, $Offset:ident) => {
-
         impl From<RawOffset> for $Offset {
             #[inline]
             fn from(i: RawOffset) -> Self {
