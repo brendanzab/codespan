@@ -9,7 +9,7 @@ repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-lsp"
 
 [dependencies]
-codespan = { version = "0.1", path = "../codespan" }
+codespan = { version = "0.1.2", path = "../codespan" }
 codespan-reporting = { version = "0.1", path = "../codespan-reporting/" }
 
 failure = "0.1"
