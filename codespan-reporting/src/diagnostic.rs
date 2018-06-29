@@ -52,6 +52,8 @@ impl Label {
 pub struct Diagnostic {
     /// The overall severity of the diagnostic
     pub severity: Severity,
+    /// An optional code that identifies this diagnostic.
+    pub code: Option<String>,
     /// The main message associated with this diagnostic
     pub message: String,
     /// The labelled spans marking the regions of code that cause this
@@ -63,6 +65,7 @@ impl Diagnostic {
     pub fn new<S: Into<String>>(severity: Severity, message: S) -> Diagnostic {
         Diagnostic {
             severity,
+            code: None,
             message: message.into(),
             labels: Vec::new(),
         }
@@ -86,6 +89,11 @@ impl Diagnostic {
 
     pub fn new_help<S: Into<String>>(message: S) -> Diagnostic {
         Diagnostic::new(Severity::Help, message)
+    }
+
+    pub fn with_code<S: Into<String>>(mut self, code: S) -> Diagnostic {
+        self.code = Some(code.into());
+        self
     }
 
     pub fn with_label(mut self, label: Label) -> Diagnostic {
