@@ -34,6 +34,11 @@ where
         .clone()
         .set_fg(Some(diagnostic.severity.color())))?;
     write!(writer, "{}", diagnostic.severity)?;
+
+    if let Some(ref code) = diagnostic.code {
+        write!(writer, "[{}]", code)?;
+    }
+
     writer.set_color(&highlight_color)?;
     writeln!(writer, ": {}", diagnostic.message)?;
     writer.reset()?;

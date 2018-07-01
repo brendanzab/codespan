@@ -42,7 +42,8 @@ fn main() {
         .with_label(
             Label::new_secondary(Span::from_offset(str_start, 2.into()))
                 .with_message("Expected integer but got string"),
-        );
+        )
+        .with_code("E0001");
 
     let line_start = file_map.byte_index(2.into(), 0.into()).unwrap();
     let warning = Diagnostic::new(
