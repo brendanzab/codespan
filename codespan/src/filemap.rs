@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::{fmt, io};
 
+#[cfg(feature = "memory_usage")]
 use heapsize::{self, HeapSizeOf};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
@@ -60,6 +61,7 @@ impl fmt::Display for FileName {
     }
 }
 
+#[cfg(feature = "memory_usage")]
 impl HeapSizeOf for FileName {
     fn heap_size_of_children(&self) -> usize {
         match *self {
