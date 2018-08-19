@@ -4,12 +4,12 @@ use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::{fmt, io};
 
+use heapsize::{self, HeapSizeOf};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub enum FileName {
     /// A real file on disk
     Real(PathBuf),
@@ -56,6 +56,27 @@ impl fmt::Display for FileName {
         match *self {
             FileName::Real(ref path) => write!(fmt, "{}", path.display()),
             FileName::Virtual(ref name) => write!(fmt, "<{}>", name),
+        }
+    }
+}
+
+impl HeapSizeOf for FileName {
+    fn heap_size_of_children(&self) -> usize {
+        match *self {
+            FileName::Virtual(ref s) => s.heap_size_of_children(),
+            FileName::Real(ref path) => {
+                // Reliably finding the amount of memory used by a `PathBuf` is
+                // annoying due to its os-specific nature. We use an
+                // approximation by converting to a string and getting the
+                // raw heap size for the string's buffer, falling back to 0
+                // otherwise. Ideally this should be in the `heapsize` crate.
+                //
+                // This *should* be safe because a `PathBuf` will allocate its
+                // buffer using jemalloc.
+                path.to_str()
+                    .map(|s| unsafe { heapsize::heap_size_of(s.as_ptr()) })
+                    .unwrap_or(0)
+            }
         }
     }
 }
