@@ -8,6 +8,8 @@
 //!
 //! - **serialization** - Adds `Serialize` and `Deserialize` implementations
 //!   for use with `serde`
+//! - **memory_usage** - Adds `HeapSizeOf` implementations for use with the
+//!   `heapsize` crate
 
 #[macro_use]
 extern crate failure;
