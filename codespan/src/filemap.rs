@@ -9,6 +9,7 @@ use span::ByteSpan;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub enum FileName {
     /// A real file on disk
     Real(PathBuf),
@@ -92,6 +93,7 @@ pub enum SpanError {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 /// Some source code
 pub struct FileMap<S = String> {
     /// The name of the file that the source came from

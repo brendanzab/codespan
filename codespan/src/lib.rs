@@ -22,6 +22,12 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+#[cfg(feature = "memory_usage")]
+extern crate heapsize;
+#[cfg(feature = "memory_usage")]
+#[macro_use]
+extern crate heapsize_derive;
+
 mod codemap;
 mod filemap;
 mod index;

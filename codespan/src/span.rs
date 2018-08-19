@@ -6,6 +6,7 @@ use index::{ByteIndex, Index};
 /// A region of code in a source file
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct Span<I> {
     start: I,
     end: I,

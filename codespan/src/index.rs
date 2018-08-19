@@ -13,6 +13,7 @@ pub type RawOffset = i64;
 /// A zero-indexed line offset into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct LineIndex(pub RawIndex);
 
 impl LineIndex {
@@ -51,6 +52,7 @@ impl fmt::Debug for LineIndex {
 /// A 1-indexed line number. Useful for pretty printing source locations.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct LineNumber(RawIndex);
 
 impl fmt::Debug for LineNumber {
@@ -70,6 +72,7 @@ impl fmt::Display for LineNumber {
 /// A line offset in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct LineOffset(pub RawOffset);
 
 impl Default for LineOffset {
@@ -95,6 +98,7 @@ impl fmt::Display for LineOffset {
 /// A zero-indexed column offset into a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct ColumnIndex(pub RawIndex);
 
 impl ColumnIndex {
@@ -133,6 +137,7 @@ impl fmt::Debug for ColumnIndex {
 /// A 1-indexed column number. Useful for pretty printing source locations.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct ColumnNumber(RawIndex);
 
 impl fmt::Debug for ColumnNumber {
@@ -152,6 +157,7 @@ impl fmt::Display for ColumnNumber {
 /// A column offset in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct ColumnOffset(pub RawOffset);
 
 impl Default for ColumnOffset {
@@ -177,6 +183,7 @@ impl fmt::Display for ColumnOffset {
 /// A byte position in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct ByteIndex(pub RawIndex);
 
 impl ByteIndex {
@@ -214,6 +221,7 @@ impl fmt::Display for ByteIndex {
 /// A byte offset in a source file
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct ByteOffset(pub RawOffset);
 
 impl ByteOffset {
