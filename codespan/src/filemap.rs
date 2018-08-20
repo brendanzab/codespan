@@ -4,6 +4,8 @@ use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::{fmt, io};
 
+#[cfg(feature = "memory_usage")]
+use heapsize::{self, HeapSizeOf};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
@@ -59,6 +61,28 @@ impl fmt::Display for FileName {
     }
 }
 
+#[cfg(feature = "memory_usage")]
+impl HeapSizeOf for FileName {
+    fn heap_size_of_children(&self) -> usize {
+        match *self {
+            FileName::Virtual(ref s) => s.heap_size_of_children(),
+            FileName::Real(ref path) => {
+                // Reliably finding the amount of memory used by a `PathBuf` is
+                // annoying due to its os-specific nature. We use an
+                // approximation by converting to a string and getting the
+                // raw heap size for the string's buffer, falling back to 0
+                // otherwise. Ideally this should be in the `heapsize` crate.
+                //
+                // This *should* be safe because a `PathBuf` will allocate its
+                // buffer using jemalloc.
+                path.to_str()
+                    .map(|s| unsafe { heapsize::heap_size_of(s.as_ptr()) })
+                    .unwrap_or(0)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Fail, PartialEq)]
 pub enum LineIndexError {
     #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
@@ -92,6 +116,7 @@ pub enum SpanError {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 /// Some source code
 pub struct FileMap<S = String> {
     /// The name of the file that the source came from

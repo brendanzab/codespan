@@ -9,6 +9,7 @@ use index::{ByteIndex, ByteOffset, RawIndex};
 
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub struct CodeMap {
     files: Vec<Arc<FileMap>>,
 }

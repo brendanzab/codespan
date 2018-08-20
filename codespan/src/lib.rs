@@ -8,6 +8,8 @@
 //!
 //! - **serialization** - Adds `Serialize` and `Deserialize` implementations
 //!   for use with `serde`
+//! - **memory_usage** - Adds `HeapSizeOf` implementations for use with the
+//!   `heapsize` crate
 
 #[macro_use]
 extern crate failure;
@@ -21,6 +23,12 @@ extern crate serde;
 #[cfg(feature = "serialization")]
 #[macro_use]
 extern crate serde_derive;
+
+#[cfg(feature = "memory_usage")]
+extern crate heapsize;
+#[cfg(feature = "memory_usage")]
+#[macro_use]
+extern crate heapsize_derive;
 
 mod codemap;
 mod filemap;
