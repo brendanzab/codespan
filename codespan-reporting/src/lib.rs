@@ -5,6 +5,11 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 use termcolor::{Color, ColorChoice};
+#[cfg(feature = "memory_usage")]
+extern crate heapsize;
+#[cfg(feature = "memory_usage")]
+#[macro_use]
+extern crate heapsize_derive;
 
 mod diagnostic;
 mod emitter;
@@ -25,6 +30,7 @@ pub use self::emitter::emit;
 /// assert!(Severity::Note > Severity::Help);
 /// ```
 #[derive(Copy, Clone, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 pub enum Severity {
     /// An unexpected bug.
     Bug,
