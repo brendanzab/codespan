@@ -15,9 +15,12 @@ codespan = { path = "../codespan", version = "0.1.3" }
 termcolor = "0.3.4"
 heapsize = { version = "0.4", optional = true }
 heapsize_derive = { version = "0.1", optional = true }
+serde_derive = { version = "1", optional = true }
+serde = { version = "1", optional = true }
 
 [dev-dependencies]
 structopt = "0.2.7"
 
 [features]
+serialization = ["serde", "serde/rc", "serde_derive", "codespan/serialization"]
 memory_usage = ["heapsize_derive", "heapsize", "codespan/memory_usage"]
