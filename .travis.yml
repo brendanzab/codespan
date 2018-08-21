@@ -12,7 +12,7 @@ env:
   - CARGO_FEATURES="memory_usage" 
     REPORTING_CARGO_FEATURES="memory_usage"
   - CARGO_FEATURES="serialization"
-    REPORTING_CARGO_FEATURES=""
+    REPORTING_CARGO_FEATURES="serialization"
 
 matrix:
   allow_failures:

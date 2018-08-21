@@ -5,11 +5,18 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 use termcolor::{Color, ColorChoice};
+
 #[cfg(feature = "memory_usage")]
 extern crate heapsize;
 #[cfg(feature = "memory_usage")]
 #[macro_use]
 extern crate heapsize_derive;
+
+#[cfg(feature = "serialization")]
+extern crate serde;
+#[cfg(feature = "serialization")]
+#[macro_use]
+extern crate serde_derive;
 
 mod diagnostic;
 mod emitter;
@@ -31,6 +38,7 @@ pub use self::emitter::emit;
 /// ```
 #[derive(Copy, Clone, PartialEq, Hash, Debug)]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
     Bug,

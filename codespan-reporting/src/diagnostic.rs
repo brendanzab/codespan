@@ -7,6 +7,7 @@ use Severity;
 /// A style for the label
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// The main focus of the diagnostic
     Primary,
@@ -17,6 +18,7 @@ pub enum LabelStyle {
 /// A label describing an underlined region of code associated with a diagnostic
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
     /// The span we are going to include in the final snippet.
     pub span: ByteSpan,
@@ -52,6 +54,7 @@ impl Label {
 /// Represents a diagnostic message and associated child messages.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic {
     /// The overall severity of the diagnostic
     pub severity: Severity,
