@@ -15,7 +15,7 @@ impl<T: fmt::Display> fmt::Display for Pad<T> {
     }
 }
 
-pub fn emit<W>(mut writer: W, codemap: &CodeMap, diagnostic: &Diagnostic) -> io::Result<()>
+pub fn emit<W>(writer: &mut W, codemap: &CodeMap, diagnostic: &Diagnostic) -> io::Result<()>
 where
     W: WriteColor,
 {
