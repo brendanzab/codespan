@@ -162,7 +162,8 @@ where
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(src.as_ref()));
         let lines = {
             let newline_off = ByteOffset::from_char_utf8('\n');
-            let offsets = src.as_ref()
+            let offsets = src
+                .as_ref()
                 .match_indices('\n')
                 .map(|(i, _)| ByteOffset(i as RawOffset) + newline_off);
 
@@ -226,7 +227,9 @@ where
             })
     }
 
-    /// Returns the byte offset to the start of `line`
+    /// Returns the byte offset to the start of `line`.
+    ///
+    /// Lines may be delimited with either `\n` or `\r\n`.
     pub fn line_offset(&self, index: LineIndex) -> Result<ByteOffset, LineIndexError> {
         self.lines
             .get(index.to_usize())
@@ -237,13 +240,17 @@ where
             })
     }
 
-    /// Returns the byte index of the start of `line`
+    /// Returns the byte index of the start of `line`.
+    ///
+    /// Lines may be delimited with either `\n` or `\r\n`.
     pub fn line_byte_index(&self, index: LineIndex) -> Result<ByteIndex, LineIndexError> {
         self.line_offset(index)
             .map(|offset| self.span.start() + offset)
     }
 
-    /// Returns the byte offset to the start of `line`
+    /// Returns the byte offset to the start of `line`.
+    ///
+    /// Lines may be delimited with either `\n` or `\r\n`.
     pub fn line_span(&self, line: LineIndex) -> Result<ByteSpan, LineIndexError> {
         let start = self.span.start() + self.line_offset(line)?;
         let end = match self.line_offset(line + LineOffset(1)) {
@@ -323,7 +330,14 @@ mod tests {
     impl TestData {
         fn new() -> TestData {
             let mut codemap = CodeMap::new();
-            let lines = &["hello!\n", "howdy\n", "\n", "hi萤\n", "bloop\n"];
+            let lines = &[
+                "hello!\n",
+                "howdy\n",
+                "\r\n",
+                "hi萤\n",
+                "bloop\n",
+                "goopey\r\n",
+            ];
             let filemap = codemap.add_filemap(FileName::Virtual("test".into()), lines.concat());
 
             TestData { filemap, lines }
@@ -336,7 +350,16 @@ mod tests {
             for line in self.lines {
                 byte_offsets.push(offset);
                 offset += ByteOffset::from_str(line);
-                byte_offsets.push(offset + -ByteOffset::from_char_utf8('\n'));
+
+                let line_end = if line.ends_with("\r\n") {
+                    offset + -ByteOffset::from_char_utf8('\r') + -ByteOffset::from_char_utf8('\n')
+                } else if line.ends_with("\n") {
+                    offset + -ByteOffset::from_char_utf8('\n')
+                } else {
+                    offset
+                };
+
+                byte_offsets.push(line_end);
             }
 
             // bump us past the end
@@ -398,12 +421,13 @@ mod tests {
                 Ok(ByteOffset(0)),
                 Ok(ByteOffset(7)),
                 Ok(ByteOffset(13)),
-                Ok(ByteOffset(14)),
-                Ok(ByteOffset(20)),
-                Ok(ByteOffset(26)),
+                Ok(ByteOffset(15)),
+                Ok(ByteOffset(21)),
+                Ok(ByteOffset(27)),
+                Ok(ByteOffset(35)),
                 Err(LineIndexError::OutOfBounds {
-                    given: LineIndex(6),
-                    max: LineIndex(5),
+                    given: LineIndex(7),
+                    max: LineIndex(6),
                 }),
             ],
         );
@@ -424,12 +448,13 @@ mod tests {
                 Ok(test_data.filemap.span().start() + ByteOffset(0)),
                 Ok(test_data.filemap.span().start() + ByteOffset(7)),
                 Ok(test_data.filemap.span().start() + ByteOffset(13)),
-                Ok(test_data.filemap.span().start() + ByteOffset(14)),
-                Ok(test_data.filemap.span().start() + ByteOffset(20)),
-                Ok(test_data.filemap.span().start() + ByteOffset(26)),
+                Ok(test_data.filemap.span().start() + ByteOffset(15)),
+                Ok(test_data.filemap.span().start() + ByteOffset(21)),
+                Ok(test_data.filemap.span().start() + ByteOffset(27)),
+                Ok(test_data.filemap.span().start() + ByteOffset(35)),
                 Err(LineIndexError::OutOfBounds {
-                    given: LineIndex(6),
-                    max: LineIndex(5),
+                    given: LineIndex(7),
+                    max: LineIndex(6),
                 }),
             ],
         );
@@ -476,9 +501,11 @@ mod tests {
                 Ok((LineIndex(4), ColumnIndex(0))),
                 Ok((LineIndex(4), ColumnIndex(5))),
                 Ok((LineIndex(5), ColumnIndex(0))),
+                Ok((LineIndex(5), ColumnIndex(6))),
+                Ok((LineIndex(6), ColumnIndex(0))),
                 Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(28),
-                    span: test_data.filemap.span(),
+                    given: ByteIndex(37),
+                    span: test_data.filemap.span()
                 }),
             ],
         );
@@ -511,8 +538,10 @@ mod tests {
                 Ok(LineIndex(4)),
                 Ok(LineIndex(4)),
                 Ok(LineIndex(5)),
+                Ok(LineIndex(5)),
+                Ok(LineIndex(6)),
                 Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(28),
+                    given: ByteIndex(37),
                     span: test_data.filemap.span(),
                 }),
             ],
