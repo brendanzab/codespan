@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+# A script to bump the version number on all Cargo.toml files etc in
+# an atomic fashion.
+
+VERSION=$(
+    ls codespan*/Cargo.toml | \
+        xargs grep "# CODESPAN$" | \
+        perl -p -e 's/.*version = "([0-9.]+)".* # CODESPAN$/$1/' |
+        sort |
+        uniq
+)
+
+if [[ "$(echo "$VERSION" | wc -w)" -ne "1" ]]; then
+    echo "Error: inconsistent versions detected across Cargo.toml files!"
+    echo "$VERSION"
+    exit 1
+fi
+
+echo "Found consistent version $VERSION"
+
+TMPDIR=${TMPDIR:-"/tmp"}
+
+function publish_fail {
+    printf "ERROR\\n"
+    cat "$TMPDIR/publish-log"
+    exit 1
+}
+
+function publish {
+    printf "Publishing %s..." "$1"
+    set +e
+    (cd "$1" && cargo publish) >& "$TMPDIR/publish-log" || publish_fail "$1"
+    set -e
+    printf "OK\\n"
+}
+
+publish codespan
+publish codespan-reporting
+publish codespan-lsp
+
+git tag "v$VERSION"
+git push origin tag "v$VERSION"
+
+printf "\\nAll set. **Do not forget to commit new changes.**\\n"
