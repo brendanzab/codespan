@@ -16,4 +16,4 @@ failure = "0.1"
 failure_derive = "0.1"
 
 url = "1"
-languageserver-types = "0.39.0"
+languageserver-types = "0.51.0"
