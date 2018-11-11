@@ -97,6 +97,10 @@ impl CodeMap {
         })
     }
 
+    pub fn iter(&self) -> impl Iterator<Item=&Arc<FileMap>> {
+        self.files.iter()
+    }
+
     fn find_index(&self, index: ByteIndex) -> Option<usize> {
         use std::cmp::Ordering;
 
