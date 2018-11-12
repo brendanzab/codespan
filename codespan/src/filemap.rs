@@ -61,6 +61,27 @@ impl From<&'static str> for FileName {
     }
 }
 
+impl AsRef<Path> for FileName {
+    fn as_ref(&self) -> &Path {
+        match *self {
+            FileName::Real(ref path) => path.as_ref(),
+            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
+        }
+    }
+}
+
+impl PartialEq<Path> for FileName {
+    fn eq(&self, other: &Path) -> bool {
+        self.as_ref() == other
+    }
+}
+
+impl PartialEq<PathBuf> for FileName {
+    fn eq(&self, other: &PathBuf) -> bool {
+        self.as_ref() == other.as_path()
+    }
+}
+
 impl FileName {
     pub fn real<T: Into<PathBuf>>(name: T) -> FileName {
         FileName::Real(name.into())
