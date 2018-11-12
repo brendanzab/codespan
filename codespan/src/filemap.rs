@@ -24,6 +24,25 @@ impl From<PathBuf> for FileName {
     }
 }
 
+impl From<FileName> for PathBuf {
+    fn from(name: FileName) -> PathBuf {
+        match name {
+            FileName::Real(path) => path,
+            FileName::Virtual(Cow::Owned(owned)) => PathBuf::from(owned),
+            FileName::Virtual(Cow::Borrowed(borrowed)) => PathBuf::from(borrowed),
+        }
+    }
+}
+
+impl<'a> From<&'a FileName> for &'a Path {
+    fn from(name: &'a FileName) -> &'a Path {
+        match *name {
+            FileName::Real(ref path) => path,
+            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
+        }
+    }
+}
+
 impl<'a> From<&'a Path> for FileName {
     fn from(name: &Path) -> FileName {
         FileName::real(name)
