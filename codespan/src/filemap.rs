@@ -9,7 +9,7 @@ use heapsize::{self, HeapSizeOf};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub enum FileName {
     /// A real file on disk
@@ -21,6 +21,25 @@ pub enum FileName {
 impl From<PathBuf> for FileName {
     fn from(name: PathBuf) -> FileName {
         FileName::real(name)
+    }
+}
+
+impl From<FileName> for PathBuf {
+    fn from(name: FileName) -> PathBuf {
+        match name {
+            FileName::Real(path) => path,
+            FileName::Virtual(Cow::Owned(owned)) => PathBuf::from(owned),
+            FileName::Virtual(Cow::Borrowed(borrowed)) => PathBuf::from(borrowed),
+        }
+    }
+}
+
+impl<'a> From<&'a FileName> for &'a Path {
+    fn from(name: &'a FileName) -> &'a Path {
+        match *name {
+            FileName::Real(ref path) => path,
+            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
+        }
     }
 }
 
@@ -39,6 +58,27 @@ impl From<String> for FileName {
 impl From<&'static str> for FileName {
     fn from(name: &'static str) -> FileName {
         FileName::virtual_(name)
+    }
+}
+
+impl AsRef<Path> for FileName {
+    fn as_ref(&self) -> &Path {
+        match *self {
+            FileName::Real(ref path) => path.as_ref(),
+            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
+        }
+    }
+}
+
+impl PartialEq<Path> for FileName {
+    fn eq(&self, other: &Path) -> bool {
+        self.as_ref() == other
+    }
+}
+
+impl PartialEq<PathBuf> for FileName {
+    fn eq(&self, other: &PathBuf) -> bool {
+        self.as_ref() == other.as_path()
     }
 }
 
