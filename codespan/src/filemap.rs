@@ -9,7 +9,7 @@ use heapsize::{self, HeapSizeOf};
 use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
 use span::ByteSpan;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub enum FileName {
     /// A real file on disk
