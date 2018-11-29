@@ -1,5 +1,6 @@
 extern crate codespan;
 pub extern crate termcolor;
+extern crate unicode_width;
 
 use std::cmp::Ordering;
 use std::fmt;

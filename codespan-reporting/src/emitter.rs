@@ -1,6 +1,7 @@
 use codespan::CodeMap;
 use std::{fmt, io};
 use termcolor::{Color, ColorSpec, WriteColor};
+use unicode_width::UnicodeWidthStr;
 
 use {Diagnostic, LabelStyle};
 
@@ -93,9 +94,9 @@ where
                 };
 
                 writer.set_color(&line_location_color)?;
-                let line_string = line.number().to_string();
-                let line_location_prefix = format!("{} | ", Pad(' ', line_string.len()));
-                write!(writer, "{} | ", line_string)?;
+                let line_number_string = line.number().to_string();
+                let line_location_prefix = format!("{} | ", Pad(' ', line_number_string.len()));
+                write!(writer, "{} | ", line_number_string)?;
                 writer.reset()?;
 
                 write!(writer, "{}", line_prefix)?;
@@ -113,8 +114,8 @@ where
                     write!(
                         writer,
                         "{}{}",
-                        Pad(' ', line_prefix.len()),
-                        Pad(mark, line_marked.len()),
+                        Pad(' ', line_prefix.width()),
+                        Pad(mark, line_marked.width()),
                     )?;
                     writer.reset()?;
 

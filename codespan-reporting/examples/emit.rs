@@ -5,9 +5,9 @@ extern crate structopt;
 
 use structopt::StructOpt;
 
-use codespan::{CodeMap, Span};
+use codespan::{ByteOffset, CodeMap, ColumnIndex, LineIndex, Span};
 use codespan_reporting::termcolor::StandardStream;
-use codespan_reporting::{emit, ColorArg, Diagnostic, Label, Severity};
+use codespan_reporting::{emit, ColorArg, Diagnostic, Label};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "emit")]
@@ -30,29 +30,34 @@ fn main() {
 (define test 123)
 (+ test "")
 ()
+
+ééééé by x by "héhé"
+
 "##;
     let file_map = code_map.add_filemap("test".into(), source.to_string());
 
-    let str_start = file_map.byte_index(2.into(), 8.into()).unwrap();
-    let error = Diagnostic::new(Severity::Error, "Unexpected type in `+` application")
-        .with_label(
-            Label::new_primary(Span::from_offset(str_start, 2.into()))
-                .with_message("Expected integer but got string"),
-        )
-        .with_label(
-            Label::new_secondary(Span::from_offset(str_start, 2.into()))
-                .with_message("Expected integer but got string"),
-        )
+    let str_start = file_map.byte_index(LineIndex(2), ColumnIndex(8)).unwrap();
+    let str_span = Span::from_offset(str_start, ByteOffset(2));
+    let plus_error = Diagnostic::new_error("Unexpected type in `+` application")
+        .with_label(Label::new_primary(str_span).with_message("Expected integer but got string"))
+        .with_label(Label::new_secondary(str_span).with_message("Expected integer but got string"))
         .with_code("E0001");
 
-    let line_start = file_map.byte_index(2.into(), 0.into()).unwrap();
-    let warning = Diagnostic::new(
-        Severity::Warning,
-        "`+` function has no effect unless its result is used",
-    )
-    .with_label(Label::new_primary(Span::from_offset(line_start, 11.into())));
+    let plus_call_start = file_map.byte_index(LineIndex(2), ColumnIndex(0)).unwrap();
+    let plus_call_span = Span::from_offset(plus_call_start, ByteOffset(1));
+    let call_warning =
+        Diagnostic::new_warning("`+` function has no effect unless its result is used")
+            .with_label(Label::new_primary(plus_call_span));
 
-    let diagnostics = [error, warning];
+    let initial_start = file_map.byte_index(LineIndex(5), ColumnIndex(6)).unwrap();
+    let initial_span = Span::from_offset(initial_start, ByteOffset(4));
+    let duplicate_start = file_map.byte_index(LineIndex(5), ColumnIndex(14)).unwrap();
+    let duplicate_span = Span::from_offset(duplicate_start, ByteOffset(6));
+    let unicode_error = Diagnostic::new_error("duplicate clause")
+        .with_label(Label::new_primary(duplicate_span).with_message("duplicate clause"))
+        .with_label(Label::new_secondary(initial_span).with_message("initial clause"));
+
+    let diagnostics = [plus_error, call_warning, unicode_error];
 
     let writer = StandardStream::stderr(opts.color.into());
     for diagnostic in &diagnostics {
