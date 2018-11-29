@@ -22,7 +22,8 @@ impl CodeMap {
 
     /// The next start index to use for a new filemap
     fn next_start_index(&self) -> ByteIndex {
-        let end_index = self.files
+        let end_index = self
+            .files
             .last()
             .map(|x| x.span().end())
             .unwrap_or_else(ByteIndex::none);
@@ -57,11 +58,13 @@ impl CodeMap {
             } else {
                 self.files[i - 1].span().end() + ByteOffset(1)
             };
-            let max = self.files
+            let max = self
+                .files
                 .get(i + 1)
                 .map_or(ByteIndex(RawIndex::max_value()), |file_map| {
                     file_map.span().start()
-                }) - ByteOffset(1);
+                })
+                - ByteOffset(1);
             if src.len() <= (max - min).to_usize() {
                 let start_index = self.files[i].span().start();
                 let name = self.files[i].name().clone();
@@ -70,7 +73,8 @@ impl CodeMap {
                 new_file
             } else {
                 let file = self.files.remove(i);
-                match self.files
+                match self
+                    .files
                     .first()
                     .map(|file| file.span().start().to_usize() - 1)
                     .into_iter()
@@ -97,7 +101,7 @@ impl CodeMap {
         })
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&Arc<FileMap>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Arc<FileMap>> {
         self.files.iter()
     }
 

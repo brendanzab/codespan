@@ -22,7 +22,11 @@ where
     let supports_color = writer.supports_color();
     let line_location_color = ColorSpec::new()
         // Blue is really difficult to see on the standard windows command line
-        .set_fg(Some(if cfg!(windows) { Color::Cyan } else { Color::Blue }))
+        .set_fg(Some(if cfg!(windows) {
+            Color::Cyan
+        } else {
+            Color::Blue
+        }))
         .clone();
     let diagnostic_color = ColorSpec::new()
         .set_fg(Some(diagnostic.severity.color()))
@@ -30,9 +34,11 @@ where
 
     let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
-    writer.set_color(&highlight_color
-        .clone()
-        .set_fg(Some(diagnostic.severity.color())))?;
+    writer.set_color(
+        &highlight_color
+            .clone()
+            .set_fg(Some(diagnostic.severity.color())),
+    )?;
     write!(writer, "{}", diagnostic.severity)?;
 
     if let Some(ref code) = diagnostic.code {
@@ -45,8 +51,10 @@ where
 
     for label in &diagnostic.labels {
         match codemap.find_file(label.span.start()) {
-            None => if let Some(ref message) = label.message {
-                writeln!(writer, "- {}", message)?
+            None => {
+                if let Some(ref message) = label.message {
+                    writeln!(writer, "- {}", message)?
+                }
             },
             Some(file) => {
                 let (line, column) = file.location(label.span.start()).expect("location");
@@ -60,10 +68,12 @@ where
 
                 let line_span = file.line_span(line).expect("line_span");
 
-                let line_prefix = file.src_slice(line_span.with_end(label.span.start()))
+                let line_prefix = file
+                    .src_slice(line_span.with_end(label.span.start()))
                     .expect("line_prefix");
                 let line_marked = file.src_slice(label.span).expect("line_marked");
-                let line_suffix = file.src_slice(line_span.with_start(label.span.end()))
+                let line_suffix = file
+                    .src_slice(line_span.with_start(label.span.end()))
                     .expect("line_suffix")
                     .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
 

@@ -118,7 +118,7 @@ impl HeapSizeOf for FileName {
                 path.to_str()
                     .map(|s| unsafe { heapsize::heap_size_of(s.as_ptr()) })
                     .unwrap_or(0)
-            }
+            },
         }
     }
 }
@@ -131,9 +131,15 @@ pub enum LineIndexError {
 
 #[derive(Debug, Fail, PartialEq)]
 pub enum ByteIndexError {
-    #[fail(display = "Byte index out of bounds - given: {}, span: {}", given, span)]
+    #[fail(
+        display = "Byte index out of bounds - given: {}, span: {}",
+        given, span
+    )]
     OutOfBounds { given: ByteIndex, span: ByteSpan },
-    #[fail(display = "Byte index points within a character boundary - given: {}", given)]
+    #[fail(
+        display = "Byte index points within a character boundary - given: {}",
+        given
+    )]
     InvalidCharBoundary { given: ByteIndex },
 }
 
@@ -426,24 +432,20 @@ mod tests {
     #[test]
     fn offset() {
         let test_data = TestData::new();
-        assert!(
-            test_data
-                .filemap
-                .offset(
-                    (test_data.lines.len() as u32 - 1).into(),
-                    (test_data.lines.last().unwrap().len() as u32).into()
-                )
-                .is_ok()
-        );
-        assert!(
-            test_data
-                .filemap
-                .offset(
-                    (test_data.lines.len() as u32 - 1).into(),
-                    (test_data.lines.last().unwrap().len() as u32 + 1).into()
-                )
-                .is_err()
-        );
+        assert!(test_data
+            .filemap
+            .offset(
+                (test_data.lines.len() as u32 - 1).into(),
+                (test_data.lines.last().unwrap().len() as u32).into()
+            )
+            .is_ok());
+        assert!(test_data
+            .filemap
+            .offset(
+                (test_data.lines.len() as u32 - 1).into(),
+                (test_data.lines.last().unwrap().len() as u32 + 1).into()
+            )
+            .is_err());
     }
 
     #[test]

@@ -49,7 +49,8 @@ fn main() {
     let warning = Diagnostic::new(
         Severity::Warning,
         "`+` function has no effect unless its result is used",
-    ).with_label(Label::new_primary(Span::from_offset(line_start, 11.into())));
+    )
+    .with_label(Label::new_primary(Span::from_offset(line_start, 11.into())));
 
     let diagnostics = [error, warning];
 

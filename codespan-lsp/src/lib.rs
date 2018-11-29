@@ -125,7 +125,8 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
         Err(LocationError::ColumnOutOfBounds {
             given: ColumnIndex(character_offset as RawIndex),
             max: ColumnIndex(line.len() as RawIndex),
-        }.into())
+        }
+        .into())
     }
 }
 
@@ -272,7 +273,8 @@ te
                 line: 3,
                 character: 2,
             },
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!((3.into(), 2.into()), source.location(pos).unwrap());
     }
 
