@@ -13,7 +13,7 @@ documentation = "https://docs.rs/codespan"
 failure = "0.1.1"
 heapsize = { version = "0.4", optional = true }
 heapsize_derive = { version = "0.1", optional = true }
-itertools = "0.7"
+itertools = "0.8"
 serde_derive = { version = "1", optional = true }
 serde = { version = "1", optional = true }
 
