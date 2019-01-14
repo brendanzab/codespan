@@ -13,5 +13,5 @@ codespan = { version = "0.2.0", path = "../codespan" } # CODESPAN
 codespan-reporting = { version = "0.2.0", path = "../codespan-reporting/" } # CODESPAN
 failure = "0.1"
 failure_derive = "0.1"
-languageserver-types = "0.51.0"
+languageserver-types = "0.54.0"
 url = "1"
