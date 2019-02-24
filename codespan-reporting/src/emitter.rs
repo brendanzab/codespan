@@ -1,4 +1,4 @@
-use codespan::CodeMap;
+use codespan::{CodeMap, LineIndex, LineNumber};
 use std::{fmt, io};
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -55,32 +55,25 @@ where
                 if let Some(ref message) = label.message {
                     writeln!(writer, "- {}", message)?
                 }
-            },
+            }
             Some(file) => {
-                let (line, column) = file.location(label.span.start()).expect("location");
+                let (start_line, column) =
+                    file.location(label.span.start()).expect("location_start");
+                let (end_line, _) = file.location(label.span.end()).expect("location_end");
+
                 writeln!(
                     writer,
                     "- {file}:{line}:{column}",
                     file = file.name(),
-                    line = line.number(),
+                    line = start_line.number(),
                     column = column.number(),
                 )?;
 
-                let line_span = file.line_span(line).expect("line_span");
+                let start_line_span = file.line_span(start_line).expect("line_span");
+                let end_line_span = file.line_span(end_line).expect("line_span");
+                let line_location_width = end_line.number().to_string().len();
+                let line_location_prefix = format!("{} | ", Pad(' ', line_location_width));
 
-                let line_prefix = file
-                    .src_slice(line_span.with_end(label.span.start()))
-                    .expect("line_prefix");
-                let line_marked = file.src_slice(label.span).expect("line_marked");
-                let line_suffix = file
-                    .src_slice(line_span.with_start(label.span.end()))
-                    .expect("line_suffix")
-                    .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
-
-                let mark = match label.style {
-                    LabelStyle::Primary => '^',
-                    LabelStyle::Secondary => '-',
-                };
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
                     LabelStyle::Secondary => ColorSpec::new()
@@ -92,17 +85,73 @@ where
                         .clone(),
                 };
 
+                // Write prefix to marked section
+                //
                 writer.set_color(&line_location_color)?;
-                let line_string = line.number().to_string();
-                let line_location_prefix = format!("{} | ", Pad(' ', line_string.len()));
+                let line_string = start_line.number().to_string();
                 write!(writer, "{} | ", line_string)?;
-                writer.reset()?;
 
-                write!(writer, "{}", line_prefix)?;
-                writer.set_color(&label_color)?;
-                write!(writer, "{}", line_marked)?;
+                let prefix = file
+                    .src_slice(start_line_span.with_end(label.span.start()))
+                    .expect("prefix");
                 writer.reset()?;
-                writeln!(writer, "{}", line_suffix)?;
+                write!(writer, "{}", prefix)?;
+
+                // Write marked section
+                //
+                let LineNumber(start) = start_line.number();
+                let LineNumber(end) = end_line.number();
+
+                let mark_len = if start == end {
+                    let marked = file.src_slice(label.span).expect("marked");
+                    writer.set_color(&label_color)?;
+                    write!(writer, "{}", marked)?;
+                    marked.len()
+                } else {
+                    let marked = file
+                        .src_slice(start_line_span.with_start(label.span.start()))
+                        .expect("start_of_marked");
+                    writer.set_color(&label_color)?;
+                    write!(writer, "{}", marked)?;
+
+                    for i in start..(end - 1) {
+                        writer.set_color(&line_location_color)?;
+                        write!(writer, "{} | ", (i + 1).to_string())?;
+
+                        let line_span = file.line_span(LineIndex(i)).expect("marked_line_span");
+                        let line = file
+                            .src_slice(line_span)
+                            .expect("line")
+                            .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
+                        writer.set_color(&label_color)?;
+                        writeln!(writer, "{}", line)?;
+                    }
+
+                    writer.set_color(&line_location_color)?;
+                    write!(writer, "{} | ", end)?;
+                    let line = file
+                        .src_slice(end_line_span.with_end(label.span.end()))
+                        .expect("line");
+                    writer.set_color(&label_color)?;
+                    write!(writer, "{}", line)?;
+                    line.len()
+                };
+
+                // Write suffix to marked section
+                //
+                let suffix = file
+                    .src_slice(end_line_span.with_start(label.span.end()))
+                    .expect("suffix")
+                    .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
+                writer.reset()?;
+                writeln!(writer, "{}", suffix)?;
+
+                // Write mark and label
+
+                let mark = match label.style {
+                    LabelStyle::Primary => '^',
+                    LabelStyle::Secondary => '-',
+                };
 
                 if !supports_color || label.message.is_some() {
                     writer.set_color(&line_location_color)?;
@@ -110,12 +159,7 @@ where
                     writer.reset()?;
 
                     writer.set_color(&label_color)?;
-                    write!(
-                        writer,
-                        "{}{}",
-                        Pad(' ', line_prefix.len()),
-                        Pad(mark, line_marked.len()),
-                    )?;
+                    write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len),)?;
                     writer.reset()?;
 
                     if label.message.is_none() {
@@ -129,9 +173,9 @@ where
                         writer.set_color(&label_color)?;
                         writeln!(writer, " {}", label)?;
                         writer.reset()?;
-                    },
+                    }
                 }
-            },
+            }
         }
     }
     Ok(())
