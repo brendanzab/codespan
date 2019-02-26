@@ -1,6 +1,6 @@
 [package]
 name = "codespan"
-version = "0.2.0" # CODESPAN
+version = "0.2.1" # CODESPAN
 readme = "../README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
