@@ -53,7 +53,7 @@ impl fmt::Debug for LineIndex {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
-pub struct LineNumber(RawIndex);
+pub struct LineNumber(pub RawIndex);
 
 impl fmt::Debug for LineNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
