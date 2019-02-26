@@ -38,7 +38,8 @@ Ace or Monaco.
 Codespan is used in the following projects:
 
 - [Gluon](https://github.com/gluon-lang/gluon)
-- [Pikelet](https://github.com/brendanzab/pikelet)
+- [Pikelet](https://github.com/pikelet-lang/pikelet)
+- [Gleam](https://github.com/lpil/gleam/)
 
 ## Acknowledgments
 
