@@ -89,6 +89,7 @@ where
                 //
                 writer.set_color(&line_location_color)?;
                 let line_string = start_line.number().to_string();
+                writeln!(writer, "{} |", Pad(' ', line_location_width))?;
                 write!(writer, "{} | ", line_string)?;
 
                 let prefix = file
@@ -159,7 +160,7 @@ where
                     writer.reset()?;
 
                     writer.set_color(&label_color)?;
-                    write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len),)?;
+                    write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len))?;
                     writer.reset()?;
 
                     if label.message.is_none() {
@@ -175,6 +176,9 @@ where
                         writer.reset()?;
                     }
                 }
+                writer.set_color(&line_location_color)?;
+                writeln!(writer, "{} |", Pad(' ', line_location_width))?;
+                writer.reset()?;
             }
         }
     }
