@@ -180,7 +180,30 @@ impl fmt::Display for ColumnOffset {
     }
 }
 
-/// A byte position in a source file
+/// A byte position in a source file. The index is continuous, running over all
+/// files in a `CodeMap`, starting with 1. Zero is reserved for positions that 
+/// do not point to a valid file. One byte of padding is added between each file.
+///
+/// For example, for these files:
+///
+/// - `main.rs`: `pub struct` (10 bytes)
+/// - `lib.rs`: `Span::new` (9 bytes)
+///
+/// `ByteIndex(0)` points to no file at all, `ByteIndex(2)` points at the
+/// second byte (index 1) in `main.rs` and `ByteIndex(14)` points at the third
+/// byte (index 2) in `lib.rs`.
+///
+/// You can visualize the indices like this:
+///
+/// ```ascii
+///                  main.rs                                     lib.rs
+///
+/// content    │ █ │ p │ u │ b │   │ s │ t │ r │ u │ c │ t │ █ │ S │ p │ a │ n │ : │ : │ n │ e │ w │
+/// ───────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+/// file index │ █ │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ █ │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │
+/// ───────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+/// ByteIndex  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │10 │11 │12 │13 │14 │15 │16 │17 │18 │19 │20 │
+/// ```
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
