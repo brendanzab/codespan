@@ -10,16 +10,22 @@ use index::{ByteIndex, ByteOffset, RawIndex};
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
-pub struct CodeMap<S: AsRef<str> = String> {
+pub struct CodeMap<S = String> {
     files: Vec<Arc<FileMap<S>>>,
 }
 
-impl<S: AsRef<str>> CodeMap<S> {
+impl<S> CodeMap<S> {
     /// Creates an empty `CodeMap`.
     pub fn new() -> CodeMap<S> {
         CodeMap::default()
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &Arc<FileMap<S>>> {
+        self.files.iter()
+    }
+}
+
+impl<S: AsRef<str>> CodeMap<S> {
     /// The next start index to use for a new filemap
     fn next_start_index(&self) -> ByteIndex {
         let end_index = self
@@ -38,6 +44,7 @@ impl<S: AsRef<str>> CodeMap<S> {
         self.files.push(file.clone());
         file
     }
+
     /// Looks up the `File` that contains the specified byte index.
     pub fn find_file(&self, index: ByteIndex) -> Option<&Arc<FileMap<S>>> {
         self.find_index(index).map(|i| &self.files[i])
@@ -89,13 +96,8 @@ impl<S: AsRef<str>> CodeMap<S> {
                     },
                     None => self.add_filemap(file.name().clone(), src),
                 }
-
             }
         })
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Arc<FileMap<S>>> {
-        self.files.iter()
     }
 
     fn find_index(&self, index: ByteIndex) -> Option<usize> {
@@ -120,13 +122,14 @@ impl<S: AsRef<str> + From<String>> CodeMap<S> {
     }
 }
 
-impl<S: AsRef<str>> Default for CodeMap<S> {
+impl<S> Default for CodeMap<S> {
     fn default() -> Self {
         CodeMap {
             files: vec![],
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
