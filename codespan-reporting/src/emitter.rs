@@ -1,5 +1,6 @@
-use codespan::{CodeMap, LineIndex, LineNumber};
+use codespan::{ByteIndex, CodeMap, FileMap, LineIndex, LineNumber};
 use std::{fmt, io};
+use std::ops::Deref;
 use termcolor::{Color, ColorSpec, WriteColor};
 
 use {Diagnostic, LabelStyle};
@@ -15,10 +16,43 @@ impl<T: fmt::Display> fmt::Display for Pad<T> {
     }
 }
 
-pub fn emit<W, S>(mut writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
+pub fn emit<W, S>(writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
 where
     W: WriteColor,
     S: AsRef<str>,
+{
+    emit_internal(writer, codemap, diagnostic)
+}
+
+pub fn emit_single<W, S>(writer: W, filemap: &FileMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
+    where
+        W: WriteColor,
+        S: AsRef<str>,
+{
+    emit_internal(writer, filemap, diagnostic)
+}
+
+trait FindFile<S> {
+    fn find_file(&self, index: ByteIndex) -> Option<&FileMap<S>>;
+}
+
+impl<S: AsRef<str>> FindFile<S> for CodeMap<S> {
+    fn find_file(&self, index: ByteIndex) -> Option<&FileMap<S>> {
+        self.find_file(index).map(Deref::deref)
+    }
+}
+
+impl<S: AsRef<str>> FindFile<S> for FileMap<S> {
+    fn find_file(&self, _index: ByteIndex) -> Option<&FileMap<S>> {
+        Some(self)
+    }
+}
+
+fn emit_internal<W, S, M>(mut writer: W, codemap: &M, diagnostic: &Diagnostic) -> io::Result<()>
+    where
+        W: WriteColor,
+        S: AsRef<str>,
+        M: FindFile<S>,
 {
     let supports_color = writer.supports_color();
     let line_location_color = ColorSpec::new()

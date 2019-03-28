@@ -22,7 +22,7 @@ mod diagnostic;
 mod emitter;
 
 pub use self::diagnostic::{Diagnostic, Label, LabelStyle};
-pub use self::emitter::emit;
+pub use self::emitter::{emit, emit_single};
 
 /// A severity level for diagnostic messages
 ///
