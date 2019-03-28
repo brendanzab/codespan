@@ -175,9 +175,9 @@ pub struct FileMap<S = String> {
     lines: Vec<ByteOffset>,
 }
 
-impl FileMap {
+impl<S: AsRef<str> + From<String>> FileMap<S> {
     /// Read some source code from a file, loading it into a filemap
-    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap> {
+    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap<S>> {
         use std::fs::File;
         use std::io::Read;
 
@@ -186,7 +186,7 @@ impl FileMap {
         let mut src = String::new();
         file.read_to_string(&mut src)?;
 
-        Ok(FileMap::with_index(FileName::Real(name), src, start))
+        Ok(FileMap::with_index(FileName::Real(name), src.into(), start))
     }
 }
 

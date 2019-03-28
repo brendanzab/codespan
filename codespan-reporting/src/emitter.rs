@@ -15,9 +15,10 @@ impl<T: fmt::Display> fmt::Display for Pad<T> {
     }
 }
 
-pub fn emit<W>(mut writer: W, codemap: &CodeMap, diagnostic: &Diagnostic) -> io::Result<()>
+pub fn emit<W, S>(mut writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
 where
     W: WriteColor,
+    S: AsRef<str>,
 {
     let supports_color = writer.supports_color();
     let line_location_color = ColorSpec::new()

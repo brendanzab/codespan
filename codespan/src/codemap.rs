@@ -7,16 +7,16 @@ use itertools::Itertools;
 use filemap::{FileMap, FileName};
 use index::{ByteIndex, ByteOffset, RawIndex};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
-pub struct CodeMap {
-    files: Vec<Arc<FileMap>>,
+pub struct CodeMap<S: AsRef<str> = String> {
+    files: Vec<Arc<FileMap<S>>>,
 }
 
-impl CodeMap {
+impl<S: AsRef<str>> CodeMap<S> {
     /// Creates an empty `CodeMap`.
-    pub fn new() -> CodeMap {
+    pub fn new() -> CodeMap<S> {
         CodeMap::default()
     }
 
@@ -33,25 +33,17 @@ impl CodeMap {
     }
 
     /// Adds a filemap to the codemap with the given name and source string
-    pub fn add_filemap(&mut self, name: FileName, src: String) -> Arc<FileMap> {
+    pub fn add_filemap(&mut self, name: FileName, src: S) -> Arc<FileMap<S>> {
         let file = Arc::new(FileMap::with_index(name, src, self.next_start_index()));
         self.files.push(file.clone());
         file
     }
-
-    /// Adds a filemap to the codemap with the given name and source string
-    pub fn add_filemap_from_disk<P: Into<PathBuf>>(&mut self, name: P) -> io::Result<Arc<FileMap>> {
-        let file = Arc::new(FileMap::from_disk(name, self.next_start_index())?);
-        self.files.push(file.clone());
-        Ok(file)
-    }
-
     /// Looks up the `File` that contains the specified byte index.
-    pub fn find_file(&self, index: ByteIndex) -> Option<&Arc<FileMap>> {
+    pub fn find_file(&self, index: ByteIndex) -> Option<&Arc<FileMap<S>>> {
         self.find_index(index).map(|i| &self.files[i])
     }
 
-    pub fn update(&mut self, index: ByteIndex, src: String) -> Option<Arc<FileMap>> {
+    pub fn update(&mut self, index: ByteIndex, src: S) -> Option<Arc<FileMap<S>>> {
         self.find_index(index).map(|i| {
             let min = if i == 0 {
                 ByteIndex(1)
@@ -65,7 +57,7 @@ impl CodeMap {
                     file_map.span().start()
                 })
                 - ByteOffset(1);
-            if src.len() <= (max - min).to_usize() {
+            if src.as_ref().len() <= (max - min).to_usize() {
                 let start_index = self.files[i].span().start();
                 let name = self.files[i].name().clone();
                 let new_file = Arc::new(FileMap::with_index(name, src, start_index));
@@ -82,7 +74,7 @@ impl CodeMap {
                         eprintln!("{} {}", x.span(), y.span());
                         (y.span().start() - x.span().end()).to_usize() - 1
                     }))
-                    .position(|size| size >= src.len() + 1)
+                    .position(|size| size >= src.as_ref().len() + 1)
                 {
                     Some(j) => {
                         let start_index = if j == 0 {
@@ -97,11 +89,12 @@ impl CodeMap {
                     },
                     None => self.add_filemap(file.name().clone(), src),
                 }
+
             }
         })
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Arc<FileMap>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Arc<FileMap<S>>> {
         self.files.iter()
     }
 
@@ -115,6 +108,23 @@ impl CodeMap {
                 () => Ordering::Equal,
             })
             .ok()
+    }
+}
+
+impl<S: AsRef<str> + From<String>> CodeMap<S> {
+    /// Adds a filemap to the codemap with the given name and source string
+    pub fn add_filemap_from_disk<P: Into<PathBuf>>(&mut self, name: P) -> io::Result<Arc<FileMap<S>>> {
+        let file = Arc::new(FileMap::from_disk(name, self.next_start_index())?);
+        self.files.push(file.clone());
+        Ok(file)
+    }
+}
+
+impl<S: AsRef<str>> Default for CodeMap<S> {
+    fn default() -> Self {
+        CodeMap {
+            files: vec![],
+        }
     }
 }
 
