@@ -53,6 +53,13 @@ impl<I: Ord> Span<I> {
 }
 
 impl<I> Span<I> {
+    /// Create a span like `new` but does not check that `start <= end`
+    pub const fn new_unchecked(start: I, end: I) -> Span<I> {
+        Span { start, end }
+    }
+}
+
+impl<I> Span<I> {
     /// Get the start index
     pub fn start(self) -> I {
         self.start
