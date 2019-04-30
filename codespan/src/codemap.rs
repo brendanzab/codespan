@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 
-use filemap::{FileMap, FileName};
-use index::{ByteIndex, ByteOffset, RawIndex};
+use crate::filemap::{FileMap, FileName};
+use crate::index::{ByteIndex, ByteOffset, RawIndex};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -135,8 +135,8 @@ impl<S> Default for CodeMap<S> {
 mod tests {
     use super::*;
 
-    use index::{ByteIndex, RawIndex};
-    use span::Span;
+    use crate::index::{ByteIndex, RawIndex};
+    use crate::span::Span;
 
     fn check_maps(code_map: &CodeMap, files: &[(RawIndex, &str, &str)]) {
         println!("{:?}", code_map);

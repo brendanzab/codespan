@@ -2,7 +2,7 @@ use codespan::{CodeMap, LineIndex, LineNumber};
 use std::{fmt, io};
 use termcolor::{Color, ColorSpec, WriteColor};
 
-use {Diagnostic, LabelStyle};
+use crate::{Diagnostic, LabelStyle};
 
 struct Pad<T>(T, usize);
 

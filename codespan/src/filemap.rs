@@ -6,8 +6,8 @@ use std::{fmt, io};
 
 #[cfg(feature = "memory_usage")]
 use heapsize::{self, HeapSizeOf};
-use index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
-use span::ByteSpan;
+use crate::index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
+use crate::span::ByteSpan;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -364,7 +364,7 @@ where
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
-    use {CodeMap, FileMap, FileName};
+    use crate::{CodeMap, FileMap, FileName};
 
     use super::*;
 
