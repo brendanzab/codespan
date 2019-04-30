@@ -2,7 +2,7 @@
 
 use codespan::ByteSpan;
 
-use Severity;
+use crate::Severity;
 
 /// A style for the label
 #[derive(Copy, Clone, PartialEq, Debug)]

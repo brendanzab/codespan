@@ -2,7 +2,7 @@ use codespan::{CodeMap, LineIndex, LineNumber};
 use std::{fmt, io};
 use termcolor::{Color, ColorSpec, WriteColor};
 
-use {Diagnostic, LabelStyle};
+use crate::{Diagnostic, LabelStyle};
 
 struct Pad<T>(T, usize);
 
@@ -56,7 +56,7 @@ where
                 if let Some(ref message) = label.message {
                     writeln!(writer, "- {}", message)?
                 }
-            }
+            },
             Some(file) => {
                 let (start_line, column) =
                     file.location(label.span.start()).expect("location_start");
@@ -124,7 +124,7 @@ where
                         let line = file
                             .src_slice(line_span)
                             .expect("line")
-                            .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
+                            .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
                         writer.set_color(&label_color)?;
                         writeln!(writer, "{}", line)?;
                     }
@@ -144,7 +144,7 @@ where
                 let suffix = file
                     .src_slice(end_line_span.with_start(label.span.end()))
                     .expect("suffix")
-                    .trim_right_matches(|ch: char| ch == '\r' || ch == '\n');
+                    .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
                 writer.reset()?;
                 writeln!(writer, "{}", suffix)?;
 
@@ -175,12 +175,12 @@ where
                         writer.set_color(&label_color)?;
                         writeln!(writer, " {}", label)?;
                         writer.reset()?;
-                    }
+                    },
                 }
                 writer.set_color(&line_location_color)?;
                 writeln!(writer, "{} |", Pad(' ', line_location_width))?;
                 writer.reset()?;
-            }
+            },
         }
     }
     Ok(())

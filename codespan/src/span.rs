@@ -1,7 +1,6 @@
-use std::cmp::Ordering;
-use std::{cmp, fmt};
+use std::{cmp, cmp::Ordering, fmt};
 
-use index::{ByteIndex, Index};
+use crate::index::{ByteIndex, Index};
 
 /// A region of code in a source file
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Ord, PartialOrd)]
@@ -49,6 +48,13 @@ impl<I: Ord> Span<I> {
         J: Ord,
     {
         Span::new(f(self.start), f(self.end))
+    }
+}
+
+impl<I> Span<I> {
+    /// Create a span like `new` but does not check that `start <= end`
+    pub const fn new_unchecked(start: I, end: I) -> Span<I> {
+        Span { start, end }
     }
 }
 
