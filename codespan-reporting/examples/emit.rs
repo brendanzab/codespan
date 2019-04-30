@@ -1,8 +1,3 @@
-extern crate codespan;
-extern crate codespan_reporting;
-#[macro_use]
-extern crate structopt;
-
 use structopt::StructOpt;
 
 use codespan::{CodeMap, Span};

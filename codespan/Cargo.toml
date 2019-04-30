@@ -8,6 +8,7 @@ description = "Data structures for tracking locations in source code"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan"
+edition = "2018"
 
 [dependencies]
 failure = "0.1.1"

@@ -9,6 +9,7 @@ homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-reporting"
 exclude = ["assets/**"]
+edition = "2018"
 
 [dependencies]
 codespan = { path = "../codespan", version = "0.2.1" } # CODESPAN

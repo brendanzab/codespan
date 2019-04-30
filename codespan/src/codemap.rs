@@ -4,8 +4,10 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 
-use crate::filemap::{FileMap, FileName};
-use crate::index::{ByteIndex, ByteOffset, RawIndex};
+use crate::{
+    filemap::{FileMap, FileName},
+    index::{ByteIndex, ByteOffset, RawIndex},
+};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -115,7 +117,10 @@ impl<S: AsRef<str>> CodeMap<S> {
 
 impl<S: AsRef<str> + From<String>> CodeMap<S> {
     /// Adds a filemap to the codemap with the given name and source string
-    pub fn add_filemap_from_disk<P: Into<PathBuf>>(&mut self, name: P) -> io::Result<Arc<FileMap<S>>> {
+    pub fn add_filemap_from_disk<P: Into<PathBuf>>(
+        &mut self,
+        name: P,
+    ) -> io::Result<Arc<FileMap<S>>> {
         let file = Arc::new(FileMap::from_disk(name, self.next_start_index())?);
         self.files.push(file.clone());
         Ok(file)
@@ -124,18 +129,14 @@ impl<S: AsRef<str> + From<String>> CodeMap<S> {
 
 impl<S> Default for CodeMap<S> {
     fn default() -> Self {
-        CodeMap {
-            files: vec![],
-        }
+        CodeMap { files: vec![] }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::index::{ByteIndex, RawIndex};
     use crate::span::Span;
 
     fn check_maps(code_map: &CodeMap, files: &[(RawIndex, &str, &str)]) {

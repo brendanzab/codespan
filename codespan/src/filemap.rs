@@ -363,10 +363,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use crate::{CodeMap, FileMap, FileName};
 
     use super::*;
+
+    use std::sync::Arc;
+
+    use crate::CodeMap;
 
     struct TestData {
         filemap: Arc<FileMap>,

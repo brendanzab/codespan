@@ -1,5 +1,4 @@
-use std::cmp::Ordering;
-use std::{cmp, fmt};
+use std::{cmp, cmp::Ordering, fmt};
 
 use crate::index::{ByteIndex, Index};
 
