@@ -25,12 +25,12 @@ impl LineIndex {
     /// assert_eq!(format!("{}", LineIndex(0).number()), "1");
     /// assert_eq!(format!("{}", LineIndex(3).number()), "4");
     /// ```
-    pub fn number(self) -> LineNumber {
+    pub const fn number(self) -> LineNumber {
         LineNumber(self.0 + 1)
     }
 
     /// Convert the index into a `usize`, for use in array indexing
-    pub fn to_usize(self) -> usize {
+    pub const fn to_usize(self) -> usize {
         self.0 as usize
     }
 }
@@ -110,12 +110,12 @@ impl ColumnIndex {
     /// assert_eq!(format!("{}", ColumnIndex(0).number()), "1");
     /// assert_eq!(format!("{}", ColumnIndex(3).number()), "4");
     /// ```
-    pub fn number(self) -> ColumnNumber {
+    pub const fn number(self) -> ColumnNumber {
         ColumnNumber(self.0 + 1)
     }
 
     /// Convert the index into a `usize`, for use in array indexing
-    pub fn to_usize(self) -> usize {
+    pub const fn to_usize(self) -> usize {
         self.0 as usize
     }
 }
@@ -211,12 +211,12 @@ pub struct ByteIndex(pub RawIndex);
 
 impl ByteIndex {
     /// A byte position that will never point to a valid file
-    pub fn none() -> ByteIndex {
+    pub const fn none() -> ByteIndex {
         ByteIndex(0)
     }
 
     /// Convert the position into a `usize`, for use in array indexing
-    pub fn to_usize(self) -> usize {
+    pub const fn to_usize(self) -> usize {
         self.0 as usize
     }
 }
@@ -277,7 +277,7 @@ impl ByteOffset {
     }
 
     /// Convert the offset into a `usize`, for use in array indexing
-    pub fn to_usize(self) -> usize {
+    pub const fn to_usize(self) -> usize {
         self.0 as usize
     }
 }
