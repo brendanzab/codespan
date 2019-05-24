@@ -11,7 +11,7 @@ extern crate languageserver_types;
 extern crate url;
 
 use codespan::{
-    ByteIndex, ByteIndexError, ByteOffset, CodeMap, ColumnIndex, FileMap, FileName, LineIndex,
+    ByteIndex, ByteIndexError, ByteOffset, CodeMap, ColumnIndex, FileMap, LineIndex,
     LineIndexError, LocationError, RawIndex, RawOffset, Span,
 };
 use codespan_reporting::{Diagnostic, Severity};
@@ -23,7 +23,7 @@ pub enum Error {
     #[fail(display = "Position is outside of codemap {}", _0)]
     SpanOutsideCodeMap(ByteIndex),
     #[fail(display = "Unable to correlate filename `{}` to url", _0)]
-    UnableToCorrelateFilename(FileName),
+    UnableToCorrelateFilename(String),
     #[fail(display = "{}", _0)]
     ByteIndexError(#[cause] ByteIndexError),
     #[fail(display = "{}", _0)]
@@ -188,7 +188,7 @@ pub fn make_lsp_diagnostic<F>(
     mut codespan_name_to_file: F,
 ) -> Result<lsp::Diagnostic, Error>
 where
-    F: FnMut(&FileName) -> Result<Url, ()>,
+    F: FnMut(&str) -> Result<Url, ()>,
 {
     use codespan_reporting::LabelStyle;
 
@@ -233,7 +233,7 @@ where
             };
 
             let uri = codespan_name_to_file(file_map.name())
-                .map_err(|()| Error::UnableToCorrelateFilename(file_map.name().clone()))?;
+                .map_err(|()| Error::UnableToCorrelateFilename(file_map.name().to_owned()))?;
 
             Ok(lsp::DiagnosticRelatedInformation {
                 location: lsp::Location { uri, range },

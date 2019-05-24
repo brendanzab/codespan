@@ -1,127 +1,13 @@
 //! Various source mapping utilities
 
-use std::borrow::Cow;
-use std::path::{Path, PathBuf};
-use std::{fmt, io};
+use std::io;
 
+use crate::index::{
+    ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset,
+};
+use crate::span::ByteSpan;
 #[cfg(feature = "memory_usage")]
 use heapsize::{self, HeapSizeOf};
-use crate::index::{ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset};
-use crate::span::ByteSpan;
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-pub enum FileName {
-    /// A real file on disk
-    Real(PathBuf),
-    /// A synthetic file, eg. from the REPL
-    Virtual(Cow<'static, str>),
-}
-
-impl From<PathBuf> for FileName {
-    fn from(name: PathBuf) -> FileName {
-        FileName::real(name)
-    }
-}
-
-impl From<FileName> for PathBuf {
-    fn from(name: FileName) -> PathBuf {
-        match name {
-            FileName::Real(path) => path,
-            FileName::Virtual(Cow::Owned(owned)) => PathBuf::from(owned),
-            FileName::Virtual(Cow::Borrowed(borrowed)) => PathBuf::from(borrowed),
-        }
-    }
-}
-
-impl<'a> From<&'a FileName> for &'a Path {
-    fn from(name: &'a FileName) -> &'a Path {
-        match *name {
-            FileName::Real(ref path) => path,
-            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
-        }
-    }
-}
-
-impl<'a> From<&'a Path> for FileName {
-    fn from(name: &Path) -> FileName {
-        FileName::real(name)
-    }
-}
-
-impl From<String> for FileName {
-    fn from(name: String) -> FileName {
-        FileName::virtual_(name)
-    }
-}
-
-impl From<&'static str> for FileName {
-    fn from(name: &'static str) -> FileName {
-        FileName::virtual_(name)
-    }
-}
-
-impl AsRef<Path> for FileName {
-    fn as_ref(&self) -> &Path {
-        match *self {
-            FileName::Real(ref path) => path.as_ref(),
-            FileName::Virtual(ref cow) => Path::new(cow.as_ref()),
-        }
-    }
-}
-
-impl PartialEq<Path> for FileName {
-    fn eq(&self, other: &Path) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl PartialEq<PathBuf> for FileName {
-    fn eq(&self, other: &PathBuf) -> bool {
-        self.as_ref() == other.as_path()
-    }
-}
-
-impl FileName {
-    pub fn real<T: Into<PathBuf>>(name: T) -> FileName {
-        FileName::Real(name.into())
-    }
-
-    pub fn virtual_<T: Into<Cow<'static, str>>>(name: T) -> FileName {
-        FileName::Virtual(name.into())
-    }
-}
-
-impl fmt::Display for FileName {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            FileName::Real(ref path) => write!(fmt, "{}", path.display()),
-            FileName::Virtual(ref name) => write!(fmt, "<{}>", name),
-        }
-    }
-}
-
-#[cfg(feature = "memory_usage")]
-impl HeapSizeOf for FileName {
-    fn heap_size_of_children(&self) -> usize {
-        match *self {
-            FileName::Virtual(ref s) => s.heap_size_of_children(),
-            FileName::Real(ref path) => {
-                // Reliably finding the amount of memory used by a `PathBuf` is
-                // annoying due to its os-specific nature. We use an
-                // approximation by converting to a string and getting the
-                // raw heap size for the string's buffer, falling back to 0
-                // otherwise. Ideally this should be in the `heapsize` crate.
-                //
-                // This *should* be safe because a `PathBuf` will allocate its
-                // buffer using jemalloc.
-                path.to_str()
-                    .map(|s| unsafe { heapsize::heap_size_of(s.as_ptr()) })
-                    .unwrap_or(0)
-            },
-        }
-    }
-}
 
 #[derive(Debug, Fail, PartialEq)]
 pub enum LineIndexError {
@@ -165,8 +51,9 @@ pub enum SpanError {
 #[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
 /// Some source code
 pub struct FileMap<S = String> {
-    /// The name of the file that the source came from
-    name: FileName,
+    /// The name of the file that the source came from, to be used when
+    /// displaying diagnostics
+    name: String,
     /// The complete source code
     src: S,
     /// The span of the source in the `CodeMap`
@@ -177,16 +64,15 @@ pub struct FileMap<S = String> {
 
 impl<S: AsRef<str> + From<String>> FileMap<S> {
     /// Read some source code from a file, loading it into a filemap
-    pub(crate) fn from_disk<P: Into<PathBuf>>(name: P, start: ByteIndex) -> io::Result<FileMap<S>> {
+    pub(crate) fn from_disk(name: String, start: ByteIndex) -> io::Result<FileMap<S>> {
         use std::fs::File;
         use std::io::Read;
 
-        let name = name.into();
         let mut file = File::open(&name)?;
         let mut src = String::new();
         file.read_to_string(&mut src)?;
 
-        Ok(FileMap::with_index(FileName::Real(name), src.into(), start))
+        Ok(FileMap::with_index(name, src.into(), start))
     }
 }
 
@@ -198,11 +84,11 @@ where
     ///
     /// This can be useful for tests that consist of a single source file. Production code should however
     /// use `CodeMap::add_filemap` or `CodeMap::add_filemap_from_disk` instead.
-    pub fn new(name: FileName, src: S) -> FileMap<S> {
+    pub fn new(name: String, src: S) -> FileMap<S> {
         FileMap::with_index(name, src, ByteIndex(1))
     }
 
-    pub(crate) fn with_index(name: FileName, src: S, start: ByteIndex) -> FileMap<S> {
+    pub(crate) fn with_index(name: String, src: S, start: ByteIndex) -> FileMap<S> {
         use std::iter;
 
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(src.as_ref()));
@@ -225,7 +111,7 @@ where
     }
 
     /// The name of the file that the source came from
-    pub fn name(&self) -> &FileName {
+    pub fn name(&self) -> &str {
         &self.name
     }
 
@@ -386,7 +272,7 @@ mod tests {
                 "bloop\n",
                 "goopey\r\n",
             ];
-            let filemap = codemap.add_filemap(FileName::Virtual("test".into()), lines.concat());
+            let filemap = codemap.add_filemap("test".to_owned(), lines.concat());
 
             TestData { filemap, lines }
         }
