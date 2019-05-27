@@ -1,11 +1,10 @@
 use std::io;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use itertools::Itertools;
 
 use crate::{
-    filemap::{FileMap, FileName},
+    filemap::FileMap,
     index::{ByteIndex, ByteOffset, RawIndex},
 };
 
@@ -41,7 +40,7 @@ impl<S: AsRef<str>> CodeMap<S> {
     }
 
     /// Adds a filemap to the codemap with the given name and source string
-    pub fn add_filemap(&mut self, name: FileName, src: S) -> Arc<FileMap<S>> {
+    pub fn add_filemap(&mut self, name: String, src: S) -> Arc<FileMap<S>> {
         let file = Arc::new(FileMap::with_index(name, src, self.next_start_index()));
         self.files.push(file.clone());
         file
@@ -68,7 +67,7 @@ impl<S: AsRef<str>> CodeMap<S> {
                 - ByteOffset(1);
             if src.as_ref().len() <= (max - min).to_usize() {
                 let start_index = self.files[i].span().start();
-                let name = self.files[i].name().clone();
+                let name = self.files[i].name().to_owned();
                 let new_file = Arc::new(FileMap::with_index(name, src, start_index));
                 self.files[i] = new_file.clone();
                 new_file
@@ -91,12 +90,12 @@ impl<S: AsRef<str>> CodeMap<S> {
                         } else {
                             self.files[j - 1].span().end() + ByteOffset(1)
                         };
-                        let new_file =
-                            Arc::new(FileMap::with_index(file.name().clone(), src, start_index));
+                        let name = file.name().to_owned();
+                        let new_file = Arc::new(FileMap::with_index(name, src, start_index));
                         self.files.insert(j, new_file.clone());
                         new_file
                     },
-                    None => self.add_filemap(file.name().clone(), src),
+                    None => self.add_filemap(file.name().to_owned(), src),
                 }
             }
         })
@@ -117,10 +116,7 @@ impl<S: AsRef<str>> CodeMap<S> {
 
 impl<S: AsRef<str> + From<String>> CodeMap<S> {
     /// Adds a filemap to the codemap with the given name and source string
-    pub fn add_filemap_from_disk<P: Into<PathBuf>>(
-        &mut self,
-        name: P,
-    ) -> io::Result<Arc<FileMap<S>>> {
+    pub fn add_filemap_from_disk(&mut self, name: String) -> io::Result<Arc<FileMap<S>>> {
         let file = Arc::new(FileMap::from_disk(name, self.next_start_index())?);
         self.files.push(file.clone());
         Ok(file)
@@ -145,10 +141,7 @@ mod tests {
         let mut prev_span = Span::new(0.into(), 0.into());
         for (i, (file, &(start, name, src))) in code_map.files.iter().zip(files).enumerate() {
             println!("{}: {:?} <=> {:?}", i, file, (start, name, src));
-            match *file.name() {
-                FileName::Virtual(ref virt) => assert_eq!(*virt, name, "At index {}", i),
-                _ => panic!(),
-            }
+            assert_eq!(file.name(), name, "At index {}", i);
             assert_eq!(ByteIndex(start), file.span().start(), "At index {}", i);
             assert!(prev_span.end() < file.span().start(), "At index {}", i);
             assert_eq!(file.src(), src, "At index {}", i);
