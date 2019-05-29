@@ -15,19 +15,19 @@ impl<T: fmt::Display> fmt::Display for Pad<T> {
     }
 }
 
+// Blue is really difficult to see on the standard windows command line
+// FIXME: Make colors configurable
+#[cfg(windows)]
+const BLUE: Color = Color::Cyan;
+#[cfg(not(windows))]
+const BLUE: Color = Color::Blue;
+
 pub fn emit<W, S>(mut writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
 where
     W: WriteColor,
     S: AsRef<str>,
 {
-    let line_location_color = ColorSpec::new()
-        // Blue is really difficult to see on the standard windows command line
-        .set_fg(Some(if cfg!(windows) {
-            Color::Cyan
-        } else {
-            Color::Blue
-        }))
-        .clone();
+    let line_location_color = ColorSpec::new().set_fg(Some(BLUE)).clone();
     let diagnostic_color = ColorSpec::new()
         .set_fg(Some(diagnostic.severity.color()))
         .clone();
@@ -76,13 +76,7 @@ where
 
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
-                    LabelStyle::Secondary => ColorSpec::new()
-                        .set_fg(Some(if cfg!(windows) {
-                            Color::Cyan
-                        } else {
-                            Color::Blue
-                        }))
-                        .clone(),
+                    LabelStyle::Secondary => ColorSpec::new().set_fg(Some(BLUE)).clone(),
                 };
 
                 // Write prefix to marked section
