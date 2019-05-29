@@ -2,7 +2,7 @@ use codespan::{CodeMap, LineIndex, RawIndex};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
-use crate::{Diagnostic, LabelStyle};
+use crate::{Diagnostic, LabelStyle, Severity};
 
 // Blue is really difficult to see on the standard windows command line
 // FIXME: Make colors configurable
@@ -18,7 +18,7 @@ where
 {
     let line_location_color = ColorSpec::new().set_fg(Some(BLUE)).clone();
     let diagnostic_color = ColorSpec::new()
-        .set_fg(Some(diagnostic.severity.color()))
+        .set_fg(Some(severity_color(diagnostic.severity)))
         .clone();
 
     let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
@@ -28,7 +28,7 @@ where
     writer.set_color(
         &highlight_color
             .clone()
-            .set_fg(Some(diagnostic.severity.color())),
+            .set_fg(Some(severity_color(diagnostic.severity))),
     )?;
 
     // Severity
@@ -36,7 +36,7 @@ where
     // ```
     // error
     // ```
-    write!(writer, "{}", diagnostic.severity)?;
+    write!(writer, "{}", severity_name(diagnostic.severity))?;
 
     // Error code
     //
@@ -168,11 +168,6 @@ where
 
                 // Write mark and label
 
-                let mark = match label.style {
-                    LabelStyle::Primary => '^',
-                    LabelStyle::Secondary => '-',
-                };
-
                 writer.set_color(&line_location_color)?;
                 write!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 writer.reset()?;
@@ -180,7 +175,7 @@ where
                 writer.set_color(&label_color)?;
                 write!(writer, "{: <width$}", "", width = prefix.len())?;
                 for _ in 0..mark_len {
-                    write!(writer, "{}", mark)?;
+                    write!(writer, "{}", underline_mark(label.style))?;
                 }
                 writer.reset()?;
 
@@ -196,4 +191,33 @@ where
         }
     }
     Ok(())
+}
+
+/// Return the termcolor to use when rendering messages of this diagnostic severity.
+fn severity_color(severity: Severity) -> Color {
+    match severity {
+        Severity::Bug | Severity::Error => Color::Red,
+        Severity::Warning => Color::Yellow,
+        Severity::Note => Color::Green,
+        Severity::Help => Color::Cyan,
+    }
+}
+
+/// A string that explains this diagnostic severity.
+fn severity_name(severity: Severity) -> &'static str {
+    match severity {
+        Severity::Bug => "bug",
+        Severity::Error => "error",
+        Severity::Warning => "warning",
+        Severity::Note => "note",
+        Severity::Help => "help",
+    }
+}
+
+/// The mark used for the underlined section of code.
+fn underline_mark(label_style: LabelStyle) -> char {
+    match label_style {
+        LabelStyle::Primary => '^',
+        LabelStyle::Secondary => '-',
+    }
 }

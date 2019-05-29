@@ -2,9 +2,8 @@ extern crate codespan;
 pub extern crate termcolor;
 
 use std::cmp::Ordering;
-use std::fmt;
 use std::str::FromStr;
-use termcolor::{Color, ColorChoice};
+use termcolor::ColorChoice;
 
 #[cfg(feature = "memory_usage")]
 extern crate heapsize;
@@ -68,35 +67,6 @@ impl Severity {
 impl PartialOrd for Severity {
     fn partial_cmp(&self, other: &Severity) -> Option<Ordering> {
         u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
-    }
-}
-
-impl fmt::Display for Severity {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.to_str().fmt(f)
-    }
-}
-
-impl Severity {
-    /// Return the termcolor to use when rendering messages of this diagnostic severity
-    pub fn color(self) -> Color {
-        match self {
-            Severity::Bug | Severity::Error => Color::Red,
-            Severity::Warning => Color::Yellow,
-            Severity::Note => Color::Green,
-            Severity::Help => Color::Cyan,
-        }
-    }
-
-    /// A string that explains this diagnostic severity
-    pub fn to_str(self) -> &'static str {
-        match self {
-            Severity::Bug => "error: internal compiler error",
-            Severity::Error => "error",
-            Severity::Warning => "warning",
-            Severity::Note => "note",
-            Severity::Help => "help",
-        }
     }
 }
 
