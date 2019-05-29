@@ -1,4 +1,4 @@
-use codespan::{CodeMap, LineIndex, LineNumber};
+use codespan::{CodeMap, LineIndex, RawIndex};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -81,27 +81,29 @@ where
                 write!(writer, "{}", prefix)?;
 
                 // Write marked section
-                //
-                let LineNumber(start) = start_line.number();
-                let LineNumber(end) = end_line.number();
+                let mark_len = if start_line == end_line {
+                    // Single line
 
-                let mark_len = if start == end {
                     let marked = file.src_slice(label.span).expect("marked");
                     writer.set_color(&label_color)?;
                     write!(writer, "{}", marked)?;
                     marked.len()
                 } else {
+                    // Multiple lines
+
                     let marked = file
                         .src_slice(start_line_span.with_start(label.span.start()))
                         .expect("start_of_marked");
                     writer.set_color(&label_color)?;
                     write!(writer, "{}", marked)?;
 
-                    for i in start..(end - 1) {
+                    for line_index in ((start_line.to_usize() + 1)..end_line.to_usize())
+                        .map(|i| LineIndex::from(i as RawIndex))
+                    {
                         writer.set_color(&line_location_color)?;
-                        write!(writer, "{} | ", (i + 1).to_string())?;
+                        write!(writer, "{} | ", line_index.number())?;
 
-                        let line_span = file.line_span(LineIndex(i)).expect("marked_line_span");
+                        let line_span = file.line_span(line_index).expect("marked_line_span");
                         let line = file
                             .src_slice(line_span)
                             .expect("line")
@@ -111,7 +113,7 @@ where
                     }
 
                     writer.set_color(&line_location_color)?;
-                    write!(writer, "{} | ", end)?;
+                    write!(writer, "{} | ", end_line.number())?;
                     let line = file
                         .src_slice(end_line_span.with_end(label.span.end()))
                         .expect("line");
