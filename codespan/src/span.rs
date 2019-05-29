@@ -1,3 +1,5 @@
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 use std::{cmp, cmp::Ordering, fmt};
 
 use crate::index::{ByteIndex, Index};
@@ -5,7 +7,7 @@ use crate::index::{ByteIndex, Index};
 /// A region of code in a source file
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct Span<I> {
     start: I,
     end: I,

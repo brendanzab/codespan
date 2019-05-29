@@ -1,24 +1,13 @@
-extern crate codespan;
-pub extern crate termcolor;
-
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use termcolor::ColorChoice;
 
-#[cfg(feature = "memory_usage")]
-extern crate heapsize;
-#[cfg(feature = "memory_usage")]
-#[macro_use]
-extern crate heapsize_derive;
-
-#[cfg(feature = "serialization")]
-extern crate serde;
-#[cfg(feature = "serialization")]
-#[macro_use]
-extern crate serde_derive;
-
 mod diagnostic;
 mod emitter;
+
+pub use termcolor;
 
 pub use self::diagnostic::{Diagnostic, Label, LabelStyle};
 pub use self::emitter::emit;
@@ -36,7 +25,7 @@ pub use self::emitter::emit;
 /// assert!(Severity::Note > Severity::Help);
 /// ```
 #[derive(Copy, Clone, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -77,10 +66,6 @@ impl PartialOrd for Severity {
 /// # Example
 ///
 /// ```rust
-/// extern crate codespan_reporting;
-/// #[macro_use]
-/// extern crate structopt;
-///
 /// use structopt::StructOpt;
 /// use codespan_reporting::termcolor::StandardStream;
 /// use codespan_reporting::ColorArg;

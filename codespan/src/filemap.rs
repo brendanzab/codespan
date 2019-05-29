@@ -1,21 +1,21 @@
 //! Various source mapping utilities
 
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 use std::io;
 
 use crate::index::{
     ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset,
 };
 use crate::span::ByteSpan;
-#[cfg(feature = "memory_usage")]
-use heapsize::{self, HeapSizeOf};
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, failure::Fail, PartialEq)]
 pub enum LineIndexError {
     #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
     OutOfBounds { given: LineIndex, max: LineIndex },
 }
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, failure::Fail, PartialEq)]
 pub enum ByteIndexError {
     #[fail(
         display = "Byte index out of bounds - given: {}, span: {}",
@@ -29,7 +29,7 @@ pub enum ByteIndexError {
     InvalidCharBoundary { given: ByteIndex },
 }
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, failure::Fail, PartialEq)]
 pub enum LocationError {
     #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
     LineOutOfBounds { given: LineIndex, max: LineIndex },
@@ -40,7 +40,7 @@ pub enum LocationError {
     },
 }
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, failure::Fail, PartialEq)]
 pub enum SpanError {
     #[fail(display = "Span out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: ByteSpan, span: ByteSpan },
@@ -48,7 +48,7 @@ pub enum SpanError {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 /// Some source code
 pub struct FileMap<S = String> {
     /// The name of the file that the source came from, to be used when

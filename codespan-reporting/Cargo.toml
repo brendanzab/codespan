@@ -15,13 +15,12 @@ edition = "2018"
 codespan = { path = "../codespan", version = "0.3.0" } # CODESPAN
 heapsize = { version = "0.4", optional = true }
 heapsize_derive = { version = "0.1", optional = true }
-serde_derive = { version = "1", optional = true }
-serde = { version = "1", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
 termcolor = "1.0.4"
 
 [dev-dependencies]
 structopt = "0.2.7"
 
 [features]
-serialization = ["serde", "serde/rc", "serde_derive", "codespan/serialization"]
+serialization = ["serde", "serde/rc", "codespan/serialization"]
 memory_usage = ["heapsize_derive", "heapsize", "codespan/memory_usage"]

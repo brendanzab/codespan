@@ -1,12 +1,14 @@
 //! Diagnostic reporting support for the codespan crate
 
 use codespan::ByteSpan;
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 
 use crate::Severity;
 
 /// A style for the label
 #[derive(Copy, Clone, PartialEq, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// The main focus of the diagnostic
@@ -17,7 +19,7 @@ pub enum LabelStyle {
 
 /// A label describing an underlined region of code associated with a diagnostic
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
     /// The span we are going to include in the final snippet.
@@ -53,7 +55,7 @@ impl Label {
 
 /// Represents a diagnostic message and associated child messages.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic {
     /// The overall severity of the diagnostic

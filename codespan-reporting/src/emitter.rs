@@ -92,7 +92,9 @@ where
 
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
-                    LabelStyle::Secondary => ColorSpec::new().set_fg(Some(secondary_color())).clone(),
+                    LabelStyle::Secondary => {
+                        ColorSpec::new().set_fg(Some(secondary_color())).clone()
+                    },
                 };
 
                 // Write prefix to marked section
