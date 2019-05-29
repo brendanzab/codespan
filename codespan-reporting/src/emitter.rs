@@ -4,19 +4,12 @@ use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::{Diagnostic, LabelStyle, Severity};
 
-// Blue is really difficult to see on the standard windows command line
-// FIXME: Make colors configurable
-#[cfg(windows)]
-const BLUE: Color = Color::Cyan;
-#[cfg(not(windows))]
-const BLUE: Color = Color::Blue;
-
 pub fn emit<W, S>(mut writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
 where
     W: WriteColor,
     S: AsRef<str>,
 {
-    let line_location_color = ColorSpec::new().set_fg(Some(BLUE)).clone();
+    let gutter_color = ColorSpec::new().set_fg(Some(gutter_color())).clone();
     let diagnostic_color = ColorSpec::new()
         .set_fg(Some(severity_color(diagnostic.severity)))
         .clone();
@@ -99,12 +92,12 @@ where
 
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
-                    LabelStyle::Secondary => ColorSpec::new().set_fg(Some(BLUE)).clone(),
+                    LabelStyle::Secondary => ColorSpec::new().set_fg(Some(secondary_color())).clone(),
                 };
 
                 // Write prefix to marked section
 
-                writer.set_color(&line_location_color)?;
+                writer.set_color(&gutter_color)?;
                 let line_string = start_line.number().to_string();
                 writeln!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 write!(writer, "{} | ", line_string)?;
@@ -135,7 +128,7 @@ where
                     for line_index in ((start_line.to_usize() + 1)..end_line.to_usize())
                         .map(|i| LineIndex::from(i as RawIndex))
                     {
-                        writer.set_color(&line_location_color)?;
+                        writer.set_color(&gutter_color)?;
                         write!(writer, "{} | ", line_index.number())?;
 
                         let line_span = file.line_span(line_index).expect("marked_line_span");
@@ -147,7 +140,7 @@ where
                         writeln!(writer, "{}", line)?;
                     }
 
-                    writer.set_color(&line_location_color)?;
+                    writer.set_color(&gutter_color)?;
                     write!(writer, "{} | ", end_line.number())?;
                     let line = file
                         .src_slice(end_line_span.with_end(label.span.end()))
@@ -168,7 +161,7 @@ where
 
                 // Write mark and label
 
-                writer.set_color(&line_location_color)?;
+                writer.set_color(&gutter_color)?;
                 write!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 writer.reset()?;
 
@@ -184,7 +177,7 @@ where
                     writeln!(writer, " {}", label.message)?;
                     writer.reset()?;
                 }
-                writer.set_color(&line_location_color)?;
+                writer.set_color(&gutter_color)?;
                 writeln!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 writer.reset()?;
             },
@@ -192,6 +185,13 @@ where
     }
     Ok(())
 }
+
+// Blue is really difficult to see on the standard windows command line
+// FIXME: Make colors configurable
+#[cfg(windows)]
+const BLUE: Color = Color::Cyan;
+#[cfg(not(windows))]
+const BLUE: Color = Color::Blue;
 
 /// Return the termcolor to use when rendering messages of this diagnostic severity.
 fn severity_color(severity: Severity) -> Color {
@@ -201,6 +201,16 @@ fn severity_color(severity: Severity) -> Color {
         Severity::Note => Color::Green,
         Severity::Help => Color::Cyan,
     }
+}
+
+/// The color to use for secondary highlights.
+fn secondary_color() -> Color {
+    BLUE
+}
+
+/// The color to use for gutters highlights.
+fn gutter_color() -> Color {
+    BLUE
 }
 
 /// A string that explains this diagnostic severity.
