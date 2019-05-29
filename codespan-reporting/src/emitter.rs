@@ -1,19 +1,8 @@
 use codespan::{CodeMap, LineIndex, LineNumber};
-use std::{fmt, io};
+use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::{Diagnostic, LabelStyle};
-
-struct Pad<T>(T, usize);
-
-impl<T: fmt::Display> fmt::Display for Pad<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for _ in 0..(self.1) {
-            self.0.fmt(f)?;
-        }
-        Ok(())
-    }
-}
 
 // Blue is really difficult to see on the standard windows command line
 // FIXME: Make colors configurable
@@ -72,7 +61,6 @@ where
                 let start_line_span = file.line_span(start_line).expect("line_span");
                 let end_line_span = file.line_span(end_line).expect("line_span");
                 let line_location_width = end_line.number().to_string().len();
-                let line_location_prefix = format!("{} | ", Pad(' ', line_location_width));
 
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
@@ -83,7 +71,7 @@ where
                 //
                 writer.set_color(&line_location_color)?;
                 let line_string = start_line.number().to_string();
-                writeln!(writer, "{} |", Pad(' ', line_location_width))?;
+                writeln!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 write!(writer, "{} | ", line_string)?;
 
                 let prefix = file
@@ -149,11 +137,14 @@ where
                 };
 
                 writer.set_color(&line_location_color)?;
-                write!(writer, "{}", line_location_prefix)?;
+                write!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 writer.reset()?;
 
                 writer.set_color(&label_color)?;
-                write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len))?;
+                write!(writer, "{: <width$}", "", width = prefix.len())?;
+                for _ in 0..mark_len {
+                    write!(writer, "{}", mark)?;
+                }
                 writer.reset()?;
 
                 if !label.message.is_empty() {
@@ -162,7 +153,7 @@ where
                     writer.reset()?;
                 }
                 writer.set_color(&line_location_color)?;
-                writeln!(writer, "{} |", Pad(' ', line_location_width))?;
+                writeln!(writer, "{: <width$} | ", "", width = line_location_width)?;
                 writer.reset()?;
             },
         }
