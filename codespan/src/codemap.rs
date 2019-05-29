@@ -1,3 +1,5 @@
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 use std::io;
 use std::sync::Arc;
 
@@ -10,7 +12,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct CodeMap<S = String> {
     files: Vec<Arc<FileMap<S>>>,
 }

@@ -1,25 +1,13 @@
-extern crate codespan;
-pub extern crate termcolor;
-
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use std::fmt;
 use std::str::FromStr;
-use termcolor::{Color, ColorChoice};
-
-#[cfg(feature = "memory_usage")]
-extern crate heapsize;
-#[cfg(feature = "memory_usage")]
-#[macro_use]
-extern crate heapsize_derive;
-
-#[cfg(feature = "serialization")]
-extern crate serde;
-#[cfg(feature = "serialization")]
-#[macro_use]
-extern crate serde_derive;
+use termcolor::ColorChoice;
 
 mod diagnostic;
 mod emitter;
+
+pub use termcolor;
 
 pub use self::diagnostic::{Diagnostic, Label, LabelStyle};
 pub use self::emitter::emit;
@@ -37,7 +25,7 @@ pub use self::emitter::emit;
 /// assert!(Severity::Note > Severity::Help);
 /// ```
 #[derive(Copy, Clone, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(HeapSizeOf))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -71,35 +59,6 @@ impl PartialOrd for Severity {
     }
 }
 
-impl fmt::Display for Severity {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.to_str().fmt(f)
-    }
-}
-
-impl Severity {
-    /// Return the termcolor to use when rendering messages of this diagnostic severity
-    pub fn color(self) -> Color {
-        match self {
-            Severity::Bug | Severity::Error => Color::Red,
-            Severity::Warning => Color::Yellow,
-            Severity::Note => Color::Green,
-            Severity::Help => Color::Cyan,
-        }
-    }
-
-    /// A string that explains this diagnostic severity
-    pub fn to_str(self) -> &'static str {
-        match self {
-            Severity::Bug => "error: internal compiler error",
-            Severity::Error => "error",
-            Severity::Warning => "warning",
-            Severity::Note => "note",
-            Severity::Help => "help",
-        }
-    }
-}
-
 /// A command line argument that configures the coloring of the output
 ///
 /// This can be used with command line argument parsers like `clap` or `structopt`.
@@ -107,10 +66,6 @@ impl Severity {
 /// # Example
 ///
 /// ```rust
-/// extern crate codespan_reporting;
-/// #[macro_use]
-/// extern crate structopt;
-///
 /// use structopt::StructOpt;
 /// use codespan_reporting::termcolor::StandardStream;
 /// use codespan_reporting::ColorArg;

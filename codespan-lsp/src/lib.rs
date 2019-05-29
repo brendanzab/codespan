@@ -1,15 +1,5 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
-extern crate codespan;
-extern crate codespan_reporting;
-
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-
-extern crate languageserver_types;
-extern crate url;
-
 use codespan::{
     ByteIndex, ByteIndexError, ByteOffset, CodeMap, ColumnIndex, FileMap, LineIndex,
     LineIndexError, LocationError, RawIndex, RawOffset, Span,
@@ -18,7 +8,7 @@ use codespan_reporting::{Diagnostic, Severity};
 use languageserver_types as lsp;
 use url::Url;
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, failure::Fail, PartialEq)]
 pub enum Error {
     #[fail(display = "Position is outside of codemap {}", _0)]
     SpanOutsideCodeMap(ByteIndex),
@@ -237,7 +227,7 @@ where
 
             Ok(lsp::DiagnosticRelatedInformation {
                 location: lsp::Location { uri, range },
-                message: label.message.unwrap_or(String::new()),
+                message: label.message,
             })
         })
         .collect::<Result<Vec<_>, Error>>()?;
