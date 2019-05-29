@@ -237,7 +237,7 @@ where
 
             Ok(lsp::DiagnosticRelatedInformation {
                 location: lsp::Location { uri, range },
-                message: label.message.unwrap_or(String::new()),
+                message: label.message,
             })
         })
         .collect::<Result<Vec<_>, Error>>()?;

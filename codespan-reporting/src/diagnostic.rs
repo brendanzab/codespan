@@ -23,7 +23,7 @@ pub struct Label {
     /// The span we are going to include in the final snippet.
     pub span: ByteSpan,
     /// A message to provide some additional information for the underlined code.
-    pub message: Option<String>,
+    pub message: String,
     /// The style to use for the label.
     pub style: LabelStyle,
 }
@@ -32,7 +32,7 @@ impl Label {
     pub fn new(span: ByteSpan, style: LabelStyle) -> Label {
         Label {
             span,
-            message: None,
+            message: String::new(),
             style,
         }
     }
@@ -46,7 +46,7 @@ impl Label {
     }
 
     pub fn with_message<S: Into<String>>(mut self, message: S) -> Label {
-        self.message = Some(message.into());
+        self.message = message.into();
         self
     }
 }

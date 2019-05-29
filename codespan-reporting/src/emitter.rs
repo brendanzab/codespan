@@ -20,7 +20,6 @@ where
     W: WriteColor,
     S: AsRef<str>,
 {
-    let supports_color = writer.supports_color();
     let line_location_color = ColorSpec::new()
         // Blue is really difficult to see on the standard windows command line
         .set_fg(Some(if cfg!(windows) {
@@ -53,8 +52,8 @@ where
     for label in &diagnostic.labels {
         match codemap.find_file(label.span.start()) {
             None => {
-                if let Some(ref message) = label.message {
-                    writeln!(writer, "- {}", message)?
+                if !label.message.is_empty() {
+                    writeln!(writer, "- {}", label.message)?
                 }
             },
             Some(file) => {
@@ -155,27 +154,18 @@ where
                     LabelStyle::Secondary => '-',
                 };
 
-                if !supports_color || label.message.is_some() {
-                    writer.set_color(&line_location_color)?;
-                    write!(writer, "{}", line_location_prefix)?;
-                    writer.reset()?;
+                writer.set_color(&line_location_color)?;
+                write!(writer, "{}", line_location_prefix)?;
+                writer.reset()?;
 
+                writer.set_color(&label_color)?;
+                write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len))?;
+                writer.reset()?;
+
+                if !label.message.is_empty() {
                     writer.set_color(&label_color)?;
-                    write!(writer, "{}{}", Pad(' ', prefix.len()), Pad(mark, mark_len))?;
+                    writeln!(writer, " {}", label.message)?;
                     writer.reset()?;
-
-                    if label.message.is_none() {
-                        writeln!(writer)?;
-                    }
-                }
-
-                match label.message {
-                    None => (),
-                    Some(ref label) => {
-                        writer.set_color(&label_color)?;
-                        writeln!(writer, " {}", label)?;
-                        writer.reset()?;
-                    },
                 }
                 writer.set_color(&line_location_color)?;
                 writeln!(writer, "{} |", Pad(' ', line_location_width))?;
