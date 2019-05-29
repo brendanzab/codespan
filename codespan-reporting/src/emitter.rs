@@ -62,6 +62,8 @@ where
                 let (start_line, column) =
                     file.location(label.span.start()).expect("location_start");
                 let (end_line, _) = file.location(label.span.end()).expect("location_end");
+                // Use the length of the last line number as the gutter padding
+                let gutter_padding = format!("{}", end_line.number()).len();
 
                 // File name
                 //
@@ -71,7 +73,9 @@ where
 
                 writeln!(
                     writer,
-                    "- {file}:{line}:{column}",
+                    "{: >width$} - {file}:{line}:{column}",
+                    "",
+                    width = gutter_padding,
                     file = file.name(),
                     line = start_line.number(),
                     column = column.number(),
@@ -80,16 +84,14 @@ where
                 // Source code snippet
                 //
                 // ```
-                //   |
-                // 2 | (+ test "")
-                //   |         ^^ Expected integer but got string
-                //   |
+                //   │
+                // 2 │ (+ test "")
+                //   │         ^^ Expected integer but got string
+                //   │
                 // ```
 
                 let start_line_span = file.line_span(start_line).expect("line_span");
                 let end_line_span = file.line_span(end_line).expect("line_span");
-                // Use the length of the last line number as the gutter padding
-                let gutter_padding = format!("{}", end_line.number()).len();
 
                 let label_color = match label.style {
                     LabelStyle::Primary => diagnostic_color.clone(),
@@ -101,10 +103,10 @@ where
                 // Write prefix to marked section
 
                 writer.set_color(&gutter_color)?;
-                writeln!(writer, "{: >width$} | ", "", width = gutter_padding)?;
+                writeln!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
                 write!(
                     writer,
-                    "{: >width$} | ",
+                    "{: >width$} │ ",
                     start_line.number(),
                     width = gutter_padding,
                 )?;
@@ -138,7 +140,7 @@ where
                         writer.set_color(&gutter_color)?;
                         write!(
                             writer,
-                            "{: >width$} | ",
+                            "{: >width$} │ ",
                             line_index.number(),
                             width = gutter_padding,
                         )?;
@@ -155,7 +157,7 @@ where
                     writer.set_color(&gutter_color)?;
                     write!(
                         writer,
-                        "{: >width$} | ",
+                        "{: >width$} │ ",
                         end_line.number(),
                         width = gutter_padding,
                     )?;
@@ -179,7 +181,7 @@ where
                 // Write mark and label
 
                 writer.set_color(&gutter_color)?;
-                write!(writer, "{: >width$} | ", "", width = gutter_padding)?;
+                write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
                 writer.reset()?;
 
                 writer.set_color(&label_color)?;
@@ -195,7 +197,7 @@ where
                     writer.reset()?;
                 }
                 writer.set_color(&gutter_color)?;
-                writeln!(writer, "{: >width$} | ", "", width = gutter_padding)?;
+                writeln!(writer, "{: >width$} │", "", width = gutter_padding)?;
                 writer.reset()?;
             },
         }
