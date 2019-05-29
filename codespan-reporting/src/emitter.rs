@@ -23,20 +23,40 @@ where
 
     let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
+    // Diagnostic header
+
     writer.set_color(
         &highlight_color
             .clone()
             .set_fg(Some(diagnostic.severity.color())),
     )?;
+
+    // Severity
+    //
+    // ```
+    // error
+    // ```
     write!(writer, "{}", diagnostic.severity)?;
 
-    if let Some(ref code) = diagnostic.code {
+    // Error code
+    //
+    // ```
+    // [E0001]
+    // ```
+    if let Some(code) = &diagnostic.code {
         write!(writer, "[{}]", code)?;
     }
 
+    // Diagnostic message
+    //
+    // ```
+    // : Unexpected type in `+` application
+    // ```
     writer.set_color(&highlight_color)?;
     writeln!(writer, ": {}", diagnostic.message)?;
     writer.reset()?;
+
+    // Diagnostic Labels
 
     for label in &diagnostic.labels {
         match codemap.find_file(label.span.start()) {
@@ -50,6 +70,12 @@ where
                     file.location(label.span.start()).expect("location_start");
                 let (end_line, _) = file.location(label.span.end()).expect("location_end");
 
+                // File name
+                //
+                // ```
+                // - <test>:2:9
+                // ```
+
                 writeln!(
                     writer,
                     "- {file}:{line}:{column}",
@@ -57,6 +83,15 @@ where
                     line = start_line.number(),
                     column = column.number(),
                 )?;
+
+                // Source code snippet
+                //
+                // ```
+                //   |
+                // 2 | (+ test "")
+                //   |         ^^ Expected integer but got string
+                //   |
+                // ```
 
                 let start_line_span = file.line_span(start_line).expect("line_span");
                 let end_line_span = file.line_span(end_line).expect("line_span");
@@ -68,7 +103,7 @@ where
                 };
 
                 // Write prefix to marked section
-                //
+
                 writer.set_color(&line_location_color)?;
                 let line_string = start_line.number().to_string();
                 writeln!(writer, "{: <width$} | ", "", width = line_location_width)?;
@@ -123,7 +158,7 @@ where
                 };
 
                 // Write suffix to marked section
-                //
+
                 let suffix = file
                     .src_slice(end_line_span.with_start(label.span.end()))
                     .expect("suffix")
