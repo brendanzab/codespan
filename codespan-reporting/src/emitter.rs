@@ -70,11 +70,11 @@ where
                 // File name
                 //
                 // ```
-                // - <test>:2:9
+                // ┌╴ <test>:2:9
                 // ```
 
                 writer.set_color(&gutter_spec)?;
-                write!(writer, "{: >width$} - ", "", width = gutter_padding)?;
+                write!(writer, "{: >width$} ┌╴ ", "", width = gutter_padding)?;
                 writer.reset()?;
                 write!(
                     writer,
@@ -91,7 +91,7 @@ where
                 //   │
                 // 2 │ (+ test "")
                 //   │         ^^ Expected integer but got string
-                //   │
+                //   ╵
                 // ```
 
                 let start_line_span = file.line_span(start_line).expect("line_span");
@@ -202,7 +202,7 @@ where
                 writer.reset()?;
 
                 writer.set_color(&gutter_spec)?;
-                write!(writer, "{: >width$} │", "", width = gutter_padding)?;
+                write!(writer, "{: >width$} ╵", "", width = gutter_padding)?;
                 write!(writer, "\n")?;
                 writer.reset()?;
             },
