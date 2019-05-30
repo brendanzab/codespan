@@ -74,46 +74,7 @@ pub fn emit(
     codemap: &CodeMap<impl AsRef<str>>,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
-    let severity_color = config.severity_color(diagnostic.severity);
-    let gutter_spec = ColorSpec::new().set_fg(Some(config.gutter_color)).clone();
-    let header_message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
-    let header_primary_spec = ColorSpec::new()
-        .set_bold(true)
-        .set_intense(true)
-        .set_fg(Some(severity_color))
-        .clone();
-
-    // Diagnostic header
-    //
-    // ```
-    // error[E0001]: Unexpected type in `+` application
-    // ```
-
-    // Write severity name
-    //
-    // ```
-    // error
-    // ```
-    writer.set_color(&header_primary_spec)?;
-    write!(writer, "{}", severity_name(diagnostic.severity))?;
-    if let Some(code) = &diagnostic.code {
-        // Write error code
-        //
-        // ```
-        // [E0001]
-        // ```
-        write!(writer, "[{}]", code)?;
-    }
-
-    // Write diagnostic message
-    //
-    // ```
-    // : Unexpected type in `+` application
-    // ```
-    writer.set_color(&header_message_spec)?;
-    write!(writer, ": {}", diagnostic.message)?;
-    write!(writer, "\n")?;
-    writer.reset()?;
+    Header::new(diagnostic).emit(&mut writer, config)?;
 
     for label in &diagnostic.labels {
         match codemap.find_file(label.span.start()) {
@@ -124,6 +85,7 @@ pub fn emit(
                 }
             },
             Some(file) => {
+                let gutter_spec = ColorSpec::new().set_fg(Some(config.gutter_color)).clone();
                 let (start_line, start_column) =
                     file.location(label.span.start()).expect("location_start");
                 let (end_line, _) = file.location(label.span.end()).expect("location_end");
@@ -282,13 +244,71 @@ pub fn emit(
     Ok(())
 }
 
-/// A string that explains this diagnostic severity.
-fn severity_name(severity: Severity) -> &'static str {
-    match severity {
-        Severity::Bug => "bug",
-        Severity::Error => "error",
-        Severity::Warning => "warning",
-        Severity::Note => "note",
-        Severity::Help => "help",
+/// Diagnostic header
+///
+/// ```
+/// error[E0001]: Unexpected type in `+` application
+/// ```
+#[derive(Copy, Clone, Debug)]
+struct Header<'doc> {
+    severity: Severity,
+    code: Option<&'doc str>,
+    message: &'doc str,
+}
+
+impl<'doc> Header<'doc> {
+    fn new(diagnostic: &'doc Diagnostic) -> Header<'doc> {
+        Header {
+            severity: diagnostic.severity,
+            code: diagnostic.code.as_ref().map(String::as_str),
+            message: &diagnostic.message,
+        }
+    }
+
+    fn severity_name(&self) -> &'static str {
+        match self.severity {
+            Severity::Bug => "bug",
+            Severity::Error => "error",
+            Severity::Warning => "warning",
+            Severity::Help => "help",
+            Severity::Note => "note",
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
+        let primary_spec = ColorSpec::new()
+            .set_bold(true)
+            .set_intense(true)
+            .set_fg(Some(config.severity_color(self.severity)))
+            .clone();
+
+        // Write severity name
+        //
+        // ```
+        // error
+        // ```
+        writer.set_color(&primary_spec)?;
+        write!(writer, "{}", self.severity_name())?;
+        if let Some(code) = &self.code {
+            // Write error code
+            //
+            // ```
+            // [E0001]
+            // ```
+            write!(writer, "[{}]", code)?;
+        }
+
+        // Write diagnostic message
+        //
+        // ```
+        // : Unexpected type in `+` application
+        // ```
+        writer.set_color(&message_spec)?;
+        write!(writer, ": {}", self.message)?;
+        write!(writer, "\n")?;
+        writer.reset()?;
+
+        Ok(())
     }
 }
