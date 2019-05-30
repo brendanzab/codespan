@@ -231,8 +231,9 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         let gutter_spec = ColorSpec::new().set_fg(Some(config.gutter_color)).clone();
-        let label_color = self.label_color(config);
-        let label_spec = ColorSpec::new().set_fg(Some(label_color)).clone();
+        let label_spec = ColorSpec::new()
+            .set_fg(Some(self.label_color(config)))
+            .clone();
 
         let (start_line, start_column) = self.file.location(self.start()).expect("location_start");
         let (end_line, _) = self.file.location(self.end()).expect("location_end");
