@@ -10,7 +10,7 @@ mod emitter;
 pub use termcolor;
 
 pub use self::diagnostic::{Diagnostic, Label, LabelStyle};
-pub use self::emitter::emit;
+pub use self::emitter::{emit, Config};
 
 /// A severity level for diagnostic messages
 ///
