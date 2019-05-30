@@ -14,7 +14,11 @@ where
     let primary_spec = ColorSpec::new().set_fg(Some(severity_color)).clone();
     let secondary_spec = ColorSpec::new().set_fg(Some(secondary_color())).clone();
     let header_message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
-    let header_primary_spec = header_message_spec.clone().set_fg(Some(severity_color)).clone();
+    let header_primary_spec = ColorSpec::new()
+        .set_bold(true)
+        .set_intense(true)
+        .set_fg(Some(severity_color))
+        .clone();
 
     // Diagnostic header
 
