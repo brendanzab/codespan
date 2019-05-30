@@ -4,16 +4,28 @@ use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::{Diagnostic, Label, Severity};
 
+/// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
 pub struct Config {
+    /// The color to use when rendering bugs. Defaults to `Color::Red`.
     pub bug_color: Color,
+    /// The color to use when rendering errors. Defaults to `Color::Red`.
     pub error_color: Color,
+    /// The color to use when rendering warnings. Defaults to `Color::Yellow`.
     pub warning_color: Color,
+    /// The color to use when rendering notes. Defaults to `Color::Green`.
     pub note_color: Color,
+    /// The color to use when rendering helps. Defaults to `Color::Cyan`.
     pub help_color: Color,
+    /// The color to use when rendering secondary labels. Defaults to
+    /// `Color::Blue` (or `Color::Cyan` on windows).
     pub secondary_color: Color,
+    /// The color to use when rendering gutters. Defaults to `Color::Blue`
+    /// (or `Color::Cyan` on windows).
     pub gutter_color: Color,
+    /// The character to use when underlining a primary label. Defaults to: `^`.
     pub primary_mark: char,
+    /// The character to use when underlining a secondary label. Defaults to: `-`.
     pub secondary_mark: char,
 }
 
