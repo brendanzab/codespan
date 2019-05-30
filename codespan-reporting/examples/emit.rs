@@ -55,8 +55,9 @@ fn main() {
     let diagnostics = [error, warning];
 
     let writer = StandardStream::stderr(opts.color.into());
+    let config = codespan_reporting::Config::default();
     for diagnostic in &diagnostics {
-        emit(&mut writer.lock(), &code_map, &diagnostic).unwrap();
+        emit(&mut writer.lock(), &config, &code_map, &diagnostic).unwrap();
         println!();
     }
 }

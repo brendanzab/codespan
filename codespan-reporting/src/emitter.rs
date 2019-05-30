@@ -4,15 +4,78 @@ use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::{Diagnostic, LabelStyle, Severity};
 
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub bug_color: Color,
+    pub error_color: Color,
+    pub warning_color: Color,
+    pub note_color: Color,
+    pub help_color: Color,
+    pub secondary_color: Color,
+    pub gutter_color: Color,
+    pub primary_mark: char,
+    pub secondary_mark: char,
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        // Blue is really difficult to see on the standard windows command line
+        #[cfg(windows)]
+        const BLUE: Color = Color::Cyan;
+        #[cfg(not(windows))]
+        const BLUE: Color = Color::Blue;
+
+        Config {
+            bug_color: Color::Red,
+            error_color: Color::Red,
+            warning_color: Color::Yellow,
+            note_color: Color::Green,
+            help_color: Color::Cyan,
+            secondary_color: BLUE,
+            gutter_color: BLUE,
+            primary_mark: '^',
+            secondary_mark: '-',
+        }
+    }
+}
+
+impl Config {
+    /// The color used to mark a given severity.
+    pub fn severity_color(&self, severity: Severity) -> Color {
+        match severity {
+            Severity::Bug => self.bug_color,
+            Severity::Error => self.error_color,
+            Severity::Warning => self.warning_color,
+            Severity::Note => self.note_color,
+            Severity::Help => self.help_color,
+        }
+    }
+
+    /// The style used to mark the labelled section of code.
+    pub fn label_color(&self, severity: Severity, label_style: LabelStyle) -> Color {
+        match label_style {
+            LabelStyle::Primary => self.severity_color(severity),
+            LabelStyle::Secondary => self.secondary_color,
+        }
+    }
+
+    /// The character used for the underlined section of code.
+    fn underline_char(&self, label_style: LabelStyle) -> char {
+        match label_style {
+            LabelStyle::Primary => self.primary_mark,
+            LabelStyle::Secondary => self.secondary_mark,
+        }
+    }
+}
+
 pub fn emit(
     mut writer: impl WriteColor,
+    config: &Config,
     codemap: &CodeMap<impl AsRef<str>>,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
-    let severity_color = severity_color(diagnostic.severity);
-    let gutter_spec = ColorSpec::new().set_fg(Some(gutter_color())).clone();
-    let primary_spec = ColorSpec::new().set_fg(Some(severity_color)).clone();
-    let secondary_spec = ColorSpec::new().set_fg(Some(secondary_color())).clone();
+    let severity_color = config.severity_color(diagnostic.severity);
+    let gutter_spec = ColorSpec::new().set_fg(Some(config.gutter_color)).clone();
     let header_message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
     let header_primary_spec = ColorSpec::new()
         .set_bold(true)
@@ -118,10 +181,8 @@ pub fn emit(
                     .expect("prefix");
                 write!(writer, "{}", source_prefix)?;
 
-                let label_spec = match label.style {
-                    LabelStyle::Primary => &primary_spec,
-                    LabelStyle::Secondary => &secondary_spec,
-                };
+                let label_color = config.label_color(diagnostic.severity, label.style);
+                let label_spec = ColorSpec::new().set_fg(Some(label_color)).clone();
 
                 // Write marked section
                 let mark_len = if start_line == end_line {
@@ -202,7 +263,7 @@ pub fn emit(
                 writer.set_color(&label_spec)?;
                 write!(writer, "{: >width$}", "", width = source_prefix.len())?;
                 for _ in 0..mark_len {
-                    write!(writer, "{}", underline_char(label.style))?;
+                    write!(writer, "{}", config.underline_char(label.style))?;
                 }
                 if !label.message.is_empty() {
                     write!(writer, " {}", label.message)?;
@@ -221,33 +282,6 @@ pub fn emit(
     Ok(())
 }
 
-// Blue is really difficult to see on the standard windows command line
-// FIXME: Make colors configurable
-#[cfg(windows)]
-const BLUE: Color = Color::Cyan;
-#[cfg(not(windows))]
-const BLUE: Color = Color::Blue;
-
-/// Return the termcolor to use when rendering messages of this diagnostic severity.
-fn severity_color(severity: Severity) -> Color {
-    match severity {
-        Severity::Bug | Severity::Error => Color::Red,
-        Severity::Warning => Color::Yellow,
-        Severity::Note => Color::Green,
-        Severity::Help => Color::Cyan,
-    }
-}
-
-/// The color to use for secondary highlights.
-fn secondary_color() -> Color {
-    BLUE
-}
-
-/// The color to use for gutters highlights.
-fn gutter_color() -> Color {
-    BLUE
-}
-
 /// A string that explains this diagnostic severity.
 fn severity_name(severity: Severity) -> &'static str {
     match severity {
@@ -256,13 +290,5 @@ fn severity_name(severity: Severity) -> &'static str {
         Severity::Warning => "warning",
         Severity::Note => "note",
         Severity::Help => "help",
-    }
-}
-
-/// The character used for the underlined section of code.
-fn underline_char(label_style: LabelStyle) -> char {
-    match label_style {
-        LabelStyle::Primary => '^',
-        LabelStyle::Secondary => '-',
     }
 }
