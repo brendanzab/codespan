@@ -73,11 +73,12 @@ where
                 // - <test>:2:9
                 // ```
 
+                writer.set_color(&gutter_spec)?;
+                write!(writer, "{: >width$} - ", "", width = gutter_padding)?;
+                writer.reset()?;
                 write!(
                     writer,
-                    "{: >width$} - {file}:{line}:{column}",
-                    "",
-                    width = gutter_padding,
+                    "{file}:{line}:{column}",
                     file = file.name(),
                     line = start_line.number(),
                     column = column.number(),
