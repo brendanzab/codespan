@@ -108,11 +108,11 @@ where
                     start_line.number(),
                     width = gutter_padding,
                 )?;
+                writer.reset()?;
 
                 let prefix = file
                     .src_slice(start_line_span.with_end(label.span.start()))
                     .expect("prefix");
-                writer.reset()?;
                 write!(writer, "{}", prefix)?;
 
                 // Write marked section
@@ -122,6 +122,7 @@ where
                     let marked = file.src_slice(label.span).expect("marked");
                     writer.set_color(&label_spec)?;
                     write!(writer, "{}", marked)?;
+                    writer.reset()?;
                     marked.len()
                 } else {
                     // Multiple lines
@@ -165,6 +166,7 @@ where
                         .expect("line");
                     writer.set_color(&label_spec)?;
                     write!(writer, "{}", line)?;
+                    writer.reset()?;
                     line.len()
                 };
 
@@ -174,7 +176,6 @@ where
                     .src_slice(end_line_span.with_start(label.span.end()))
                     .expect("suffix")
                     .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
-                writer.reset()?;
                 write!(writer, "{}", suffix)?;
                 write!(writer, "\n")?;
 
@@ -189,14 +190,12 @@ where
                 for _ in 0..mark_len {
                     write!(writer, "{}", underline_mark(label.style))?;
                 }
-                writer.reset()?;
-
                 if !label.message.is_empty() {
-                    writer.set_color(&label_spec)?;
                     write!(writer, " {}", label.message)?;
                     write!(writer, "\n")?;
-                    writer.reset()?;
                 }
+                writer.reset()?;
+
                 writer.set_color(&gutter_spec)?;
                 write!(writer, "{: >width$} │", "", width = gutter_padding)?;
                 write!(writer, "\n")?;
