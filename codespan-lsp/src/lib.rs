@@ -180,8 +180,6 @@ pub fn make_lsp_diagnostic<F>(
 where
     F: FnMut(&str) -> Result<Url, ()>,
 {
-    use codespan_reporting::LabelStyle;
-
     let find_file = |index| {
         code_map
             .find_file(index)
@@ -189,37 +187,22 @@ where
     };
 
     // We need a position for the primary error so take the span from the first primary label
-    let (primary_file_map, primary_label_range) = {
-        let first_primary_label = diagnostic
-            .labels
-            .iter()
-            .find(|label| label.style == LabelStyle::Primary);
-
-        match first_primary_label {
-            Some(label) => {
-                let file_map = find_file(label.span.start())?;
-                (Some(file_map), byte_span_to_range(&file_map, label.span)?)
-            },
-            None => (None, UNKNOWN_RANGE),
-        }
-    };
+    let primary_file_map = find_file(diagnostic.primary_label.span.start())?;
+    let primary_label_range = byte_span_to_range(&primary_file_map, diagnostic.primary_label.span)?;
 
     let related_information = diagnostic
-        .labels
+        .secondary_labels
         .into_iter()
         .map(|label| {
-            let (file_map, range) = match primary_file_map {
-                // If the label's span does not point anywhere, assume it comes from the same file
-                // as the primary label
-                Some(file_map) if label.span.start() == ByteIndex::none() => {
-                    (file_map, UNKNOWN_RANGE)
-                },
-                Some(_) | None => {
-                    let file_map = find_file(label.span.start())?;
-                    let range = byte_span_to_range(file_map, label.span)?;
+            // If the label's span does not point anywhere, assume it comes from the same file
+            // as the primary label
+            let (file_map, range) = if label.span.start() == ByteIndex::none() {
+                (primary_file_map, UNKNOWN_RANGE)
+            } else {
+                let file_map = find_file(label.span.start())?;
+                let range = byte_span_to_range(file_map, label.span)?;
 
-                    (file_map, range)
-                },
+                (file_map, range)
             };
 
             let uri = codespan_name_to_file(file_map.name())
