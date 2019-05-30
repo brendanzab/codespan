@@ -42,7 +42,8 @@ where
     // : Unexpected type in `+` application
     // ```
     writer.set_color(&header_message_spec)?;
-    writeln!(writer, ": {}", diagnostic.message)?;
+    write!(writer, ": {}", diagnostic.message)?;
+    write!(writer, "\n")?;
     writer.reset()?;
 
     // Diagnostic Labels
@@ -51,7 +52,8 @@ where
         match codemap.find_file(label.span.start()) {
             None => {
                 if !label.message.is_empty() {
-                    writeln!(writer, "- {}", label.message)?
+                    write!(writer, "- {}", label.message)?;
+                    write!(writer, "\n")?;
                 }
             },
             Some(file) => {
@@ -67,7 +69,7 @@ where
                 // - <test>:2:9
                 // ```
 
-                writeln!(
+                write!(
                     writer,
                     "{: >width$} - {file}:{line}:{column}",
                     "",
@@ -76,6 +78,7 @@ where
                     line = start_line.number(),
                     column = column.number(),
                 )?;
+                write!(writer, "\n")?;
 
                 // Source code snippet
                 //
@@ -97,7 +100,8 @@ where
                 // Write prefix to marked section
 
                 writer.set_color(&gutter_spec)?;
-                writeln!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
+                write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
+                write!(writer, "\n")?;
                 write!(
                     writer,
                     "{: >width$} │ ",
@@ -145,7 +149,8 @@ where
                             .expect("line")
                             .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
                         writer.set_color(&label_spec)?;
-                        writeln!(writer, "{}", line)?;
+                        write!(writer, "{}", line)?;
+                        write!(writer, "\n")?;
                     }
 
                     writer.set_color(&gutter_spec)?;
@@ -170,7 +175,8 @@ where
                     .expect("suffix")
                     .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
                 writer.reset()?;
-                writeln!(writer, "{}", suffix)?;
+                write!(writer, "{}", suffix)?;
+                write!(writer, "\n")?;
 
                 // Write mark and label
 
@@ -187,11 +193,13 @@ where
 
                 if !label.message.is_empty() {
                     writer.set_color(&label_spec)?;
-                    writeln!(writer, " {}", label.message)?;
+                    write!(writer, " {}", label.message)?;
+                    write!(writer, "\n")?;
                     writer.reset()?;
                 }
                 writer.set_color(&gutter_spec)?;
-                writeln!(writer, "{: >width$} │", "", width = gutter_padding)?;
+                write!(writer, "{: >width$} │", "", width = gutter_padding)?;
+                write!(writer, "\n")?;
                 writer.reset()?;
             },
         }
