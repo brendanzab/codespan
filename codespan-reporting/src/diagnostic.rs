@@ -18,10 +18,10 @@ pub struct Label {
 }
 
 impl Label {
-    pub fn new(span: ByteSpan, mesaage: impl Into<String>) -> Label {
+    pub fn new(span: ByteSpan, message: impl Into<String>) -> Label {
         Label {
             span,
-            message: mesaage.into(),
+            message: message.into(),
         }
     }
 }
