@@ -9,20 +9,16 @@ where
     W: WriteColor,
     S: AsRef<str>,
 {
-    let gutter_color = ColorSpec::new().set_fg(Some(gutter_color())).clone();
-    let diagnostic_color = ColorSpec::new()
-        .set_fg(Some(severity_color(diagnostic.severity)))
-        .clone();
-
-    let highlight_color = ColorSpec::new().set_bold(true).set_intense(true).clone();
+    let severity_color = severity_color(diagnostic.severity);
+    let gutter_spec = ColorSpec::new().set_fg(Some(gutter_color())).clone();
+    let primary_spec = ColorSpec::new().set_fg(Some(severity_color)).clone();
+    let secondary_spec = ColorSpec::new().set_fg(Some(secondary_color())).clone();
+    let header_message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
+    let header_primary_spec = header_message_spec.clone().set_fg(Some(severity_color)).clone();
 
     // Diagnostic header
 
-    writer.set_color(
-        &highlight_color
-            .clone()
-            .set_fg(Some(severity_color(diagnostic.severity))),
-    )?;
+    writer.set_color(&header_primary_spec)?;
 
     // Severity
     //
@@ -45,7 +41,7 @@ where
     // ```
     // : Unexpected type in `+` application
     // ```
-    writer.set_color(&highlight_color)?;
+    writer.set_color(&header_message_spec)?;
     writeln!(writer, ": {}", diagnostic.message)?;
     writer.reset()?;
 
@@ -93,16 +89,14 @@ where
                 let start_line_span = file.line_span(start_line).expect("line_span");
                 let end_line_span = file.line_span(end_line).expect("line_span");
 
-                let label_color = match label.style {
-                    LabelStyle::Primary => diagnostic_color.clone(),
-                    LabelStyle::Secondary => {
-                        ColorSpec::new().set_fg(Some(secondary_color())).clone()
-                    },
+                let label_spec = match label.style {
+                    LabelStyle::Primary => &primary_spec,
+                    LabelStyle::Secondary => &secondary_spec,
                 };
 
                 // Write prefix to marked section
 
-                writer.set_color(&gutter_color)?;
+                writer.set_color(&gutter_spec)?;
                 writeln!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
                 write!(
                     writer,
@@ -122,7 +116,7 @@ where
                     // Single line
 
                     let marked = file.src_slice(label.span).expect("marked");
-                    writer.set_color(&label_color)?;
+                    writer.set_color(&label_spec)?;
                     write!(writer, "{}", marked)?;
                     marked.len()
                 } else {
@@ -131,13 +125,13 @@ where
                     let marked = file
                         .src_slice(start_line_span.with_start(label.span.start()))
                         .expect("start_of_marked");
-                    writer.set_color(&label_color)?;
+                    writer.set_color(&label_spec)?;
                     write!(writer, "{}", marked)?;
 
                     for line_index in ((start_line.to_usize() + 1)..end_line.to_usize())
                         .map(|i| LineIndex::from(i as RawIndex))
                     {
-                        writer.set_color(&gutter_color)?;
+                        writer.set_color(&gutter_spec)?;
                         write!(
                             writer,
                             "{: >width$} │ ",
@@ -150,11 +144,11 @@ where
                             .src_slice(line_span)
                             .expect("line")
                             .trim_end_matches(|ch: char| ch == '\r' || ch == '\n');
-                        writer.set_color(&label_color)?;
+                        writer.set_color(&label_spec)?;
                         writeln!(writer, "{}", line)?;
                     }
 
-                    writer.set_color(&gutter_color)?;
+                    writer.set_color(&gutter_spec)?;
                     write!(
                         writer,
                         "{: >width$} │ ",
@@ -164,7 +158,7 @@ where
                     let line = file
                         .src_slice(end_line_span.with_end(label.span.end()))
                         .expect("line");
-                    writer.set_color(&label_color)?;
+                    writer.set_color(&label_spec)?;
                     write!(writer, "{}", line)?;
                     line.len()
                 };
@@ -180,11 +174,11 @@ where
 
                 // Write mark and label
 
-                writer.set_color(&gutter_color)?;
+                writer.set_color(&gutter_spec)?;
                 write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
                 writer.reset()?;
 
-                writer.set_color(&label_color)?;
+                writer.set_color(&label_spec)?;
                 write!(writer, "{: >width$}", "", width = prefix.len())?;
                 for _ in 0..mark_len {
                     write!(writer, "{}", underline_mark(label.style))?;
@@ -192,11 +186,11 @@ where
                 writer.reset()?;
 
                 if !label.message.is_empty() {
-                    writer.set_color(&label_color)?;
+                    writer.set_color(&label_spec)?;
                     writeln!(writer, " {}", label.message)?;
                     writer.reset()?;
                 }
-                writer.set_color(&gutter_color)?;
+                writer.set_color(&gutter_spec)?;
                 writeln!(writer, "{: >width$} │", "", width = gutter_padding)?;
                 writer.reset()?;
             },
