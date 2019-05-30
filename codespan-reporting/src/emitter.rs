@@ -4,11 +4,11 @@ use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::{Diagnostic, LabelStyle, Severity};
 
-pub fn emit<W, S>(mut writer: W, codemap: &CodeMap<S>, diagnostic: &Diagnostic) -> io::Result<()>
-where
-    W: WriteColor,
-    S: AsRef<str>,
-{
+pub fn emit(
+    mut writer: impl WriteColor,
+    codemap: &CodeMap<impl AsRef<str>>,
+    diagnostic: &Diagnostic,
+) -> io::Result<()> {
     let severity_color = severity_color(diagnostic.severity);
     let gutter_spec = ColorSpec::new().set_fg(Some(gutter_color())).clone();
     let primary_spec = ColorSpec::new().set_fg(Some(severity_color)).clone();
