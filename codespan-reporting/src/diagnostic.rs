@@ -26,7 +26,8 @@ impl Label {
     }
 }
 
-/// Represents a diagnostic message and associated child messages.
+/// Represents a diagnostic message that can provide information like errors and
+/// warnings to the user.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
@@ -37,7 +38,7 @@ pub struct Diagnostic {
     pub code: Option<String>,
     /// The main message associated with this diagnostic.
     pub message: String,
-    /// A label that marks the primary cause of this diagnostic.
+    /// A label that describes the primary cause of this diagnostic.
     pub primary_label: Label,
     /// Secondary labels that provide additional context for the diagnostic.
     pub secondary_labels: Vec<Label>,
