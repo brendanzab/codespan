@@ -47,7 +47,7 @@ impl Label {
         Label::new(span, LabelStyle::Secondary)
     }
 
-    pub fn with_message<S: Into<String>>(mut self, message: S) -> Label {
+    pub fn with_message(mut self, message: impl Into<String>) -> Label {
         self.message = message.into();
         self
     }
@@ -70,7 +70,7 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    pub fn new<S: Into<String>>(severity: Severity, message: S) -> Diagnostic {
+    pub fn new(severity: Severity, message: impl Into<String>) -> Diagnostic {
         Diagnostic {
             severity,
             code: None,
@@ -79,27 +79,27 @@ impl Diagnostic {
         }
     }
 
-    pub fn new_bug<S: Into<String>>(message: S) -> Diagnostic {
+    pub fn new_bug(message: impl Into<String>) -> Diagnostic {
         Diagnostic::new(Severity::Bug, message)
     }
 
-    pub fn new_error<S: Into<String>>(message: S) -> Diagnostic {
+    pub fn new_error(message: impl Into<String>) -> Diagnostic {
         Diagnostic::new(Severity::Error, message)
     }
 
-    pub fn new_warning<S: Into<String>>(message: S) -> Diagnostic {
+    pub fn new_warning(message: impl Into<String>) -> Diagnostic {
         Diagnostic::new(Severity::Warning, message)
     }
 
-    pub fn new_note<S: Into<String>>(message: S) -> Diagnostic {
+    pub fn new_note(message: impl Into<String>) -> Diagnostic {
         Diagnostic::new(Severity::Note, message)
     }
 
-    pub fn new_help<S: Into<String>>(message: S) -> Diagnostic {
+    pub fn new_help(message: impl Into<String>) -> Diagnostic {
         Diagnostic::new(Severity::Help, message)
     }
 
-    pub fn with_code<S: Into<String>>(mut self, code: S) -> Diagnostic {
+    pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic {
         self.code = Some(code.into());
         self
     }
@@ -109,7 +109,7 @@ impl Diagnostic {
         self
     }
 
-    pub fn with_labels<Labels: IntoIterator<Item = Label>>(mut self, labels: Labels) -> Diagnostic {
+    pub fn with_labels(mut self, labels: impl IntoIterator<Item = Label>) -> Diagnostic {
         self.labels.extend(labels);
         self
     }
