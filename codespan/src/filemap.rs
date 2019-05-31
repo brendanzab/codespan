@@ -2,48 +2,99 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::io;
+use std::{error, fmt, io};
 
 use crate::index::{
     ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset,
 };
 use crate::span::ByteSpan;
 
-#[derive(Debug, failure::Fail, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum LineIndexError {
-    #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
     OutOfBounds { given: LineIndex, max: LineIndex },
 }
 
-#[derive(Debug, failure::Fail, PartialEq)]
+impl error::Error for LineIndexError {}
+
+impl fmt::Display for LineIndexError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LineIndexError::OutOfBounds { given, max } => {
+                write!(f, "Line out of bounds - given: {:?}, max: {:?}", given, max)
+            },
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum ByteIndexError {
-    #[fail(
-        display = "Byte index out of bounds - given: {}, span: {}",
-        given, span
-    )]
     OutOfBounds { given: ByteIndex, span: ByteSpan },
-    #[fail(
-        display = "Byte index points within a character boundary - given: {}",
-        given
-    )]
     InvalidCharBoundary { given: ByteIndex },
 }
 
-#[derive(Debug, failure::Fail, PartialEq)]
+impl error::Error for ByteIndexError {}
+
+impl fmt::Display for ByteIndexError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ByteIndexError::OutOfBounds { given, span } => write!(
+                f,
+                "Byte index out of bounds - given: {}, span: {}",
+                given, span,
+            ),
+            ByteIndexError::InvalidCharBoundary { given } => write!(
+                f,
+                "Byte index points within a character boundary - given: {}",
+                given,
+            ),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum LocationError {
-    #[fail(display = "Line out of bounds - given: {:?}, max: {:?}", given, max)]
-    LineOutOfBounds { given: LineIndex, max: LineIndex },
-    #[fail(display = "Column out of bounds - given: {:?}, max: {:?}", given, max)]
+    LineOutOfBounds {
+        given: LineIndex,
+        max: LineIndex,
+    },
     ColumnOutOfBounds {
         given: ColumnIndex,
         max: ColumnIndex,
     },
 }
 
-#[derive(Debug, failure::Fail, PartialEq)]
+impl error::Error for LocationError {}
+
+impl fmt::Display for LocationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LocationError::LineOutOfBounds { given, max } => {
+                write!(f, "Line out of bounds - given: {:?}, max: {:?}", given, max)
+            },
+            LocationError::ColumnOutOfBounds { given, max } => write!(
+                f,
+                "Column out of bounds - given: {:?}, max: {:?}",
+                given, max,
+            ),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum SpanError {
-    #[fail(display = "Span out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: ByteSpan, span: ByteSpan },
+}
+
+impl error::Error for SpanError {}
+
+impl fmt::Display for SpanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SpanError::OutOfBounds { given, span } => {
+                write!(f, "Span out of bounds - given: {}, span: {}", given, span)
+            },
+        }
+    }
 }
 
 #[derive(Debug)]
