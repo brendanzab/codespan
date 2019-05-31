@@ -5,7 +5,7 @@ use codespan::{
     LineIndexError, LocationError, RawIndex, RawOffset, Span,
 };
 use codespan_reporting::{Diagnostic, Severity};
-use languageserver_types as lsp;
+use lsp_types as lsp;
 use url::Url;
 
 #[derive(Debug, failure::Fail, PartialEq)]
