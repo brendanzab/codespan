@@ -102,7 +102,7 @@ impl fmt::Display for SpanError {
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 /// Some source code
-pub struct FileMap<S = String> {
+pub struct File<S = String> {
     /// The name of the file that the source came from, to be used when
     /// displaying diagnostics
     name: String,
@@ -114,33 +114,30 @@ pub struct FileMap<S = String> {
     lines: Vec<ByteOffset>,
 }
 
-impl<S: AsRef<str> + From<String>> FileMap<S> {
-    /// Read some source code from a file, loading it into a filemap
-    pub(crate) fn from_disk(name: String, start: ByteIndex) -> io::Result<FileMap<S>> {
-        use std::fs::File;
-        use std::io::Read;
+impl<S: AsRef<str> + From<String>> File<S> {
+    /// Read some source code from a file, loading it into a file
+    pub(crate) fn from_disk(name: String, start: ByteIndex) -> io::Result<File<S>> {
+        use std::fs;
 
-        let mut file = File::open(&name)?;
-        let mut src = String::new();
-        file.read_to_string(&mut src)?;
+        let src = fs::read_to_string(&name)?;
 
-        Ok(FileMap::with_index(name, src.into(), start))
+        Ok(File::with_index(name, src.into(), start))
     }
 }
 
-impl<S> FileMap<S>
+impl<S> File<S>
 where
     S: AsRef<str>,
 {
-    /// Construct a new, standalone filemap.
+    /// Construct a new, standalone file.
     ///
     /// This can be useful for tests that consist of a single source file. Production code should however
-    /// use `CodeMap::add_filemap` or `CodeMap::add_filemap_from_disk` instead.
-    pub fn new(name: String, src: S) -> FileMap<S> {
-        FileMap::with_index(name, src, ByteIndex(1))
+    /// use `CodeMap::add_file` or `CodeMap::add_file_from_disk` instead.
+    pub fn new(name: String, src: S) -> File<S> {
+        File::with_index(name, src, ByteIndex(1))
     }
 
-    pub(crate) fn with_index(name: String, src: S, start: ByteIndex) -> FileMap<S> {
+    pub(crate) fn with_index(name: String, src: S, start: ByteIndex) -> File<S> {
         use std::iter;
 
         let span = ByteSpan::from_offset(start, ByteOffset::from_str(src.as_ref()));
@@ -154,7 +151,7 @@ where
             iter::once(ByteOffset(0)).chain(offsets).collect()
         };
 
-        FileMap {
+        File {
             name,
             src,
             span,
@@ -309,7 +306,7 @@ mod tests {
     use crate::CodeMap;
 
     struct TestData {
-        filemap: Arc<FileMap>,
+        file: Arc<File>,
         lines: &'static [&'static str],
     }
 
@@ -324,9 +321,9 @@ mod tests {
                 "bloop\n",
                 "goopey\r\n",
             ];
-            let filemap = codemap.add_filemap("test".to_owned(), lines.concat());
+            let file = codemap.add_file("test".to_owned(), lines.concat());
 
-            TestData { filemap, lines }
+            TestData { file, lines }
         }
 
         fn byte_offsets(&self) -> Vec<ByteOffset> {
@@ -373,14 +370,14 @@ mod tests {
     fn offset() {
         let test_data = TestData::new();
         assert!(test_data
-            .filemap
+            .file
             .offset(
                 (test_data.lines.len() as u32 - 1).into(),
                 (test_data.lines.last().unwrap().len() as u32).into()
             )
             .is_ok());
         assert!(test_data
-            .filemap
+            .file
             .offset(
                 (test_data.lines.len() as u32 - 1).into(),
                 (test_data.lines.last().unwrap().len() as u32 + 1).into()
@@ -394,7 +391,7 @@ mod tests {
         let offsets: Vec<_> = test_data
             .line_indices()
             .iter()
-            .map(|&i| test_data.filemap.line_offset(i))
+            .map(|&i| test_data.file.line_offset(i))
             .collect();
 
         assert_eq!(
@@ -421,19 +418,19 @@ mod tests {
         let offsets: Vec<_> = test_data
             .line_indices()
             .iter()
-            .map(|&i| test_data.filemap.line_byte_index(i))
+            .map(|&i| test_data.file.line_byte_index(i))
             .collect();
 
         assert_eq!(
             offsets,
             vec![
-                Ok(test_data.filemap.span().start() + ByteOffset(0)),
-                Ok(test_data.filemap.span().start() + ByteOffset(7)),
-                Ok(test_data.filemap.span().start() + ByteOffset(13)),
-                Ok(test_data.filemap.span().start() + ByteOffset(15)),
-                Ok(test_data.filemap.span().start() + ByteOffset(21)),
-                Ok(test_data.filemap.span().start() + ByteOffset(27)),
-                Ok(test_data.filemap.span().start() + ByteOffset(35)),
+                Ok(test_data.file.span().start() + ByteOffset(0)),
+                Ok(test_data.file.span().start() + ByteOffset(7)),
+                Ok(test_data.file.span().start() + ByteOffset(13)),
+                Ok(test_data.file.span().start() + ByteOffset(15)),
+                Ok(test_data.file.span().start() + ByteOffset(21)),
+                Ok(test_data.file.span().start() + ByteOffset(27)),
+                Ok(test_data.file.span().start() + ByteOffset(35)),
                 Err(LineIndexError::OutOfBounds {
                     given: LineIndex(7),
                     max: LineIndex(6),
@@ -444,16 +441,16 @@ mod tests {
 
     // #[test]
     // fn line_span() {
-    //     let filemap = filemap();
-    //     let start = filemap.span().start();
+    //     let file = file();
+    //     let start = file.span().start();
 
-    //     assert_eq!(filemap.line_byte_index(Li(0)), Some(start + BOff(0)));
-    //     assert_eq!(filemap.line_byte_index(Li(1)), Some(start + BOff(7)));
-    //     assert_eq!(filemap.line_byte_index(Li(2)), Some(start + BOff(13)));
-    //     assert_eq!(filemap.line_byte_index(Li(3)), Some(start + BOff(14)));
-    //     assert_eq!(filemap.line_byte_index(Li(4)), Some(start + BOff(20)));
-    //     assert_eq!(filemap.line_byte_index(Li(5)), Some(start + BOff(26)));
-    //     assert_eq!(filemap.line_byte_index(Li(6)), None);
+    //     assert_eq!(file.line_byte_index(Li(0)), Some(start + BOff(0)));
+    //     assert_eq!(file.line_byte_index(Li(1)), Some(start + BOff(7)));
+    //     assert_eq!(file.line_byte_index(Li(2)), Some(start + BOff(13)));
+    //     assert_eq!(file.line_byte_index(Li(3)), Some(start + BOff(14)));
+    //     assert_eq!(file.line_byte_index(Li(4)), Some(start + BOff(20)));
+    //     assert_eq!(file.line_byte_index(Li(5)), Some(start + BOff(26)));
+    //     assert_eq!(file.line_byte_index(Li(6)), None);
     // }
 
     #[test]
@@ -462,7 +459,7 @@ mod tests {
         let lines: Vec<_> = test_data
             .byte_indices()
             .iter()
-            .map(|&index| test_data.filemap.location(index))
+            .map(|&index| test_data.file.location(index))
             .collect();
 
         assert_eq!(
@@ -470,7 +467,7 @@ mod tests {
             vec![
                 Err(ByteIndexError::OutOfBounds {
                     given: ByteIndex(0),
-                    span: test_data.filemap.span(),
+                    span: test_data.file.span(),
                 }),
                 Ok(Location::new(0, 0)),
                 Ok(Location::new(0, 6)),
@@ -487,7 +484,7 @@ mod tests {
                 Ok(Location::new(6, 0)),
                 Err(ByteIndexError::OutOfBounds {
                     given: ByteIndex(37),
-                    span: test_data.filemap.span()
+                    span: test_data.file.span()
                 }),
             ],
         );
@@ -499,7 +496,7 @@ mod tests {
         let lines: Vec<_> = test_data
             .byte_indices()
             .iter()
-            .map(|&index| test_data.filemap.find_line(index))
+            .map(|&index| test_data.file.find_line(index))
             .collect();
 
         assert_eq!(
@@ -507,7 +504,7 @@ mod tests {
             vec![
                 Err(ByteIndexError::OutOfBounds {
                     given: ByteIndex(0),
-                    span: test_data.filemap.span(),
+                    span: test_data.file.span(),
                 }),
                 Ok(LineIndex(0)),
                 Ok(LineIndex(0)),
@@ -524,7 +521,7 @@ mod tests {
                 Ok(LineIndex(6)),
                 Err(ByteIndexError::OutOfBounds {
                     given: ByteIndex(37),
-                    span: test_data.filemap.span(),
+                    span: test_data.file.span(),
                 }),
             ],
         );

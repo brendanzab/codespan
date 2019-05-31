@@ -12,14 +12,14 @@
 //!   `heapsize` crate
 
 mod codemap;
-mod filemap;
+mod file;
 mod index;
 mod location;
 mod span;
 
 pub use crate::codemap::CodeMap;
-pub use crate::filemap::FileMap;
-pub use crate::filemap::{ByteIndexError, LineIndexError, LocationError, SpanError};
+pub use crate::file::File;
+pub use crate::file::{ByteIndexError, LineIndexError, LocationError, SpanError};
 pub use crate::index::{ByteIndex, ByteOffset};
 pub use crate::index::{ColumnIndex, ColumnNumber, ColumnOffset};
 pub use crate::index::{Index, Offset};

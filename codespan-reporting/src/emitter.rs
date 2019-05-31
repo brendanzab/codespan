@@ -1,4 +1,4 @@
-use codespan::{ByteIndex, CodeMap, FileMap, LineIndex, RawIndex};
+use codespan::{ByteIndex, CodeMap, File, LineIndex, RawIndex};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -197,13 +197,13 @@ enum MarkStyle {
 ///   ╵
 /// ```
 struct MarkedSource<'a, S: AsRef<str>> {
-    file: &'a FileMap<S>,
+    file: &'a File<S>,
     label: &'a Label,
     mark_style: MarkStyle,
 }
 
 impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
-    fn new_primary(file: &'a FileMap<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
+    fn new_primary(file: &'a File<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
         MarkedSource {
             file,
             label: &diagnostic.primary_label,
@@ -211,7 +211,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         }
     }
 
-    fn new_secondary(file: &'a FileMap<S>, label: &'a Label) -> MarkedSource<'a, S> {
+    fn new_secondary(file: &'a File<S>, label: &'a Label) -> MarkedSource<'a, S> {
         MarkedSource {
             file,
             label,

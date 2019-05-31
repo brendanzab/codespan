@@ -28,9 +28,9 @@ fn main() {
       3) ()
 ()
 "##;
-    let file_map = code_map.add_filemap("test".into(), source.to_string());
+    let file = code_map.add_file("test".into(), source.to_string());
 
-    let str_start = file_map.byte_index(3.into(), 6.into()).unwrap();
+    let str_start = file.byte_index(3.into(), 6.into()).unwrap();
     let error = Diagnostic::new_error(
         "Unexpected type in `+` application",
         Label::new(
@@ -44,7 +44,7 @@ fn main() {
         "Expected integer but got string",
     )]);
 
-    let line_start = file_map.byte_index(2.into(), 3.into()).unwrap();
+    let line_start = file.byte_index(2.into(), 3.into()).unwrap();
     let warning = Diagnostic::new_warning(
         "`+` function has no effect unless its result is used",
         Label::new(Span::from_offset(line_start, 27.into()), "Value discarded"),
