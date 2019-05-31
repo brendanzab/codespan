@@ -1,4 +1,4 @@
-use codespan::{ByteIndex, CodeMap, File, LineIndex, RawIndex};
+use codespan::{ByteIndex, File, Files, LineIndex, RawIndex};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -67,18 +67,18 @@ impl Config {
 pub fn emit(
     mut writer: impl WriteColor,
     config: &Config,
-    codemap: &CodeMap<impl AsRef<str>>,
+    files: &Files<impl AsRef<str>>,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
     Header::new(diagnostic).emit(&mut writer, config)?;
 
-    match codemap.find_file(diagnostic.primary_label.span.start()) {
+    match files.find_file(diagnostic.primary_label.span.start()) {
         None => SimpleMessage::new(&diagnostic.primary_label).emit(&mut writer, config)?,
         Some(file) => MarkedSource::new_primary(file, &diagnostic).emit(&mut writer, config)?,
     }
 
     for label in &diagnostic.secondary_labels {
-        match codemap.find_file(label.span.start()) {
+        match files.find_file(label.span.start()) {
             None => SimpleMessage::new(&label).emit(&mut writer, config)?,
             Some(file) => MarkedSource::new_secondary(file, &label).emit(&mut writer, config)?,
         }

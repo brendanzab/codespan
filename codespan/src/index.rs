@@ -183,7 +183,7 @@ impl fmt::Display for ColumnOffset {
 }
 
 /// A byte position in a source file. The index is continuous, running over all
-/// files in a `CodeMap`, starting with 1. Zero is reserved for positions that
+/// files in a `Files`, starting with 1. Zero is reserved for positions that
 /// do not point to a valid file. One byte of padding is added between each file.
 ///
 /// For example, for these files:

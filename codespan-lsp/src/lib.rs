@@ -1,7 +1,7 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
 use codespan::{
-    ByteIndex, ByteIndexError, ByteOffset, CodeMap, ColumnIndex, File, LineIndex, LineIndexError,
+    ByteIndex, ByteIndexError, ByteOffset, ColumnIndex, File, Files, LineIndex, LineIndexError,
     LocationError, RawIndex, RawOffset, Span,
 };
 use codespan_reporting::{Diagnostic, Severity};
@@ -12,7 +12,7 @@ use url::Url;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    SpanOutsideCodeMap(ByteIndex),
+    SpanOutsideFiles(ByteIndex),
     UnableToCorrelateFilename(String),
     ByteIndexError(ByteIndexError),
     LocationError(LocationError),
@@ -40,7 +40,7 @@ impl From<LineIndexError> for Error {
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
-            Error::SpanOutsideCodeMap(_) | Error::UnableToCorrelateFilename(_) => None,
+            Error::SpanOutsideFiles(_) | Error::UnableToCorrelateFilename(_) => None,
             Error::ByteIndexError(error) => Some(error),
             Error::LocationError(error) => Some(error),
             Error::LineIndexError(error) => Some(error),
@@ -51,9 +51,7 @@ impl error::Error for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::SpanOutsideCodeMap(index) => {
-                write!(f, "Position is outside of codemap {}", index)
-            },
+            Error::SpanOutsideFiles(index) => write!(f, "Position is outside of files {}", index),
             Error::UnableToCorrelateFilename(name) => {
                 write!(f, "Unable to correlate filename `{}` to url", name)
             },
@@ -188,7 +186,7 @@ const UNKNOWN_RANGE: lsp::Range = lsp::Range {
 ///
 /// `code` and `file` are left empty by this function
 pub fn make_lsp_diagnostic<F>(
-    code_map: &CodeMap,
+    files: &Files,
     diagnostic: Diagnostic,
     mut codespan_name_to_file: F,
 ) -> Result<lsp::Diagnostic, Error>
@@ -196,9 +194,9 @@ where
     F: FnMut(&str) -> Result<Url, ()>,
 {
     let find_file = |index| {
-        code_map
+        files
             .find_file(index)
-            .ok_or_else(|| Error::SpanOutsideCodeMap(index))
+            .ok_or_else(|| Error::SpanOutsideFiles(index))
     };
 
     // We need a position for the primary error so take the span from the first primary label

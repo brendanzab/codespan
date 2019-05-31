@@ -13,14 +13,14 @@ use crate::{
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
-pub struct CodeMap<S = String> {
+pub struct Files<S = String> {
     files: Vec<Arc<File<S>>>,
 }
 
-impl<S> CodeMap<S> {
-    /// Creates an empty `CodeMap`.
-    pub fn new() -> CodeMap<S> {
-        CodeMap::default()
+impl<S> Files<S> {
+    /// Creates an empty `Files`.
+    pub fn new() -> Files<S> {
+        Files::default()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Arc<File<S>>> {
@@ -28,7 +28,7 @@ impl<S> CodeMap<S> {
     }
 }
 
-impl<S: AsRef<str>> CodeMap<S> {
+impl<S: AsRef<str>> Files<S> {
     /// The next start index to use for a new file
     fn next_start_index(&self) -> ByteIndex {
         let end_index = self
@@ -41,7 +41,7 @@ impl<S: AsRef<str>> CodeMap<S> {
         end_index + ByteOffset(1)
     }
 
-    /// Adds a file to the codemap with the given name and source string
+    /// Adds a file to the files with the given name and source string
     pub fn add_file(&mut self, name: String, src: S) -> Arc<File<S>> {
         let file = Arc::new(File::with_index(name, src, self.next_start_index()));
         self.files.push(file.clone());
@@ -114,8 +114,8 @@ impl<S: AsRef<str>> CodeMap<S> {
     }
 }
 
-impl<S: AsRef<str> + From<String>> CodeMap<S> {
-    /// Adds a file to the codemap with the given name and source string
+impl<S: AsRef<str> + From<String>> Files<S> {
+    /// Adds a file to the files with the given name and source string
     pub fn add_file_from_disk(&mut self, name: String) -> io::Result<Arc<File<S>>> {
         let file = Arc::new(File::from_disk(name, self.next_start_index())?);
         self.files.push(file.clone());
@@ -123,9 +123,9 @@ impl<S: AsRef<str> + From<String>> CodeMap<S> {
     }
 }
 
-impl<S> Default for CodeMap<S> {
+impl<S> Default for Files<S> {
     fn default() -> Self {
-        CodeMap { files: vec![] }
+        Files { files: vec![] }
     }
 }
 
@@ -135,11 +135,11 @@ mod tests {
 
     use crate::span::Span;
 
-    fn check_maps(code_map: &CodeMap, files: &[(RawIndex, &str, &str)]) {
-        println!("{:?}", code_map);
-        assert_eq!(code_map.files.len(), files.len());
+    fn check_maps(files: &Files, expected_files: &[(RawIndex, &str, &str)]) {
+        println!("{:?}", files);
+        assert_eq!(files.files.len(), expected_files.len());
         let mut prev_span = Span::new(0.into(), 0.into());
-        for (i, (file, &(start, name, src))) in code_map.files.iter().zip(files).enumerate() {
+        for (i, (file, &(start, name, src))) in files.files.iter().zip(expected_files).enumerate() {
             println!("{}: {:?} <=> {:?}", i, file, (start, name, src));
             assert_eq!(file.name(), name, "At index {}", i);
             assert_eq!(ByteIndex(start), file.span().start(), "At index {}", i);
@@ -152,19 +152,19 @@ mod tests {
 
     #[test]
     fn update() {
-        let mut code_map = CodeMap::new();
+        let mut files = Files::new();
 
-        let a_span = code_map.add_file("a".into(), "a".into()).span();
-        let b_span = code_map.add_file("b".into(), "b".into()).span();
-        let c_span = code_map.add_file("c".into(), "c".into()).span();
+        let a_span = files.add_file("a".into(), "a".into()).span();
+        let b_span = files.add_file("b".into(), "b".into()).span();
+        let c_span = files.add_file("c".into(), "c".into()).span();
 
-        code_map.update(a_span.start(), "aa".into()).unwrap();
-        check_maps(&code_map, &[(3, "b", "b"), (5, "c", "c"), (7, "a", "aa")]);
+        files.update(a_span.start(), "aa".into()).unwrap();
+        check_maps(&files, &[(3, "b", "b"), (5, "c", "c"), (7, "a", "aa")]);
 
-        code_map.update(b_span.start(), "".into()).unwrap().span();
-        check_maps(&code_map, &[(3, "b", ""), (5, "c", "c"), (7, "a", "aa")]);
+        files.update(b_span.start(), "".into()).unwrap().span();
+        check_maps(&files, &[(3, "b", ""), (5, "c", "c"), (7, "a", "aa")]);
 
-        code_map.update(c_span.start(), "ccc".into()).unwrap();
-        check_maps(&code_map, &[(3, "b", ""), (7, "a", "aa"), (10, "c", "ccc")]);
+        files.update(c_span.start(), "ccc".into()).unwrap();
+        check_maps(&files, &[(3, "b", ""), (7, "a", "aa"), (10, "c", "ccc")]);
     }
 }

@@ -108,7 +108,7 @@ pub struct File<S = String> {
     name: String,
     /// The complete source code
     src: S,
-    /// The span of the source in the `CodeMap`
+    /// The span of the source in the `Files`
     span: ByteSpan,
     /// Offsets to the line beginnings in the source
     lines: Vec<ByteOffset>,
@@ -132,7 +132,7 @@ where
     /// Construct a new, standalone file.
     ///
     /// This can be useful for tests that consist of a single source file. Production code should however
-    /// use `CodeMap::add_file` or `CodeMap::add_file_from_disk` instead.
+    /// use `Files::add_file` or `Files::add_file_from_disk` instead.
     pub fn new(name: String, src: S) -> File<S> {
         File::with_index(name, src, ByteIndex(1))
     }
@@ -169,7 +169,7 @@ where
         &self.src.as_ref()
     }
 
-    /// The span of the source in the `CodeMap`
+    /// The span of the source in the `Files`
     pub fn span(&self) -> ByteSpan {
         self.span
     }
@@ -303,7 +303,7 @@ mod tests {
 
     use std::sync::Arc;
 
-    use crate::CodeMap;
+    use crate::Files;
 
     struct TestData {
         file: Arc<File>,
@@ -312,7 +312,7 @@ mod tests {
 
     impl TestData {
         fn new() -> TestData {
-            let mut codemap = CodeMap::new();
+            let mut files = Files::new();
             let lines = &[
                 "hello!\n",
                 "howdy\n",
@@ -321,7 +321,7 @@ mod tests {
                 "bloop\n",
                 "goopey\r\n",
             ];
-            let file = codemap.add_file("test".to_owned(), lines.concat());
+            let file = files.add_file("test".to_owned(), lines.concat());
 
             TestData { file, lines }
         }
