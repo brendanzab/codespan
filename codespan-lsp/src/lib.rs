@@ -6,20 +6,17 @@ use codespan::{
 };
 use codespan_reporting::{Diagnostic, Severity};
 use lsp_types as lsp;
+use std::error;
+use std::fmt;
 use url::Url;
 
-#[derive(Debug, failure::Fail, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
-    #[fail(display = "Position is outside of codemap {}", _0)]
     SpanOutsideCodeMap(ByteIndex),
-    #[fail(display = "Unable to correlate filename `{}` to url", _0)]
     UnableToCorrelateFilename(String),
-    #[fail(display = "{}", _0)]
-    ByteIndexError(#[cause] ByteIndexError),
-    #[fail(display = "{}", _0)]
-    LocationError(#[cause] LocationError),
-    #[fail(display = "{}", _0)]
-    LineIndexError(#[cause] LineIndexError),
+    ByteIndexError(ByteIndexError),
+    LocationError(LocationError),
+    LineIndexError(LineIndexError),
 }
 
 impl From<ByteIndexError> for Error {
@@ -37,6 +34,33 @@ impl From<LocationError> for Error {
 impl From<LineIndexError> for Error {
     fn from(e: LineIndexError) -> Error {
         Error::LineIndexError(e)
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::SpanOutsideCodeMap(_) | Error::UnableToCorrelateFilename(_) => None,
+            Error::ByteIndexError(error) => Some(error),
+            Error::LocationError(error) => Some(error),
+            Error::LineIndexError(error) => Some(error),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::SpanOutsideCodeMap(index) => {
+                write!(f, "Position is outside of codemap {}", index)
+            },
+            Error::UnableToCorrelateFilename(name) => {
+                write!(f, "Unable to correlate filename `{}` to url", name)
+            },
+            Error::ByteIndexError(error) => write!(f, "{}", error),
+            Error::LocationError(error) => write!(f, "{}", error),
+            Error::LineIndexError(error) => write!(f, "{}", error),
+        }
     }
 }
 
