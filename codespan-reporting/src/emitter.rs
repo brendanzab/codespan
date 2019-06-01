@@ -1,4 +1,4 @@
-use codespan::{ByteIndex, CodeMap, FileMap, LineIndex, RawIndex};
+use codespan::{ByteIndex, File, Files, LineIndex, RawIndex};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -67,18 +67,18 @@ impl Config {
 pub fn emit(
     mut writer: impl WriteColor,
     config: &Config,
-    codemap: &CodeMap<impl AsRef<str>>,
+    files: &Files<impl AsRef<str>>,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
     Header::new(diagnostic).emit(&mut writer, config)?;
 
-    match codemap.find_file(diagnostic.primary_label.span.start()) {
+    match files.find_file(diagnostic.primary_label.span.start()) {
         None => SimpleMessage::new(&diagnostic.primary_label).emit(&mut writer, config)?,
         Some(file) => MarkedSource::new_primary(file, &diagnostic).emit(&mut writer, config)?,
     }
 
     for label in &diagnostic.secondary_labels {
-        match codemap.find_file(label.span.start()) {
+        match files.find_file(label.span.start()) {
             None => SimpleMessage::new(&label).emit(&mut writer, config)?,
             Some(file) => MarkedSource::new_secondary(file, &label).emit(&mut writer, config)?,
         }
@@ -197,13 +197,13 @@ enum MarkStyle {
 ///   ╵
 /// ```
 struct MarkedSource<'a, S: AsRef<str>> {
-    file: &'a FileMap<S>,
+    file: &'a File<S>,
     label: &'a Label,
     mark_style: MarkStyle,
 }
 
 impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
-    fn new_primary(file: &'a FileMap<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
+    fn new_primary(file: &'a File<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
         MarkedSource {
             file,
             label: &diagnostic.primary_label,
@@ -211,7 +211,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         }
     }
 
-    fn new_secondary(file: &'a FileMap<S>, label: &'a Label) -> MarkedSource<'a, S> {
+    fn new_secondary(file: &'a File<S>, label: &'a Label) -> MarkedSource<'a, S> {
         MarkedSource {
             file,
             label,
