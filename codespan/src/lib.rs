@@ -12,18 +12,16 @@
 //!   `heapsize` crate
 
 mod file;
-mod files;
 mod index;
 mod location;
 mod span;
 
-pub use crate::file::File;
-pub use crate::file::{ByteIndexError, LineIndexError, LocationError, SpanError};
-pub use crate::files::Files;
+pub use crate::file::{FileId, FileSpan, Files};
+pub use crate::file::{LineIndexOutOfBoundsError, LocationError, SpanOutOfBoundsError};
 pub use crate::index::{ByteIndex, ByteOffset};
 pub use crate::index::{ColumnIndex, ColumnNumber, ColumnOffset};
 pub use crate::index::{Index, Offset};
 pub use crate::index::{LineIndex, LineNumber, LineOffset};
 pub use crate::index::{RawIndex, RawOffset};
 pub use crate::location::Location;
-pub use crate::span::{ByteSpan, Span};
+pub use crate::span::Span;

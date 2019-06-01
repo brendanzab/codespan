@@ -1,63 +1,53 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
 use codespan::{
-    ByteIndex, ByteIndexError, ByteOffset, ColumnIndex, File, Files, LineIndex, LineIndexError,
-    LocationError, RawIndex, RawOffset, Span,
+    ByteIndex, ByteOffset, ColumnIndex, FileId, Files, LineIndex, LineIndexOutOfBoundsError,
+    LocationError, RawIndex, RawOffset, Span, SpanOutOfBoundsError,
 };
 use codespan_reporting::{Diagnostic, Severity};
 use lsp_types as lsp;
 use std::error;
-use std::fmt;
 use url::Url;
 
-#[derive(Debug, PartialEq)]
+#[derive(derive_more::Display, Debug, PartialEq)]
 pub enum Error {
-    SpanOutsideFiles(ByteIndex),
+    #[display(fmt = "Unable to correlate filename `{}` to url", _0)]
     UnableToCorrelateFilename(String),
-    ByteIndexError(ByteIndexError),
-    LocationError(LocationError),
-    LineIndexError(LineIndexError),
-}
-
-impl From<ByteIndexError> for Error {
-    fn from(e: ByteIndexError) -> Error {
-        Error::ByteIndexError(e)
-    }
+    #[display(fmt = "Column out of bounds - given: {}, max: {}", given, max)]
+    ColumnOutOfBounds {
+        given: ColumnIndex,
+        max: ColumnIndex,
+    },
+    Location(LocationError),
+    LineIndexOutOfBounds(LineIndexOutOfBoundsError),
+    SpanOutOfBounds(SpanOutOfBoundsError),
 }
 
 impl From<LocationError> for Error {
     fn from(e: LocationError) -> Error {
-        Error::LocationError(e)
+        Error::Location(e)
     }
 }
 
-impl From<LineIndexError> for Error {
-    fn from(e: LineIndexError) -> Error {
-        Error::LineIndexError(e)
+impl From<LineIndexOutOfBoundsError> for Error {
+    fn from(e: LineIndexOutOfBoundsError) -> Error {
+        Error::LineIndexOutOfBounds(e)
+    }
+}
+
+impl From<SpanOutOfBoundsError> for Error {
+    fn from(e: SpanOutOfBoundsError) -> Error {
+        Error::SpanOutOfBounds(e)
     }
 }
 
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
-            Error::SpanOutsideFiles(_) | Error::UnableToCorrelateFilename(_) => None,
-            Error::ByteIndexError(error) => Some(error),
-            Error::LocationError(error) => Some(error),
-            Error::LineIndexError(error) => Some(error),
-        }
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::SpanOutsideFiles(index) => write!(f, "Position is outside of files {}", index),
-            Error::UnableToCorrelateFilename(name) => {
-                write!(f, "Unable to correlate filename `{}` to url", name)
-            },
-            Error::ByteIndexError(error) => write!(f, "{}", error),
-            Error::LocationError(error) => write!(f, "{}", error),
-            Error::LineIndexError(error) => write!(f, "{}", error),
+            Error::UnableToCorrelateFilename(_) | Error::ColumnOutOfBounds { .. } => None,
+            Error::Location(error) => Some(error),
+            Error::LineIndexOutOfBounds(error) => Some(error),
+            Error::SpanOutOfBounds(error) => Some(error),
         }
     }
 }
@@ -72,11 +62,11 @@ fn location_to_position(
         let max = ColumnIndex(line_str.len() as RawIndex);
         let given = column;
 
-        Err(LocationError::ColumnOutOfBounds { given, max }.into())
+        Err(Error::ColumnOutOfBounds { given, max })
     } else if !line_str.is_char_boundary(column.to_usize()) {
         let given = byte_index;
 
-        Err(ByteIndexError::InvalidCharBoundary { given }.into())
+        Err(LocationError::InvalidCharBoundary { given }.into())
     } else {
         let line_utf16 = line_str[..column.to_usize()].encode_utf16();
         let character = line_utf16.count() as u64;
@@ -86,25 +76,23 @@ fn location_to_position(
     }
 }
 
-pub fn byte_index_to_position<S>(file: &File<S>, pos: ByteIndex) -> Result<lsp::Position, Error>
-where
-    S: AsRef<str>,
-{
-    let line = file.find_line(pos)?;
-    let line_span = file.line_span(line).unwrap();
-    let line_str = file.src_slice(line_span).unwrap();
-    let column = ColumnIndex::from((pos - line_span.start()).0 as RawIndex);
+pub fn byte_index_to_position(
+    files: &Files,
+    file_id: FileId,
+    byte_index: ByteIndex,
+) -> Result<lsp::Position, Error> {
+    let location = files.location(file_id, byte_index)?;
+    let line_span = files.line_span(file_id, location.line)?;
+    let line_str = files.source_slice(file_id, line_span)?;
+    let column = ColumnIndex::from((byte_index - line_span.start()).0 as RawIndex);
 
-    location_to_position(line_str, line, column, pos)
+    location_to_position(line_str, location.line, column, byte_index)
 }
 
-pub fn byte_span_to_range<S>(file: &File<S>, span: Span<ByteIndex>) -> Result<lsp::Range, Error>
-where
-    S: AsRef<str>,
-{
+pub fn byte_span_to_range(files: &Files, file_id: FileId, span: Span) -> Result<lsp::Range, Error> {
     Ok(lsp::Range {
-        start: byte_index_to_position(file, span.start())?,
-        end: byte_index_to_position(file, span.end())?,
+        start: byte_index_to_position(files, file_id, span.start())?,
+        end: byte_index_to_position(files, file_id, span.end())?,
     })
 }
 
@@ -115,8 +103,8 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
     let mut chars = line.chars();
     while let Some(ch) = chars.next() {
         if character_offset == character {
-            let chars_off = ByteOffset::from_str(chars.as_str());
-            let ch_off = ByteOffset::from_char_utf8(ch);
+            let chars_off = ByteOffset::from_str_len_utf8(chars.as_str());
+            let ch_off = ByteOffset::from_char_len_utf8(ch);
 
             return Ok(line_len - chars_off - ch_off);
         }
@@ -128,35 +116,33 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
     if character_offset == character {
         Ok(line_len)
     } else {
-        Err(LocationError::ColumnOutOfBounds {
+        Err(Error::ColumnOutOfBounds {
             given: ColumnIndex(character_offset as RawIndex),
             max: ColumnIndex(line.len() as RawIndex),
-        }
-        .into())
+        })
     }
 }
 
-pub fn position_to_byte_index<S>(
-    file: &File<S>,
+pub fn position_to_byte_index(
+    files: &Files,
+    file_id: FileId,
     position: &lsp::Position,
-) -> Result<ByteIndex, Error>
-where
-    S: AsRef<str>,
-{
-    let line_span = file.line_span(LineIndex::from(position.line as RawIndex))?;
-    let src_slice = file.src_slice(line_span).unwrap();
-    let byte_offset = character_to_line_offset(src_slice, position.character)?;
+) -> Result<ByteIndex, Error> {
+    let line_span = files.line_span(file_id, position.line as RawIndex)?;
+    let source = files.source_slice(file_id, line_span)?;
+    let byte_offset = character_to_line_offset(source, position.character)?;
 
     Ok(line_span.start() + byte_offset)
 }
 
-pub fn range_to_byte_span<S>(file: &File<S>, range: &lsp::Range) -> Result<Span<ByteIndex>, Error>
-where
-    S: AsRef<str>,
-{
+pub fn range_to_byte_span(
+    files: &Files,
+    file_id: FileId,
+    range: &lsp::Range,
+) -> Result<Span, Error> {
     Ok(Span::new(
-        position_to_byte_index(file, &range.start)?,
-        position_to_byte_index(file, &range.end)?,
+        position_to_byte_index(files, file_id, &range.start)?,
+        position_to_byte_index(files, file_id, &range.end)?,
     ))
 }
 
@@ -169,57 +155,31 @@ pub fn make_lsp_severity(severity: Severity) -> lsp::DiagnosticSeverity {
     }
 }
 
-const UNKNOWN_POS: lsp::Position = lsp::Position {
-    character: 0,
-    line: 0,
-};
-
-const UNKNOWN_RANGE: lsp::Range = lsp::Range {
-    start: UNKNOWN_POS,
-    end: UNKNOWN_POS,
-};
-
-/// Translates a `codespan_reporting::Diagnostic` to a `languageserver_types::Diagnostic`.
+/// Translates a `codespan_reporting::Diagnostic` to a
+/// `languageserver_types::Diagnostic`.
 ///
-/// Since the language client requires `Url`s to locate the errors `codespan_name_to_file` is
-/// necessary to resolve codespan `FileName`s
+/// Since the language client requires `Url`s to locate the diagnostics,
+/// `correlate_file_url` is necessary to resolve codespan `FileName`s
 ///
 /// `code` and `file` are left empty by this function
-pub fn make_lsp_diagnostic<F>(
+pub fn make_lsp_diagnostic(
     files: &Files,
     diagnostic: Diagnostic,
-    mut codespan_name_to_file: F,
-) -> Result<lsp::Diagnostic, Error>
-where
-    F: FnMut(&str) -> Result<Url, ()>,
-{
-    let find_file = |index| {
-        files
-            .find_file(index)
-            .ok_or_else(|| Error::SpanOutsideFiles(index))
-    };
-
+    mut correlate_file_url: impl FnMut(FileId, &str) -> Result<Url, ()>,
+) -> Result<lsp::Diagnostic, Error> {
     // We need a position for the primary error so take the span from the first primary label
-    let primary_file = find_file(diagnostic.primary_label.span.start())?;
-    let primary_label_range = byte_span_to_range(&primary_file, diagnostic.primary_label.span)?;
+    let primary_file_id = diagnostic.primary_label.file_span.id;
+    let primary_span = diagnostic.primary_label.file_span.span;
+    let primary_label_range = byte_span_to_range(files, primary_file_id, primary_span)?;
 
     let related_information = diagnostic
         .secondary_labels
         .into_iter()
         .map(|label| {
-            // If the label's span does not point anywhere, assume it comes from the same file
-            // as the primary label
-            let (file, range) = if label.span.start() == ByteIndex::none() {
-                (primary_file, UNKNOWN_RANGE)
-            } else {
-                let file = find_file(label.span.start())?;
-                let range = byte_span_to_range(file, label.span)?;
-
-                (file, range)
-            };
-
-            let uri = codespan_name_to_file(file.name())
-                .map_err(|()| Error::UnableToCorrelateFilename(file.name().to_owned()))?;
+            let file_id = label.file_span.id;
+            let range = byte_span_to_range(files, file_id, label.file_span.span)?;
+            let uri = correlate_file_url(file_id, files.name(file_id))
+                .map_err(|()| Error::UnableToCorrelateFilename(files.name(file_id).to_owned()))?;
 
             Ok(lsp::DiagnosticRelatedInformation {
                 location: lsp::Location { uri, range },
@@ -252,18 +212,20 @@ mod tests {
         let text = r#"
 let test = 2
 let test1 = ""
-te
+test
 "#;
-        let file = File::new("".into(), text);
+        let mut files = Files::new();
+        let file_id = files.add("test", text);
         let pos = position_to_byte_index(
-            &file,
+            &files,
+            file_id,
             &lsp::Position {
                 line: 3,
                 character: 2,
             },
         )
         .unwrap();
-        assert_eq!(Location::new(3, 2), file.location(pos).unwrap());
+        assert_eq!(Location::new(3, 2), files.location(file_id, pos).unwrap());
     }
 
     // The protocol specifies that each `character` in position is a UTF-16 character.
@@ -272,32 +234,36 @@ te
 
     #[test]
     fn unicode_get_byte_index() {
-        let file = File::new("".into(), UNICODE);
+        let mut files = Files::new();
+        let file_id = files.add("unicode", UNICODE);
 
         let result = position_to_byte_index(
-            &file,
+            &files,
+            file_id,
             &lsp::Position {
                 line: 0,
                 character: 3,
             },
         );
-        assert_eq!(result, Ok(ByteIndex::from(6)));
+        assert_eq!(result, Ok(ByteIndex::from(5)));
 
         let result = position_to_byte_index(
-            &file,
+            &files,
+            file_id,
             &lsp::Position {
                 line: 0,
                 character: 6,
             },
         );
-        assert_eq!(result, Ok(ByteIndex::from(11)));
+        assert_eq!(result, Ok(ByteIndex::from(10)));
     }
 
     #[test]
     fn unicode_get_position() {
-        let file = File::new("".into(), UNICODE);
+        let mut files = Files::new();
+        let file_id = files.add("unicode", UNICODE);
 
-        let result = byte_index_to_position(&file, ByteIndex::from(6));
+        let result = byte_index_to_position(&files, file_id, ByteIndex::from(5));
         assert_eq!(
             result,
             Ok(lsp::Position {
@@ -306,7 +272,7 @@ te
             })
         );
 
-        let result = byte_index_to_position(&file, ByteIndex::from(11));
+        let result = byte_index_to_position(&files, file_id, ByteIndex::from(10));
         assert_eq!(
             result,
             Ok(lsp::Position {

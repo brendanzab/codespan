@@ -1,4 +1,4 @@
-use codespan::{ByteIndex, File, Files, LineIndex, RawIndex};
+use codespan::{ByteIndex, Files, LineIndex, Location, Span};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
 
@@ -67,21 +67,15 @@ impl Config {
 pub fn emit(
     mut writer: impl WriteColor,
     config: &Config,
-    files: &Files<impl AsRef<str>>,
+    files: &Files,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
     Header::new(diagnostic).emit(&mut writer, config)?;
 
-    match files.find_file(diagnostic.primary_label.span.start()) {
-        None => SimpleMessage::new(&diagnostic.primary_label).emit(&mut writer, config)?,
-        Some(file) => MarkedSource::new_primary(file, &diagnostic).emit(&mut writer, config)?,
-    }
+    MarkedSource::new_primary(files, &diagnostic).emit(&mut writer, config)?;
 
     for label in &diagnostic.secondary_labels {
-        match files.find_file(label.span.start()) {
-            None => SimpleMessage::new(&label).emit(&mut writer, config)?,
-            Some(file) => MarkedSource::new_secondary(file, &label).emit(&mut writer, config)?,
-        }
+        MarkedSource::new_secondary(files, &label).emit(&mut writer, config)?;
     }
 
     Ok(())
@@ -156,32 +150,6 @@ impl<'a> Header<'a> {
     }
 }
 
-/// A simple message
-///
-/// ```text
-/// - Expected integer but got string
-/// ```
-struct SimpleMessage<'a> {
-    message: &'a str,
-}
-
-impl<'a> SimpleMessage<'a> {
-    fn new(label: &'a Label) -> SimpleMessage<'a> {
-        SimpleMessage {
-            message: &label.message,
-        }
-    }
-
-    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
-        if !self.message.is_empty() {
-            write!(writer, "- {}", self.message)?;
-            write!(writer, "\n")?;
-        }
-
-        Ok(())
-    }
-}
-
 enum MarkStyle {
     Primary(Severity),
     Secondary,
@@ -196,35 +164,55 @@ enum MarkStyle {
 ///   │         ^^ Expected integer but got string
 ///   ╵
 /// ```
-struct MarkedSource<'a, S: AsRef<str>> {
-    file: &'a File<S>,
+struct MarkedSource<'a> {
+    files: &'a Files,
     label: &'a Label,
     mark_style: MarkStyle,
 }
 
-impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
-    fn new_primary(file: &'a File<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
+impl<'a> MarkedSource<'a> {
+    fn new_primary(files: &'a Files, diagnostic: &'a Diagnostic) -> MarkedSource<'a> {
         MarkedSource {
-            file,
+            files,
             label: &diagnostic.primary_label,
             mark_style: MarkStyle::Primary(diagnostic.severity),
         }
     }
 
-    fn new_secondary(file: &'a File<S>, label: &'a Label) -> MarkedSource<'a, S> {
+    fn new_secondary(files: &'a Files, label: &'a Label) -> MarkedSource<'a> {
         MarkedSource {
-            file,
+            files,
             label,
             mark_style: MarkStyle::Secondary,
         }
     }
 
+    fn span(&self) -> Span {
+        self.label.file_span.span
+    }
+
     fn start(&self) -> ByteIndex {
-        self.label.span.start()
+        self.span().start()
     }
 
     fn end(&self) -> ByteIndex {
-        self.label.span.end()
+        self.span().end()
+    }
+
+    fn file_name(&self) -> &'a str {
+        self.files.name(self.label.file_span.id)
+    }
+
+    fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
+        self.files.location(self.label.file_span.id, byte_index)
+    }
+
+    fn source_slice(&self, span: Span) -> Result<&'a str, impl std::error::Error> {
+        self.files.source_slice(self.label.file_span.id, span)
+    }
+
+    fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
+        self.files.line_span(self.label.file_span.id, line_index)
     }
 
     fn label_color(&self, config: &Config) -> Color {
@@ -247,10 +235,10 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             .set_fg(Some(self.label_color(config)))
             .clone();
 
-        let start = self.file.location(self.start()).expect("location_start");
-        let end = self.file.location(self.end()).expect("location_end");
-        let start_line_span = self.file.line_span(start.line).expect("line_span");
-        let end_line_span = self.file.line_span(end.line).expect("line_span");
+        let start = self.location(self.start()).expect("location_start");
+        let end = self.location(self.end()).expect("location_end");
+        let start_line_span = self.line_span(start.line).expect("line_span");
+        let end_line_span = self.line_span(end.line).expect("line_span");
 
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
@@ -270,7 +258,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         write!(
             writer,
             "{file}:{line}:{column}",
-            file = self.file.name(),
+            file = self.file_name(),
             line = start.line.number(),
             column = start.column.number(),
         )?;
@@ -301,7 +289,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
         // Write source prefix before marked section
         let prefix_span = start_line_span.with_end(self.start());
-        let source_prefix = self.file.src_slice(prefix_span).expect("prefix");
+        let source_prefix = self.source_slice(prefix_span).expect("prefix");
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
@@ -309,7 +297,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             // Single line
 
             // Write marked source section
-            let marked_source = self.file.src_slice(self.label.span).expect("marked_source");
+            let marked_source = self.source_slice(self.span()).expect("marked_source");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
@@ -319,12 +307,12 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.start());
-            let marked_source = self.file.src_slice(marked_span).expect("start_of_marked");
+            let marked_source = self.source_slice(marked_span).expect("start_of_marked");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
 
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
-                .map(|i| LineIndex::from(i as RawIndex))
+                .map(|i| LineIndex::from(i as u32))
             {
                 // Write line number and gutter
                 writer.set_color(&gutter_spec)?;
@@ -336,8 +324,8 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
                 )?;
 
                 // Write marked source section
-                let mark_span = self.file.line_span(line_index).expect("marked_line_span");
-                let marked_source = self.file.src_slice(mark_span).expect("marked_source");
+                let mark_span = self.line_span(line_index).expect("marked_line_span");
+                let marked_source = self.source_slice(mark_span).expect("marked_source");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
                 write!(writer, "\n")?;
@@ -354,7 +342,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
             // Write marked source section
             let mark_span = end_line_span.with_end(self.end());
-            let marked_source = self.file.src_slice(mark_span).expect("marked_source");
+            let marked_source = self.source_slice(mark_span).expect("marked_source");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
@@ -363,7 +351,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
         // Write source suffix after marked section
         let suffix_span = end_line_span.with_start(self.end());
-        let source_suffix = self.file.src_slice(suffix_span).expect("suffix");
+        let source_suffix = self.source_slice(suffix_span).expect("suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
         write!(writer, "\n")?;
 
