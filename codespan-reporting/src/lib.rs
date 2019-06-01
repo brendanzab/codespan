@@ -2,7 +2,6 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::str::FromStr;
 use termcolor::ColorChoice;
 
@@ -11,55 +10,8 @@ mod emitter;
 
 pub use termcolor;
 
-pub use self::diagnostic::{Diagnostic, Label};
+pub use self::diagnostic::{Diagnostic, Label, Severity};
 pub use self::emitter::{emit, Config};
-
-/// A severity level for diagnostic messages.
-///
-/// These are ordered in the following way:
-///
-/// ```rust
-/// use codespan_reporting::Severity;
-///
-/// assert!(Severity::Bug > Severity::Error);
-/// assert!(Severity::Error > Severity::Warning);
-/// assert!(Severity::Warning > Severity::Note);
-/// assert!(Severity::Note > Severity::Help);
-/// ```
-#[derive(Copy, Clone, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
-#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
-pub enum Severity {
-    /// An unexpected bug.
-    Bug,
-    /// An error.
-    Error,
-    /// A warning.
-    Warning,
-    /// A note.
-    Note,
-    /// A help message.
-    Help,
-}
-
-impl Severity {
-    /// We want bugs to be the maximum severity, errors next, etc...
-    fn to_cmp_int(self) -> u8 {
-        match self {
-            Severity::Bug => 5,
-            Severity::Error => 4,
-            Severity::Warning => 3,
-            Severity::Note => 2,
-            Severity::Help => 1,
-        }
-    }
-}
-
-impl PartialOrd for Severity {
-    fn partial_cmp(&self, other: &Severity) -> Option<Ordering> {
-        u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
-    }
-}
 
 /// A command line argument that configures the coloring of the output.
 ///
