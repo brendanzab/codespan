@@ -1,5 +1,3 @@
-//! Diagnostic reporting support for the codespan crate
-
 use codespan::ByteSpan;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
