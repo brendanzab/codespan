@@ -247,13 +247,13 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             .set_fg(Some(self.label_color(config)))
             .clone();
 
-        let (start_line, start_column) = self.file.location(self.start()).expect("location_start");
-        let (end_line, _) = self.file.location(self.end()).expect("location_end");
-        let start_line_span = self.file.line_span(start_line).expect("line_span");
-        let end_line_span = self.file.line_span(end_line).expect("line_span");
+        let start = self.file.location(self.start()).expect("location_start");
+        let end = self.file.location(self.end()).expect("location_end");
+        let start_line_span = self.file.line_span(start.line).expect("line_span");
+        let end_line_span = self.file.line_span(end.line).expect("line_span");
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = format!("{}", end_line.number()).len();
+        let gutter_padding = format!("{}", end.line.number()).len();
 
         // File name
         //
@@ -271,8 +271,8 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             writer,
             "{file}:{line}:{column}",
             file = self.file.name(),
-            line = start_line.number(),
-            column = start_column.number(),
+            line = start.line.number(),
+            column = start.column.number(),
         )?;
         write!(writer, "\n")?;
 
@@ -292,7 +292,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         write!(
             writer,
             "{: >width$} │ ",
-            start_line.number(),
+            start.line.number(),
             width = gutter_padding,
         )?;
         writer.reset()?;
@@ -305,7 +305,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
-        let mark_len = if start_line == end_line {
+        let mark_len = if start.line == end.line {
             // Single line
 
             // Write marked source section
@@ -323,7 +323,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
 
-            for line_index in ((start_line.to_usize() + 1)..end_line.to_usize())
+            for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                 .map(|i| LineIndex::from(i as RawIndex))
             {
                 // Write line number and gutter
@@ -348,7 +348,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             write!(
                 writer,
                 "{: >width$} │ ",
-                end_line.number(),
+                end.line.number(),
                 width = gutter_padding,
             )?;
 

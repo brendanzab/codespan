@@ -14,6 +14,7 @@
 mod codemap;
 mod filemap;
 mod index;
+mod location;
 mod span;
 
 pub use crate::codemap::CodeMap;
@@ -24,4 +25,5 @@ pub use crate::index::{ColumnIndex, ColumnNumber, ColumnOffset};
 pub use crate::index::{Index, Offset};
 pub use crate::index::{LineIndex, LineNumber, LineOffset};
 pub use crate::index::{RawIndex, RawOffset};
+pub use crate::location::Location;
 pub use crate::span::{ByteSpan, Span};
