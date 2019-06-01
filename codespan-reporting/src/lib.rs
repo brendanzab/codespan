@@ -1,3 +1,5 @@
+//! Diagnostic reporting support for the codespan crate.
+
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -12,7 +14,7 @@ pub use termcolor;
 pub use self::diagnostic::{Diagnostic, Label};
 pub use self::emitter::{emit, Config};
 
-/// A severity level for diagnostic messages
+/// A severity level for diagnostic messages.
 ///
 /// These are ordered in the following way:
 ///
@@ -59,7 +61,7 @@ impl PartialOrd for Severity {
     }
 }
 
-/// A command line argument that configures the coloring of the output
+/// A command line argument that configures the coloring of the output.
 ///
 /// This can be used with command line argument parsers like `clap` or `structopt`.
 ///
@@ -92,7 +94,7 @@ impl PartialOrd for Severity {
 pub struct ColorArg(pub ColorChoice);
 
 impl ColorArg {
-    /// Allowed values the argument
+    /// Allowed values the argument.
     ///
     /// This is useful for generating documentation via `clap` or `structopt`'s
     /// `possible_values` configuration.

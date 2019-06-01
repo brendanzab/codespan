@@ -1,5 +1,3 @@
-//! Diagnostic reporting support for the codespan crate
-
 use codespan::ByteSpan;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
@@ -18,6 +16,7 @@ pub struct Label {
 }
 
 impl Label {
+    /// Create a new label.
     pub fn new(span: ByteSpan, message: impl Into<String>) -> Label {
         Label {
             span,
@@ -45,6 +44,7 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
+    /// Create a new diagnostic.
     pub fn new(severity: Severity, message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic {
             severity,
@@ -55,31 +55,38 @@ impl Diagnostic {
         }
     }
 
+    /// Create a new diagnostic with a severity of `Severity::Bug`.
     pub fn new_bug(message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic::new(Severity::Bug, message, primary_label)
     }
 
+    /// Create a new diagnostic with a severity of `Severity::Error`.
     pub fn new_error(message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic::new(Severity::Error, message, primary_label)
     }
 
+    /// Create a new diagnostic with a severity of `Severity::Warning`.
     pub fn new_warning(message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic::new(Severity::Warning, message, primary_label)
     }
 
+    /// Create a new diagnostic with a severity of `Severity::Note`.
     pub fn new_note(message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic::new(Severity::Note, message, primary_label)
     }
 
+    /// Create a new diagnostic with a severity of `Severity::Help`.
     pub fn new_help(message: impl Into<String>, primary_label: Label) -> Diagnostic {
         Diagnostic::new(Severity::Help, message, primary_label)
     }
 
+    /// Add an error code to the diagnostic.
     pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic {
         self.code = Some(code.into());
         self
     }
 
+    /// Add some secondary labels to the diagnostic.
     pub fn with_secondary_labels(mut self, labels: impl IntoIterator<Item = Label>) -> Diagnostic {
         self.secondary_labels.extend(labels);
         self
