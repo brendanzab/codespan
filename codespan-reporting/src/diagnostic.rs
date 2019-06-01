@@ -1,4 +1,6 @@
-use codespan::ByteSpan;
+//! Diagnostic reporting support for the codespan crate
+
+use codespan::FileSpan;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -56,16 +58,16 @@ impl PartialOrd for Severity {
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
     /// The span we are going to include in the final snippet.
-    pub span: ByteSpan,
+    pub file_span: FileSpan,
     /// A message to provide some additional information for the underlined code.
     pub message: String,
 }
 
 impl Label {
     /// Create a new label.
-    pub fn new(span: ByteSpan, message: impl Into<String>) -> Label {
+    pub fn new(file_span: FileSpan, message: impl Into<String>) -> Label {
         Label {
-            span,
+            file_span,
             message: message.into(),
         }
     }

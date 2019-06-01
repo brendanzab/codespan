@@ -1,6 +1,6 @@
 use structopt::StructOpt;
 
-use codespan::{Files, Span};
+use codespan::{FileSpan, Files, Span};
 use codespan_reporting::termcolor::StandardStream;
 use codespan_reporting::{emit, ColorArg, Diagnostic, Label};
 
@@ -28,26 +28,25 @@ fn main() {
       3) ()
 ()
 "##;
-    let file = files.add_file("test".into(), source.to_string());
 
-    let str_start = file.byte_index(3.into(), 6.into()).unwrap();
+    let file_id = files.add("test", source.to_string());
+
     let error = Diagnostic::new_error(
         "Unexpected type in `+` application",
         Label::new(
-            Span::from_offset(str_start, 2.into()),
+            FileSpan::new(file_id, Span::new(36, 38)),
             "Expected integer but got string",
         ),
     )
     .with_code("E0001")
     .with_secondary_labels(vec![Label::new(
-        Span::from_offset(str_start, 2.into()),
+        FileSpan::new(file_id, Span::new(36, 38)),
         "Expected integer but got string",
     )]);
 
-    let line_start = file.byte_index(2.into(), 3.into()).unwrap();
     let warning = Diagnostic::new_warning(
         "`+` function has no effect unless its result is used",
-        Label::new(Span::from_offset(line_start, 27.into()), "Value discarded"),
+        Label::new(FileSpan::new(file_id, Span::new(22, 49)), "Value discarded"),
     );
 
     let diagnostics = [error, warning];

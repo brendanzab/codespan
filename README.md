@@ -44,4 +44,9 @@ Codespan is used in the following projects:
 
 ## Acknowledgments
 
-Inspired by rustc's error reporting infrastructure and the codemap crate
+Inspired by rustc's error reporting infrastructure and the [codemap] crate. The
+[language-reporting] fork also provided much needed inspiration towards
+improving the API.
+
+[codemap]: https://github.com/kevinmehall/codemap
+[language-reporting]: https://github.com/wycats/language-reporting
