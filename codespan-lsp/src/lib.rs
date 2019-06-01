@@ -254,6 +254,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use codespan::Location;
+
     use super::*;
 
     #[test]
@@ -272,7 +274,7 @@ te
             },
         )
         .unwrap();
-        assert_eq!((3.into(), 2.into()), source.location(pos).unwrap());
+        assert_eq!(Location::new(3, 2), source.location(pos).unwrap());
     }
 
     // The protocol specifies that each `character` in position is a UTF-16 character.

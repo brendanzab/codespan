@@ -7,6 +7,7 @@ use std::{error, fmt, io};
 use crate::index::{
     ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset,
 };
+use crate::location::Location;
 use crate::span::ByteSpan;
 
 #[derive(Debug, PartialEq)]
@@ -245,7 +246,7 @@ where
     }
 
     /// Returns the line and column location of `byte`
-    pub fn location(&self, index: ByteIndex) -> Result<(LineIndex, ColumnIndex), ByteIndexError> {
+    pub fn location(&self, index: ByteIndex) -> Result<Location, ByteIndexError> {
         let line_index = self.find_line(index)?;
         let line_span = self.line_span(line_index).unwrap(); // line_index should be valid!
         let line_slice = self.src_slice(line_span).unwrap(); // line_span should be valid!
@@ -253,7 +254,7 @@ where
         let column_index =
             ColumnIndex(line_slice[..byte_col.to_usize()].chars().count() as RawIndex);
 
-        Ok((line_index, column_index))
+        Ok(Location::new(line_index, column_index))
     }
 
     /// Returns the line index that the byte index points to
@@ -471,19 +472,19 @@ mod tests {
                     given: ByteIndex(0),
                     span: test_data.filemap.span(),
                 }),
-                Ok((LineIndex(0), ColumnIndex(0))),
-                Ok((LineIndex(0), ColumnIndex(6))),
-                Ok((LineIndex(1), ColumnIndex(0))),
-                Ok((LineIndex(1), ColumnIndex(5))),
-                Ok((LineIndex(2), ColumnIndex(0))),
-                Ok((LineIndex(2), ColumnIndex(0))),
-                Ok((LineIndex(3), ColumnIndex(0))),
-                Ok((LineIndex(3), ColumnIndex(3))),
-                Ok((LineIndex(4), ColumnIndex(0))),
-                Ok((LineIndex(4), ColumnIndex(5))),
-                Ok((LineIndex(5), ColumnIndex(0))),
-                Ok((LineIndex(5), ColumnIndex(6))),
-                Ok((LineIndex(6), ColumnIndex(0))),
+                Ok(Location::new(0, 0)),
+                Ok(Location::new(0, 6)),
+                Ok(Location::new(1, 0)),
+                Ok(Location::new(1, 5)),
+                Ok(Location::new(2, 0)),
+                Ok(Location::new(2, 0)),
+                Ok(Location::new(3, 0)),
+                Ok(Location::new(3, 3)),
+                Ok(Location::new(4, 0)),
+                Ok(Location::new(4, 5)),
+                Ok(Location::new(5, 0)),
+                Ok(Location::new(5, 6)),
+                Ok(Location::new(6, 0)),
                 Err(ByteIndexError::OutOfBounds {
                     given: ByteIndex(37),
                     span: test_data.filemap.span()
