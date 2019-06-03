@@ -128,7 +128,7 @@ impl<'a> Header<'a> {
 
         // Write severity name
         //
-        // ```
+        // ```text
         // error
         // ```
         writer.set_color(&primary_spec)?;
@@ -144,7 +144,7 @@ impl<'a> Header<'a> {
 
         // Write diagnostic message
         //
-        // ```
+        // ```text
         // : Unexpected type in `+` application
         // ```
         writer.set_color(&message_spec)?;
@@ -194,7 +194,9 @@ enum MarkStyle {
 ///   │
 /// 2 │ (+ test "")
 ///   │         ^^ Expected integer but got string
-///   ╵
+///   │
+///   = perhaps you meant a number like `1`?
+///
 /// ```
 struct MarkedSource<'a, S: AsRef<str>> {
     file: &'a File<S>,
@@ -257,7 +259,7 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
         // File name
         //
-        // ```
+        // ```text
         // ┌╴ <test>:2:9
         // ```
 
@@ -276,13 +278,13 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         )?;
         write!(writer, "\n")?;
 
-        // Source code snippet
+        // Body of source code snippet
         //
-        // ```
+        // ```text
         //   │
         // 2 │ (+ test "")
         //   │         ^^ Expected integer but got string
-        //   ╵
+        //   │
         // ```
 
         // Write line number and gutter
@@ -384,11 +386,37 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
         }
         writer.reset()?;
 
-        // Write final gutter
+        // Write spacing gutter
         writer.set_color(&gutter_spec)?;
-        write!(writer, "{: >width$} ╵", "", width = gutter_padding)?;
+        write!(writer, "{: >width$} │", "", width = gutter_padding)?;
         write!(writer, "\n")?;
         writer.reset()?;
+
+        // Additional notes
+        //
+        // ```text
+        // = perhaps you meant a number like `1`?
+        // ```
+
+        for note in &self.label.notes {
+            for (i, line) in note.lines().enumerate() {
+                // Write bullet or indent
+                if i == 0 {
+                    writer.set_color(&gutter_spec)?;
+                    write!(writer, "{: >width$} = ", "", width = gutter_padding)?;
+                    writer.reset()?;
+                } else {
+                    write!(writer, "{: >width$}   ", "", width = gutter_padding)?;
+                }
+
+                // Write line of note
+                write!(writer, "{}", line)?;
+                write!(writer, "\n")?;
+            }
+        }
+
+        // Write post-source spacer
+        write!(writer, "\n")?;
 
         Ok(())
     }

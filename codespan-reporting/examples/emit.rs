@@ -32,22 +32,26 @@ fn main() {
 
     let str_start = file.byte_index(3.into(), 6.into()).unwrap();
     let error = Diagnostic::new_error(
-        "Unexpected type in `+` application",
+        "unexpected type in `+` application",
         Label::new(
             Span::from_offset(str_start, 2.into()),
-            "Expected integer but got string",
+            "expected integer but got string",
+            vec![
+                "perhaps you meant a number like `1`?".to_owned(),
+            ],
         ),
     )
     .with_code("E0001")
     .with_secondary_labels(vec![Label::new(
         Span::from_offset(str_start, 2.into()),
-        "Expected integer but got string",
+        "expected integer but got string",
+        vec![]
     )]);
 
     let line_start = file.byte_index(2.into(), 3.into()).unwrap();
     let warning = Diagnostic::new_warning(
         "`+` function has no effect unless its result is used",
-        Label::new(Span::from_offset(line_start, 27.into()), "Value discarded"),
+        Label::new(Span::from_offset(line_start, 27.into()), "value discarded", vec![]),
     );
 
     let diagnostics = [error, warning];
@@ -56,6 +60,5 @@ fn main() {
     let config = codespan_reporting::Config::default();
     for diagnostic in &diagnostics {
         emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
-        println!();
     }
 }

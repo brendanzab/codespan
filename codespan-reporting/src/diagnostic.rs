@@ -59,14 +59,17 @@ pub struct Label {
     pub span: ByteSpan,
     /// A message to provide some additional information for the underlined code.
     pub message: String,
+    /// Notes providing more information under the source code snippet.
+    pub notes: Vec<String>,
 }
 
 impl Label {
     /// Create a new label.
-    pub fn new(span: ByteSpan, message: impl Into<String>) -> Label {
+    pub fn new(span: ByteSpan, message: impl Into<String>, notes: impl Into<Vec<String>>) -> Label {
         Label {
             span,
             message: message.into(),
+            notes: notes.into(),
         }
     }
 }

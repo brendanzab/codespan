@@ -203,6 +203,29 @@ where
     let primary_file = find_file(diagnostic.primary_label.span.start())?;
     let primary_label_range = byte_span_to_range(&primary_file, diagnostic.primary_label.span)?;
 
+    // Collect additional context for primary message
+    let primary_message = {
+        let mut message = diagnostic.message;
+
+        if !diagnostic.primary_label.notes.is_empty() {
+            // Spacer between message and notes
+            message.push_str("\n\n");
+            // Insert notes as a bulleted list
+            for note in diagnostic.primary_label.notes {
+                for (i, line) in note.lines().enumerate() {
+                    if i == 0 {
+                        message.push_str("  • ");
+                    } else {
+                        message.push_str("    ");
+                    }
+                    message.push_str(line.trim_end());
+                }
+            }
+        }
+
+        message
+    };
+
     let related_information = diagnostic
         .secondary_labels
         .into_iter()
@@ -229,7 +252,7 @@ where
         .collect::<Result<Vec<_>, Error>>()?;
 
     Ok(lsp::Diagnostic {
-        message: diagnostic.message,
+        message: primary_message,
         range: primary_label_range,
         severity: Some(make_lsp_severity(diagnostic.severity)),
         related_information: if related_information.is_empty() {
