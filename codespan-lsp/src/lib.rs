@@ -169,16 +169,16 @@ pub fn make_lsp_diagnostic(
     mut correlate_file_url: impl FnMut(FileId, &str) -> Result<Url, ()>,
 ) -> Result<lsp::Diagnostic, Error> {
     // We need a position for the primary error so take the span from the first primary label
-    let primary_file_id = diagnostic.primary_label.file_span.id;
-    let primary_span = diagnostic.primary_label.file_span.span;
+    let primary_file_id = diagnostic.primary_label.file_id;
+    let primary_span = diagnostic.primary_label.span;
     let primary_label_range = byte_span_to_range(files, primary_file_id, primary_span)?;
 
     let related_information = diagnostic
         .secondary_labels
         .into_iter()
         .map(|label| {
-            let file_id = label.file_span.id;
-            let range = byte_span_to_range(files, file_id, label.file_span.span)?;
+            let file_id = label.file_id;
+            let range = byte_span_to_range(files, file_id, label.span)?;
             let uri = correlate_file_url(file_id, files.name(file_id))
                 .map_err(|()| Error::UnableToCorrelateFilename(files.name(file_id).to_owned()))?;
 

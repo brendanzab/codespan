@@ -38,21 +38,6 @@ impl error::Error for SpanOutOfBoundsError {}
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct FileId(u32);
 
-/// A span that is situated in a source file.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
-pub struct FileSpan {
-    pub id: FileId,
-    pub span: Span,
-}
-
-impl FileSpan {
-    pub fn new(id: FileId, span: Span) -> FileSpan {
-        FileSpan { id, span }
-    }
-}
-
 /// A database of source files.
 #[derive(Debug, Clone)]
 pub struct Files {

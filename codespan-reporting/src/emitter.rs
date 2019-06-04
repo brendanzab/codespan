@@ -188,7 +188,7 @@ impl<'a> MarkedSource<'a> {
     }
 
     fn span(&self) -> Span {
-        self.label.file_span.span
+        self.label.span
     }
 
     fn start(&self) -> ByteIndex {
@@ -200,19 +200,19 @@ impl<'a> MarkedSource<'a> {
     }
 
     fn file_name(&self) -> &'a str {
-        self.files.name(self.label.file_span.id)
+        self.files.name(self.label.file_id)
     }
 
     fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
-        self.files.location(self.label.file_span.id, byte_index)
+        self.files.location(self.label.file_id, byte_index)
     }
 
     fn source_slice(&self, span: Span) -> Result<&'a str, impl std::error::Error> {
-        self.files.source_slice(self.label.file_span.id, span)
+        self.files.source_slice(self.label.file_id, span)
     }
 
     fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
-        self.files.line_span(self.label.file_span.id, line_index)
+        self.files.line_span(self.label.file_id, line_index)
     }
 
     fn label_color(&self, config: &Config) -> Color {
