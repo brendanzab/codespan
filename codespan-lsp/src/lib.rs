@@ -164,6 +164,7 @@ pub fn make_lsp_severity(severity: Severity) -> lsp::DiagnosticSeverity {
 /// `code` and `file` are left empty by this function
 pub fn make_lsp_diagnostic(
     files: &Files,
+    source: impl Into<Option<String>>,
     diagnostic: Diagnostic,
     mut correlate_file_url: impl FnMut(FileId, &str) -> Result<Url, ()>,
 ) -> Result<lsp::Diagnostic, Error> {
@@ -189,15 +190,16 @@ pub fn make_lsp_diagnostic(
         .collect::<Result<Vec<_>, Error>>()?;
 
     Ok(lsp::Diagnostic {
-        message: diagnostic.message,
         range: primary_label_range,
+        code: diagnostic.code.map(lsp::NumberOrString::String),
+        source: source.into(),
         severity: Some(make_lsp_severity(diagnostic.severity)),
+        message: diagnostic.message,
         related_information: if related_information.is_empty() {
             None
         } else {
             Some(related_information)
         },
-        ..lsp::Diagnostic::default()
     })
 }
 
