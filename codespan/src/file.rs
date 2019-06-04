@@ -199,8 +199,12 @@ impl Files {
     /// assert_eq!(files.source_slice(file_id, Span::new(0, 5)), Ok("hello"));
     /// assert!(files.source_slice(file_id, Span::new(0, 100)).is_err());
     /// ```
-    pub fn source_slice(&self, file_id: FileId, span: Span) -> Result<&str, SpanOutOfBoundsError> {
-        self.get(file_id).source_slice(span)
+    pub fn source_slice(
+        &self,
+        file_id: FileId,
+        span: impl Into<Span>,
+    ) -> Result<&str, SpanOutOfBoundsError> {
+        self.get(file_id).source_slice(span.into())
     }
 }
 

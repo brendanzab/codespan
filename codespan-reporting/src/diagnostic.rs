@@ -67,10 +67,10 @@ pub struct Label {
 
 impl Label {
     /// Create a new label.
-    pub fn new(file_id: FileId, span: Span, message: impl Into<String>) -> Label {
+    pub fn new(file_id: FileId, span: impl Into<Span>, message: impl Into<String>) -> Label {
         Label {
             file_id,
-            span,
+            span: span.into(),
             message: message.into(),
         }
     }

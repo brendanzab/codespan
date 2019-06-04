@@ -1,6 +1,7 @@
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::ops::Range;
 
 use crate::ByteIndex;
 
@@ -117,5 +118,14 @@ impl fmt::Display for Span {
             start = self.start(),
             end = self.end(),
         )
+    }
+}
+
+impl<I> From<Range<I>> for Span
+where
+    I: Into<ByteIndex>,
+{
+    fn from(range: Range<I>) -> Span {
+        Span::new(range.start, range.end)
     }
 }
