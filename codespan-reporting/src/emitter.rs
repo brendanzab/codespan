@@ -158,10 +158,10 @@ enum MarkStyle {
 /// A marked section of source code
 ///
 /// ```text
-///   ┌╴ <test>:2:9
+///   ┌╴ test:2:9
 ///   │
 /// 2 │ (+ test "")
-///   │         ^^ Expected integer but got string
+///   │         ^^ expected `Int` but found `String`
 ///   ╵
 /// ```
 struct MarkedSource<'a> {
@@ -246,7 +246,7 @@ impl<'a> MarkedSource<'a> {
         // File name
         //
         // ```
-        // ┌╴ <test>:2:9
+        // ┌╴ test:2:9
         // ```
 
         // Write gutter
@@ -269,7 +269,7 @@ impl<'a> MarkedSource<'a> {
         // ```
         //   │
         // 2 │ (+ test "")
-        //   │         ^^ Expected integer but got string
+        //   │         ^^ expected `Int` but found `String`
         //   ╵
         // ```
 

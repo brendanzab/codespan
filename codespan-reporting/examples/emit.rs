@@ -33,13 +33,13 @@ fn main() {
 
     let error = Diagnostic::new_error(
         "Unexpected type in `+` application",
-        Label::new(file_id, 36..38, "Expected integer but got string"),
+        Label::new(file_id, 36..38, "expected `Int` but found `String`"),
     )
     .with_code("E0001")
     .with_secondary_labels(vec![Label::new(
         file_id,
         36..38,
-        "Expected integer but got string",
+        "expected `Int` but found `String`",
     )]);
 
     let warning = Diagnostic::new_warning(
