@@ -59,7 +59,8 @@ impl PartialOrd for Severity {
 pub struct Label {
     /// The span we are going to include in the final snippet.
     pub file_span: FileSpan,
-    /// A message to provide some additional information for the underlined code.
+    /// A message to provide some additional information for the underlined
+    /// code. This could be a multi-line string.
     pub message: String,
 }
 

@@ -32,21 +32,32 @@ fn main() {
     let file_id = files.add("test", source.to_string());
 
     let error = Diagnostic::new_error(
-        "Unexpected type in `+` application",
+        "unexpected type in `+` application",
         Label::new(
             FileSpan::new(file_id, Span::new(36, 38)),
-            "Expected integer but got string",
+            // Use the unindent crate to format this string as:
+            //
+            // ```
+            // "expected: `Int`\n   found: `String`"
+            // ```
+            unindent::unindent("
+                expected: `Int`
+                   found: `String`
+            "),
         ),
     )
     .with_code("E0001")
     .with_secondary_labels(vec![Label::new(
         FileSpan::new(file_id, Span::new(36, 38)),
-        "Expected integer but got string",
+        unindent::unindent("
+            expected: `Int`
+               found: `String`
+        "),
     )]);
 
     let warning = Diagnostic::new_warning(
         "`+` function has no effect unless its result is used",
-        Label::new(FileSpan::new(file_id, Span::new(22, 49)), "Value discarded"),
+        Label::new(FileSpan::new(file_id, Span::new(22, 49)), "value discarded"),
     );
 
     let diagnostics = [error, warning];

@@ -161,7 +161,8 @@ enum MarkStyle {
 ///   ┌╴ <test>:2:9
 ///   │
 /// 2 │ (+ test "")
-///   │         ^^ Expected integer but got string
+///   │         ^^ expected: `Int`
+///   │               found: `String`
 ///   ╵
 /// ```
 struct MarkedSource<'a> {
@@ -269,7 +270,8 @@ impl<'a> MarkedSource<'a> {
         // ```
         //   │
         // 2 │ (+ test "")
-        //   │         ^^ Expected integer but got string
+        //   │         ^^ expected: `Int`
+        //   │               found: `String`
         //   ╵
         // ```
 
@@ -293,7 +295,7 @@ impl<'a> MarkedSource<'a> {
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
-        let mark_len = if start.line == end.line {
+        let underline_len = if start.line == end.line {
             // Single line
 
             // Write marked source section
@@ -360,17 +362,47 @@ impl<'a> MarkedSource<'a> {
         write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
         writer.reset()?;
 
-        // Write underline and label
+        // Write underline
         writer.set_color(&label_spec)?;
         write!(writer, "{: >width$}", "", width = source_prefix.len())?;
-        for _ in 0..mark_len {
+        for _ in 0..underline_len {
             write!(writer, "{}", self.underline_char(config))?;
         }
-        if !self.label.message.is_empty() {
-            write!(writer, " {}", self.label.message)?;
-            write!(writer, "\n")?;
-        }
         writer.reset()?;
+
+        // Write label message
+        if !self.label.message.is_empty() {
+            // The padding that we need to indent us from the gutter to the end
+            // of the underline.
+            let underline_padding = source_prefix.len() + underline_len + 1;
+
+            for (i, line) in self.label.message.lines().enumerate() {
+                match i {
+                    // First line of label message
+                    0 => {
+                        // Write rest of label message line (following the underline)
+                        writer.set_color(&label_spec)?;
+                        write!(writer, " {}", line)?;
+                        write!(writer, "\n")?;
+                        writer.reset()?;
+                    }
+                    // Subsequent lines of label message
+                    _ => {
+                        // Write gutter
+                        writer.set_color(&gutter_spec)?;
+                        write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
+                        writer.reset()?;
+
+
+                        // Write rest of label message line
+                        writer.set_color(&label_spec)?;
+                        write!(writer, "{: >width$}{}", "", line, width = underline_padding)?;
+                        write!(writer, "\n")?;
+                        writer.reset()?;
+                    }
+                }
+            }
+        }
 
         // Write final gutter
         writer.set_color(&gutter_spec)?;
