@@ -256,8 +256,8 @@ impl<'a> MarkedSource<'a> {
 
         let start = self.location(self.start()).expect("location_start");
         let end = self.location(self.end()).expect("location_end");
-        let start_line_span = self.line_span(start.line).expect("line_span");
-        let end_line_span = self.line_span(end.line).expect("line_span");
+        let start_line_span = self.line_span(start.line).expect("start_line_span");
+        let end_line_span = self.line_span(end.line).expect("end_line_span");
 
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
@@ -301,7 +301,7 @@ impl<'a> MarkedSource<'a> {
 
         // Write source prefix before marked section
         let prefix_span = start_line_span.with_end(self.start());
-        let source_prefix = self.source_slice(prefix_span).expect("prefix");
+        let source_prefix = self.source_slice(prefix_span).expect("source_prefix");
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
@@ -319,7 +319,7 @@ impl<'a> MarkedSource<'a> {
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.start());
-            let marked_source = self.source_slice(marked_span).expect("start_of_marked");
+            let marked_source = self.source_slice(marked_span).expect("marked_source_1");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
 
@@ -331,8 +331,8 @@ impl<'a> MarkedSource<'a> {
                 BorderLeft::new().emit(writer, config)?;
 
                 // Write marked source section
-                let mark_span = self.line_span(line_index).expect("marked_line_span");
-                let marked_source = self.source_slice(mark_span).expect("marked_source");
+                let marked_span = self.line_span(line_index).expect("marked_span");
+                let marked_source = self.source_slice(marked_span).expect("marked_source_2");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
                 NewLine::new().emit(writer, config)?;
@@ -343,8 +343,8 @@ impl<'a> MarkedSource<'a> {
             BorderLeft::new().emit(writer, config)?;
 
             // Write marked source section
-            let mark_span = end_line_span.with_end(self.end());
-            let marked_source = self.source_slice(mark_span).expect("marked_source");
+            let marked_span = end_line_span.with_end(self.end());
+            let marked_source = self.source_slice(marked_span).expect("marked_source_3");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
@@ -353,7 +353,7 @@ impl<'a> MarkedSource<'a> {
 
         // Write source suffix after marked section
         let suffix_span = end_line_span.with_start(self.end());
-        let source_suffix = self.source_slice(suffix_span).expect("suffix");
+        let source_suffix = self.source_slice(suffix_span).expect("source_suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
         NewLine::new().emit(writer, config)?;
 
