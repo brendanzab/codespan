@@ -435,7 +435,7 @@ impl<'a> Gutter {
             None => {
                 write!(
                     writer,
-                    "{space: >width$} ",
+                    "{space: >width$}",
                     space = "",
                     width = self.gutter_padding,
                 )?;
@@ -448,13 +448,14 @@ impl<'a> Gutter {
                 writer.set_color(&line_number_spec)?;
                 write!(
                     writer,
-                    "{line: >width$} ",
+                    "{line: >width$}",
                     line = line_number,
                     width = self.gutter_padding,
                 )?;
                 writer.reset()?;
             },
         }
+        write!(writer, " ")?;
 
         Ok(())
     }
