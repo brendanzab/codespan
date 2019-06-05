@@ -53,6 +53,5 @@ fn main() {
     let config = codespan_reporting::Config::default();
     for diagnostic in &diagnostics {
         emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
-        println!();
     }
 }
