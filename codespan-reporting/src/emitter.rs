@@ -87,14 +87,14 @@ pub fn emit(
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
     Header::new(diagnostic).emit(&mut writer, config)?;
-    write!(writer, "\n")?;
+    NewLine::new().emit(&mut writer, config)?;
 
     MarkedSource::new_primary(files, &diagnostic).emit(&mut writer, config)?;
-    write!(writer, "\n")?;
+    NewLine::new().emit(&mut writer, config)?;
 
     for label in &diagnostic.secondary_labels {
         MarkedSource::new_secondary(files, &label).emit(&mut writer, config)?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(&mut writer, config)?;
     }
 
     Ok(())
@@ -162,8 +162,9 @@ impl<'a> Header<'a> {
         // ```
         writer.set_color(&message_spec)?;
         write!(writer, ": {}", self.message)?;
-        write!(writer, "\n")?;
         writer.reset()?;
+
+        NewLine::new().emit(writer, config)?;
 
         Ok(())
     }
@@ -276,7 +277,7 @@ impl<'a> MarkedSource<'a> {
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
 
         // Source code snippet
         //
@@ -287,10 +288,12 @@ impl<'a> MarkedSource<'a> {
         //   │
         // ```
 
-        // Write line number and border
+        // Write initial border
         Gutter::new(None, gutter_padding).emit(writer, config)?;
         BorderLeft::new().emit(writer, config)?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
+
+        // Write line number and border
         Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
         BorderLeft::new().emit(writer, config)?;
 
@@ -332,7 +335,7 @@ impl<'a> MarkedSource<'a> {
                 let marked_source = self.source_slice(mark_span).expect("marked_source");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
-                write!(writer, "\n")?;
+                NewLine::new().emit(writer, config)?;
             }
 
             // Write line number and border
@@ -352,7 +355,7 @@ impl<'a> MarkedSource<'a> {
         let suffix_span = end_line_span.with_start(self.end());
         let source_suffix = self.source_slice(suffix_span).expect("suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
 
         // Write underline border
         Gutter::new(None, gutter_padding).emit(writer, config)?;
@@ -372,13 +375,13 @@ impl<'a> MarkedSource<'a> {
         if !self.label.message.is_empty() {
             write!(writer, " {}", self.label.message)?;
         }
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
         writer.reset()?;
 
         // Write final border
         Gutter::new(None, gutter_padding).emit(writer, config)?;
         BorderLeft::new().emit(writer, config)?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
 
         Ok(())
     }
@@ -519,5 +522,18 @@ impl<'a> BorderLeft {
         writer.reset()?;
 
         Ok(())
+    }
+}
+
+/// A new line.
+struct NewLine {}
+
+impl<'a> NewLine {
+    fn new() -> NewLine {
+        NewLine {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
+        write!(writer, "\n")
     }
 }
