@@ -243,7 +243,7 @@ impl<'a> MarkedSource<'a> {
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
 
-        // File name
+        // Label locus
         //
         // ```
         // ┌╴ test:2:9
@@ -254,14 +254,8 @@ impl<'a> MarkedSource<'a> {
         write!(writer, "{: >width$} ┌╴ ", "", width = gutter_padding)?;
         writer.reset()?;
 
-        // Write file name
-        write!(
-            writer,
-            "{file}:{line}:{column}",
-            file = self.file_name(),
-            line = start.line.number(),
-            column = start.column.number(),
-        )?;
+        // Write locus
+        SourceLocus::new(self.file_name(), start).emit(writer, config)?;
         write!(writer, "\n")?;
 
         // Source code snippet
@@ -379,5 +373,37 @@ impl<'a> MarkedSource<'a> {
         writer.reset()?;
 
         Ok(())
+    }
+}
+
+/// The 'location focus' of a source code snippet.
+///
+/// This is displayed in a way that other tools can understand, for
+/// example when command+clicking in iTerm.
+///
+/// ```text
+/// test:2:9
+/// ```
+struct SourceLocus<'a> {
+    file_name: &'a str,
+    location: Location,
+}
+
+impl<'a> SourceLocus<'a> {
+    fn new(file_name: &'a str, location: Location) -> SourceLocus<'a> {
+        SourceLocus {
+            file_name,
+            location,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
+        write!(
+            writer,
+            "{file}:{line}:{column}",
+            file = self.file_name,
+            line = self.location.line.number(),
+            column = self.location.column.number(),
+        )
     }
 }
