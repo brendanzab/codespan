@@ -203,12 +203,12 @@ impl ByteOffset {
     /// ```rust
     /// use codespan::ByteOffset;
     ///
-    /// assert_eq!(ByteOffset::from_char_len_utf8('A').to_usize(), 1);
-    /// assert_eq!(ByteOffset::from_char_len_utf8('ß').to_usize(), 2);
-    /// assert_eq!(ByteOffset::from_char_len_utf8('ℝ').to_usize(), 3);
-    /// assert_eq!(ByteOffset::from_char_len_utf8('💣').to_usize(), 4);
+    /// assert_eq!(ByteOffset::from_char_len('A').to_usize(), 1);
+    /// assert_eq!(ByteOffset::from_char_len('ß').to_usize(), 2);
+    /// assert_eq!(ByteOffset::from_char_len('ℝ').to_usize(), 3);
+    /// assert_eq!(ByteOffset::from_char_len('💣').to_usize(), 4);
     /// ```
-    pub fn from_char_len_utf8(ch: char) -> ByteOffset {
+    pub fn from_char_len(ch: char) -> ByteOffset {
         ByteOffset(ch.len_utf8() as RawOffset)
     }
 
@@ -217,12 +217,12 @@ impl ByteOffset {
     /// ```rust
     /// use codespan::ByteOffset;
     ///
-    /// assert_eq!(ByteOffset::from_str_len_utf8("A").to_usize(), 1);
-    /// assert_eq!(ByteOffset::from_str_len_utf8("ß").to_usize(), 2);
-    /// assert_eq!(ByteOffset::from_str_len_utf8("ℝ").to_usize(), 3);
-    /// assert_eq!(ByteOffset::from_str_len_utf8("💣").to_usize(), 4);
+    /// assert_eq!(ByteOffset::from_str_len("A").to_usize(), 1);
+    /// assert_eq!(ByteOffset::from_str_len("ß").to_usize(), 2);
+    /// assert_eq!(ByteOffset::from_str_len("ℝ").to_usize(), 3);
+    /// assert_eq!(ByteOffset::from_str_len("💣").to_usize(), 4);
     /// ```
-    pub fn from_str_len_utf8(value: &str) -> ByteOffset {
+    pub fn from_str_len(value: &str) -> ByteOffset {
         ByteOffset(value.len() as RawOffset)
     }
 

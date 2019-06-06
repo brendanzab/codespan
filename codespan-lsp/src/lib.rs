@@ -103,8 +103,8 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
     let mut chars = line.chars();
     while let Some(ch) = chars.next() {
         if character_offset == character {
-            let chars_off = ByteOffset::from_str_len_utf8(chars.as_str());
-            let ch_off = ByteOffset::from_char_len_utf8(ch);
+            let chars_off = ByteOffset::from_str_len(chars.as_str());
+            let ch_off = ByteOffset::from_char_len(ch);
 
             return Ok(line_len - chars_off - ch_off);
         }
