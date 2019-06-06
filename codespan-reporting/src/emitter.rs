@@ -27,6 +27,9 @@ pub struct Config {
     /// The color to use when rendering the source code borders. Defaults to
     /// `Color::Blue` (or `Color::Cyan` on windows).
     pub border_color: Color,
+    /// The color to use when rendering the note bullets. Defaults to
+    /// `Color::Blue` (or `Color::Cyan` on windows).
+    pub note_bullet_color: Color,
     /// The character to use when marking the top-left corner of the source.
     /// Defaults to: `┌`.
     pub border_top_left_char: char,
@@ -61,6 +64,7 @@ impl Default for Config {
             secondary_color: BLUE,
             line_number_color: BLUE,
             border_color: BLUE,
+            note_bullet_color: BLUE,
             border_top_left_char: '┌',
             border_top_char: '─',
             border_left_char: '│',
@@ -566,24 +570,39 @@ impl<'a> Note<'a> {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
-
         for (i, line) in self.message.lines().enumerate() {
             Gutter::new(None, self.gutter_padding).emit(writer, config)?;
             match i {
-                // Write bullet
-                0 => {
-                    writer.set_color(&border_spec)?;
-                    write!(writer, "{}", config.note_bullet_char)?;
-                    writer.reset()?;
-                },
-                // Write indent
-                _ => write!(writer, "  ")?,
+                0 => NoteBullet::new().emit(writer, config)?,
+                _ => write!(writer, " ")?,
             }
             // Write line of message
             write!(writer, " {}", line)?;
             NewLine::new().emit(writer, config)?;
         }
+
+        Ok(())
+    }
+}
+
+/// The bullet that appears before a note.
+///
+/// ```text
+/// =
+/// ```
+struct NoteBullet {}
+
+impl<'a> NoteBullet {
+    fn new() -> NoteBullet {
+        NoteBullet {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let note_bullet_spec = ColorSpec::new().set_fg(Some(config.note_bullet_color)).clone();
+
+        writer.set_color(&note_bullet_spec)?;
+        write!(writer, "{}", config.note_bullet_char)?;
+        writer.reset()?;
 
         Ok(())
     }
