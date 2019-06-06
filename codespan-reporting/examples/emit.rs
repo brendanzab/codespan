@@ -21,7 +21,7 @@ fn main() {
     let opts = Opts::from_args();
     let mut files = Files::new();
 
-    let nat_file_id = files.add(
+    let file_id1 = files.add(
         "Data/Nat.fun",
         unindent::unindent(
             "
@@ -47,7 +47,7 @@ fn main() {
         ),
     );
 
-    let test_file_id = files.add(
+    let file_id2 = files.add(
         "Test.fun",
         unindent::unindent(
             r#"
@@ -59,7 +59,7 @@ fn main() {
         ),
     );
 
-    let fizz_buzz_file_id = files.add(
+    let file_id3 = files.add(
         "FizzBuzz.fun",
         unindent::unindent(
             r#"
@@ -86,7 +86,7 @@ fn main() {
         // Unknown builtin error
         Diagnostic::new_error(
             "unknown builtin: `NATRAL`",
-            Label::new(nat_file_id, 96..102, "unknown builtin"),
+            Label::new(file_id1, 96..102, "unknown builtin"),
         )
         .with_notes(vec![
             "there is a builtin with a similar name: `NATURAL`".to_owned()
@@ -94,28 +94,24 @@ fn main() {
         // Unused parameter warning
         Diagnostic::new_warning(
             "unused parameter pattern: `n₂`",
-            Label::new(nat_file_id, 285..289, "unused parameter"),
+            Label::new(file_id1, 285..289, "unused parameter"),
         )
         .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
         // Unexpected type error
         Diagnostic::new_error(
             "unexpected type in application of `_+_`",
-            Label::new(test_file_id, 37..44, "expected `Nat`, found `String`"),
+            Label::new(file_id2, 37..44, "expected `Nat`, found `String`"),
         )
         .with_code("E0001")
         .with_secondary_labels(vec![Label::new(
-            nat_file_id,
+            file_id1,
             130..155,
             "based on the definition of `_+_`",
         )]),
         // Incompatible match clause error
         Diagnostic::new_error(
             "`case` clauses have incompatible types",
-            Label::new(
-                fizz_buzz_file_id,
-                163..166,
-                "expected `String`, found `Nat`",
-            ),
+            Label::new(file_id3, 163..166, "expected `String`, found `Nat`"),
         )
         .with_code("E0308")
         .with_notes(vec![unindent::unindent(
@@ -125,25 +121,13 @@ fn main() {
             ",
         )])
         .with_secondary_labels(vec![
-            Label::new(
-                fizz_buzz_file_id,
-                62..166,
-                "`case` clauses have incompatible types",
-            ),
-            Label::new(
-                fizz_buzz_file_id,
-                41..47,
-                "expected type `String` found here",
-            ),
+            Label::new(file_id3, 62..166, "`case` clauses have incompatible types"),
+            Label::new(file_id3, 41..47, "expected type `String` found here"),
         ]),
         // Incompatible match clause error
         Diagnostic::new_error(
             "`case` clauses have incompatible types",
-            Label::new(
-                fizz_buzz_file_id,
-                303..306,
-                "expected `String`, found `Nat`",
-            ),
+            Label::new(file_id3, 303..306, "expected `String`, found `Nat`"),
         )
         .with_code("E0308")
         .with_notes(vec![unindent::unindent(
@@ -153,26 +137,10 @@ fn main() {
             ",
         )])
         .with_secondary_labels(vec![
-            Label::new(
-                fizz_buzz_file_id,
-                186..306,
-                "`case` clauses have incompatible types",
-            ),
-            Label::new(
-                fizz_buzz_file_id,
-                233..243,
-                "this is found to be of type `String`",
-            ),
-            Label::new(
-                fizz_buzz_file_id,
-                259..265,
-                "this is found to be of type `String`",
-            ),
-            Label::new(
-                fizz_buzz_file_id,
-                281..287,
-                "this is found to be of type `String`",
-            ),
+            Label::new(file_id3, 186..306, "`case` clauses have incompatible types"),
+            Label::new(file_id3, 233..243, "this is found to be of type `String`"),
+            Label::new(file_id3, 259..265, "this is found to be of type `String`"),
+            Label::new(file_id3, 281..287, "this is found to be of type `String`"),
         ]),
     ];
 
