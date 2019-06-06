@@ -89,7 +89,7 @@ fn main() {
             Label::new(nat_file_id, 96..102, "unknown builtin"),
         )
         .with_notes(vec![
-            "there is a builtin with a similar name: `NATURAL`".to_owned(),
+            "there is a builtin with a similar name: `NATURAL`".to_owned()
         ]),
         // Unused parameter warning
         Diagnostic::new_warning(
