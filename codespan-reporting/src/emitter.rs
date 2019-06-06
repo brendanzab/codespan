@@ -8,42 +8,50 @@ use crate::{Diagnostic, Label, Severity};
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The color to use when rendering bugs. Defaults to `Color::Red`.
+    /// The color to use when rendering bugs.
+    /// Defaults to `Color::Red`.
     pub bug_color: Color,
-    /// The color to use when rendering errors. Defaults to `Color::Red`.
+    /// The color to use when rendering errors.
+    /// Defaults to `Color::Red`.
     pub error_color: Color,
-    /// The color to use when rendering warnings. Defaults to `Color::Yellow`.
+    /// The color to use when rendering warnings.
+    /// Defaults to `Color::Yellow`.
     pub warning_color: Color,
-    /// The color to use when rendering notes. Defaults to `Color::Green`.
+    /// The color to use when rendering notes.
+    /// Defaults to `Color::Green`.
     pub note_color: Color,
-    /// The color to use when rendering helps. Defaults to `Color::Cyan`.
+    /// The color to use when rendering helps.
+    /// Defaults to `Color::Cyan`.
     pub help_color: Color,
-    /// The color to use when rendering secondary labels. Defaults to
-    /// `Color::Blue` (or `Color::Cyan` on windows).
+    /// The color to use when rendering secondary labels.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
     pub secondary_color: Color,
-    /// The color to use when rendering the line numbers. Defaults to
-    /// `Color::Blue` (or `Color::Cyan` on windows).
+    /// The color to use when rendering the line numbers.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
     pub line_number_color: Color,
-    /// The color to use when rendering the source code borders. Defaults to
-    /// `Color::Blue` (or `Color::Cyan` on windows).
+    /// The color to use when rendering the source code borders.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
     pub border_color: Color,
-    /// The color to use when rendering the note bullets. Defaults to
-    /// `Color::Blue` (or `Color::Cyan` on windows).
+    /// The color to use when rendering the note bullets.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
     pub note_bullet_color: Color,
     /// The character to use when marking the top-left corner of the source.
-    /// Defaults to: `┌`.
+    /// Defaults to: `'┌'`.
     pub border_top_left_char: char,
     /// The character to use when marking the top border of the source.
-    /// Defaults to: `─`.
+    /// Defaults to: `'─'`.
     pub border_top_char: char,
     /// The character to use when marking the left border of the source.
-    /// Defaults to: `│`.
+    /// Defaults to: `'│'`.
     pub border_left_char: char,
-    /// The character to use when underlining a primary label. Defaults to: `^`.
+    /// The character to use when underlining a primary label.
+    /// Defaults to: `'^'`.
     pub primary_underline_char: char,
-    /// The character to use when underlining a secondary label. Defaults to: `-`.
+    /// The character to use when underlining a secondary label.
+    /// Defaults to: `'-'`.
     pub secondary_underline_char: char,
-    /// The character to use for the note bullet. Defaults to: `=`.
+    /// The character to use for the note bullet.
+    /// Defaults to: `'='`.
     pub note_bullet_char: char,
 }
 
