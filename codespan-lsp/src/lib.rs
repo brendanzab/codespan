@@ -173,6 +173,31 @@ pub fn make_lsp_diagnostic(
     let primary_span = diagnostic.primary_label.span;
     let primary_label_range = byte_span_to_range(files, primary_file_id, primary_span)?;
 
+    // Collect additional context for primary message
+    let primary_message = {
+        let mut message = diagnostic.message;
+
+        if !diagnostic.notes.is_empty() {
+            // Spacer between message and notes
+            message.push_str("\n\n");
+            // Insert notes as a bulleted list
+            for note in diagnostic.notes {
+                for (i, line) in note.lines().enumerate() {
+                    message.push_str("  ");
+                    match i {
+                        0 => message.push_str("•"),
+                        _ => message.push_str(" "),
+                    }
+                    message.push_str(" ");
+                    message.push_str(line.trim_end());
+                    message.push_str("\n");
+                }
+            }
+        }
+
+        message
+    };
+
     let related_information = diagnostic
         .secondary_labels
         .into_iter()
@@ -194,7 +219,7 @@ pub fn make_lsp_diagnostic(
         code: diagnostic.code.map(lsp::NumberOrString::String),
         source: source.into(),
         severity: Some(make_lsp_severity(diagnostic.severity)),
-        message: diagnostic.message,
+        message: primary_message,
         related_information: if related_information.is_empty() {
             None
         } else {
