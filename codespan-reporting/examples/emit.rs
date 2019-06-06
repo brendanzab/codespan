@@ -21,35 +21,84 @@ fn main() {
     let opts = Opts::from_args();
     let mut files = Files::new();
 
-    let source = unindent::unindent(
-        r##"
-            (define test 123)
-            () (+ test
-                  "" 2
-                  3) ()
-            ()
-        "##,
+    let nat_file_id = files.add(
+        "Data/Nat.fun",
+        unindent::unindent(
+            "
+                module Data.Nat where
+
+                data Nat : Type where
+                    zero : Nat
+                    succ : Nat → Nat
+
+                {-# BUILTIN NATRAL Nat #-}
+
+                infixl 6 _+_ _-_
+
+                _+_ : Nat → Nat → Nat
+                zero    + n₂ = n₂
+                succ n₁ + n₂ = succ (n₁ + n₂)
+
+                _-_ : Nat → Nat → Nat
+                n₁      - zero    = n₁
+                zero    - succ n₂ = zero
+                succ n₁ - succ n₂ = n₁ - n₂
+            ",
+        ),
     );
 
-    let file_id = files.add("test", source.to_string());
+    let test_file_id = files.add(
+        "Test.fun",
+        unindent::unindent(
+            r#"
+                module Test where
 
-    let error = Diagnostic::new_error(
-        "Unexpected type in `+` application",
-        Label::new(file_id, 35..37, "expected `Int` but found `String`"),
-    )
-    .with_code("E0001")
-    .with_secondary_labels(vec![Label::new(
-        file_id,
-        35..37,
-        "expected `Int` but found `String`",
-    )]);
+                _ : Nat
+                _ = 123 + "hello"
 
-    let warning = Diagnostic::new_warning(
-        "`+` function has no effect unless its result is used",
-        Label::new(file_id, 21..48, "Value discarded"),
+                id : {A : Type} → A → A
+                id a = a
+            "#,
+        ),
     );
 
-    let diagnostics = [error, warning];
+    let diagnostics = [
+        Diagnostic::new_error(
+            "unknown builtin: `NATRAL`",
+            Label::new(nat_file_id, 96..102, "unknown builtin"),
+        )
+        .with_secondary_labels(vec![Label::new(
+            nat_file_id,
+            96..102,
+            "perhaps you meant: `NATURAL`",
+        )]),
+
+        Diagnostic::new_warning(
+            "unused parameter pattern: `n₂`",
+            Label::new(nat_file_id, 285..289, ""),
+        )
+        .with_secondary_labels(vec![Label::new(
+            nat_file_id,
+            285..289,
+            "consider using a wildcard pattern: `_`",
+        )]),
+
+        Diagnostic::new_error(
+            "unexpected type in application of `_+_`",
+            Label::new(test_file_id, 37..44, "expected `Nat` but found `String`"),
+        )
+        .with_code("E0001")
+        .with_secondary_labels(vec![Label::new(
+            nat_file_id,
+            130..155,
+            "based on the definition of `_+_`",
+        )]),
+
+        Diagnostic::new_warning(
+            "`id` is never used",
+            Label::new(test_file_id, 46..82, "definition is never used"),
+        ),
+    ];
 
     let writer = StandardStream::stderr(opts.color.into());
     let config = codespan_reporting::Config::default();

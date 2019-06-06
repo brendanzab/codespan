@@ -1,6 +1,7 @@
 use codespan::{ByteIndex, Files, LineIndex, LineNumber, Location, Span};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
+use unicode_width::UnicodeWidthStr;
 
 use crate::{Diagnostic, Label, Severity};
 
@@ -313,7 +314,7 @@ impl<'a> MarkedSource<'a> {
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.len()
+            marked_source.width()
         } else {
             // Multiple lines
 
@@ -348,7 +349,7 @@ impl<'a> MarkedSource<'a> {
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.len()
+            marked_source.width()
         };
 
         // Write source suffix after marked section
@@ -367,7 +368,7 @@ impl<'a> MarkedSource<'a> {
             writer,
             "{space: >width$}",
             space = "",
-            width = source_prefix.len(),
+            width = source_prefix.width(),
         )?;
         for _ in 0..mark_len {
             write!(writer, "{}", self.underline_char(config))?;
@@ -434,6 +435,7 @@ impl<'a> Gutter {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
         match self.line_number {
             None => {
                 write!(
