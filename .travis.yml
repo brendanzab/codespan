@@ -2,7 +2,7 @@ language: rust
 cache: cargo
 
 rust:
-  - 1.31.0 # Required for `const fn`
+  - 1.32.0
   - stable
   - beta
   - nightly
@@ -10,7 +10,7 @@ rust:
 env:
   - CARGO_FEATURES=""
     REPORTING_CARGO_FEATURES=""
-  - CARGO_FEATURES="memory_usage" 
+  - CARGO_FEATURES="memory_usage"
     REPORTING_CARGO_FEATURES="memory_usage"
   - CARGO_FEATURES="serialization"
     REPORTING_CARGO_FEATURES="serialization"
@@ -24,7 +24,7 @@ script:
   - set -ex
   # We manually build/test each crate and pass in any necessary feature flags
   # to work around rust-lang/cargo#4942
-  
+
   # codespan
   - cargo build --manifest-path=codespan/Cargo.toml --verbose --no-default-features --features="$CARGO_FEATURES"
   - cargo test --manifest-path=codespan/Cargo.toml --verbose --no-default-features --features="$CARGO_FEATURES"

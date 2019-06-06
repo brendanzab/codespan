@@ -20,6 +20,7 @@ termcolor = "1.0"
 unicode-width = "0.1"
 
 [dev-dependencies]
+insta = "0.8"
 structopt = "0.2"
 unindent = "0.1"
 

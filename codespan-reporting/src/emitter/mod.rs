@@ -107,3 +107,88 @@ pub fn emit(
 
     RichDiagnostic::new(files, diagnostic).emit(writer, config)
 }
+
+#[cfg(test)]
+mod tests {
+    use codespan::Files;
+
+    use super::*;
+    use crate::diagnostic::{Diagnostic, Label};
+    use crate::termcolor::Buffer;
+
+    fn emit_fizz_buzz(writer: &mut impl WriteColor) {
+        let mut files = Files::new();
+
+        let file_id = files.add(
+            "FizzBuzz.fun",
+            unindent::unindent(
+                r#"
+                    module FizzBuzz where
+
+                    fizz₁ : Nat → String
+                    fizz₁ num = case (mod num 5) (mod num 3) of
+                        0 0 => "FizzBuzz"
+                        0 _ => "Fizz"
+                        _ 0 => "Buzz"
+                        _ _ => num
+
+                    fizz₂ num =
+                        case (mod num 5) (mod num 3) of
+                            0 0 => "FizzBuzz"
+                            0 _ => "Fizz"
+                            _ 0 => "Buzz"
+                            _ _ => num
+                "#,
+            ),
+        );
+
+        let diagnostics = vec![
+            // Incompatible match clause error
+            Diagnostic::new_error(
+                "`case` clauses have incompatible types",
+                Label::new(file_id, 163..166, "expected `String`, found `Nat`"),
+            )
+            .with_code("E0308")
+            .with_notes(vec![unindent::unindent(
+                "
+                    expected type `String`
+                       found type `Nat`
+                ",
+            )])
+            .with_secondary_labels(vec![
+                Label::new(file_id, 62..166, "`case` clauses have incompatible types"),
+                Label::new(file_id, 41..47, "expected type `String` found here"),
+            ]),
+            // Incompatible match clause error
+            Diagnostic::new_error(
+                "`case` clauses have incompatible types",
+                Label::new(file_id, 303..306, "expected `String`, found `Nat`"),
+            )
+            .with_code("E0308")
+            .with_notes(vec![unindent::unindent(
+                "
+                    expected type `String`
+                       found type `Nat`
+                ",
+            )])
+            .with_secondary_labels(vec![
+                Label::new(file_id, 186..306, "`case` clauses have incompatible types"),
+                Label::new(file_id, 233..243, "this is found to be of type `String`"),
+                Label::new(file_id, 259..265, "this is found to be of type `String`"),
+                Label::new(file_id, 281..287, "this is found to be of type `String`"),
+            ]),
+        ];
+
+        for diagnostic in &diagnostics {
+            emit(writer, &Config::default(), &files, &diagnostic).unwrap();
+        }
+    }
+
+    #[test]
+    fn fizz_buzz_no_color() {
+        let mut buffer = Buffer::no_color();
+        emit_fizz_buzz(&mut buffer);
+        let result = String::from_utf8_lossy(buffer.as_slice());
+        insta::assert_snapshot_matches!("fizz_buzz_no_color", result);
+    }
+}
