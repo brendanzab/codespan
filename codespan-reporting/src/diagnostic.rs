@@ -76,6 +76,11 @@ impl Label {
     }
 }
 
+// pub enum Note {
+//     Message(String),
+//     Spanned(FileId, Span, String),
+// }
+
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 #[derive(Clone, Debug)]
@@ -90,6 +95,8 @@ pub struct Diagnostic {
     pub message: String,
     /// A label that describes the primary cause of this diagnostic.
     pub primary_label: Label,
+    /// Notes that are associated with the primary cause of the diagnostic.
+    pub notes: Vec<String>,
     /// Secondary labels that provide additional context for the diagnostic.
     pub secondary_labels: Vec<Label>,
 }
@@ -102,6 +109,7 @@ impl Diagnostic {
             code: None,
             message: message.into(),
             primary_label,
+            notes: Vec::new(),
             secondary_labels: Vec::new(),
         }
     }
@@ -134,6 +142,12 @@ impl Diagnostic {
     /// Add an error code to the diagnostic.
     pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic {
         self.code = Some(code.into());
+        self
+    }
+
+    /// Add some notes to the diagnostic.
+    pub fn with_notes(mut self, notes: Vec<String>) -> Diagnostic {
+        self.notes = notes;
         self
     }
 

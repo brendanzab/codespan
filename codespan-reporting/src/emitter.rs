@@ -40,6 +40,8 @@ pub struct Config {
     pub primary_underline_char: char,
     /// The character to use when underlining a secondary label. Defaults to: `-`.
     pub secondary_underline_char: char,
+    /// The character to use for the note bullet. Defaults to: `=`.
+    pub note_bullet_char: char,
 }
 
 impl Default for Config {
@@ -64,6 +66,7 @@ impl Default for Config {
             border_left_char: '│',
             primary_underline_char: '^',
             secondary_underline_char: '-',
+            note_bullet_char: '=',
         }
     }
 }
@@ -142,7 +145,7 @@ impl<'a> Header<'a> {
 
         // Write severity name
         //
-        // ```
+        // ```text
         // error
         // ```
         writer.set_color(&primary_spec)?;
@@ -150,7 +153,7 @@ impl<'a> Header<'a> {
         if let Some(code) = &self.code {
             // Write error code
             //
-            // ```
+            // ```text
             // [E0001]
             // ```
             write!(writer, "[{}]", code)?;
@@ -158,7 +161,7 @@ impl<'a> Header<'a> {
 
         // Write diagnostic message
         //
-        // ```
+        // ```text
         // : Unexpected type in `+` application
         // ```
         writer.set_color(&message_spec)?;
@@ -184,11 +187,14 @@ enum MarkStyle {
 /// 2 │ (+ test "")
 ///   │         ^^ expected `Int` but found `String`
 ///   │
+///   = expected type `Int`
+///        found type `String`
 /// ```
 struct MarkedSource<'a> {
     files: &'a Files,
     label: &'a Label,
     mark_style: MarkStyle,
+    notes: &'a [String],
 }
 
 impl<'a> MarkedSource<'a> {
@@ -197,6 +203,7 @@ impl<'a> MarkedSource<'a> {
             files,
             label: &diagnostic.primary_label,
             mark_style: MarkStyle::Primary(diagnostic.severity),
+            notes: &diagnostic.notes,
         }
     }
 
@@ -205,6 +212,7 @@ impl<'a> MarkedSource<'a> {
             files,
             label,
             mark_style: MarkStyle::Secondary,
+            notes: &[],
         }
     }
 
@@ -265,7 +273,7 @@ impl<'a> MarkedSource<'a> {
 
         // Top left border and locus.
         //
-        // ```
+        // ```text
         // ┌── test:2:9 ───
         // ```
 
@@ -282,7 +290,7 @@ impl<'a> MarkedSource<'a> {
 
         // Source code snippet
         //
-        // ```
+        // ```text
         //   │
         // 2 │ (+ test "")
         //   │         ^^ expected `Int` but found `String`
@@ -383,6 +391,17 @@ impl<'a> MarkedSource<'a> {
         Gutter::new(None, gutter_padding).emit(writer, config)?;
         BorderLeft::new().emit(writer, config)?;
         NewLine::new().emit(writer, config)?;
+
+        // Additional notes
+        //
+        // ```text
+        // = expected type `Int`
+        //      found type `String`
+        // ```
+
+        for note in self.notes {
+            Note::new(gutter_padding, note).emit(writer, config)?;
+        }
 
         Ok(())
     }
@@ -522,6 +541,49 @@ impl<'a> BorderLeft {
         writer.set_color(&border_spec)?;
         write!(writer, "{left} ", left = config.border_left_char)?;
         writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// Additional note
+///
+/// ```text
+/// = expected type `Int`
+///      found type `String`
+/// ```
+struct Note<'a> {
+    gutter_padding: usize,
+    message: &'a str,
+}
+
+impl<'a> Note<'a> {
+    fn new(gutter_padding: usize, message: &'a str) -> Note<'a> {
+        Note {
+            gutter_padding,
+            message,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        for (i, line) in self.message.lines().enumerate() {
+            Gutter::new(None, self.gutter_padding).emit(writer, config)?;
+            match i {
+                // Write bullet
+                0 => {
+                    writer.set_color(&border_spec)?;
+                    write!(writer, "{}", config.note_bullet_char)?;
+                    writer.reset()?;
+                },
+                // Write indent
+                _ => write!(writer, "  ")?,
+            }
+            // Write line of message
+            write!(writer, " {}", line)?;
+            NewLine::new().emit(writer, config)?;
+        }
 
         Ok(())
     }

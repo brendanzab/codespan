@@ -88,18 +88,15 @@ fn main() {
             "unknown builtin: `NATRAL`",
             Label::new(nat_file_id, 96..102, "unknown builtin"),
         )
-        // .with_notes(vec!["there is a builtin with a similar name: `NATURAL`".to_owned()])
-        .with_secondary_labels(vec![Label::new(
-            nat_file_id,
-            96..102,
-            "perhaps you meant: `NATURAL`",
-        )]),
+        .with_notes(vec![
+            "there is a builtin with a similar name: `NATURAL`".to_owned(),
+        ]),
         // Unused parameter warning
         Diagnostic::new_warning(
             "unused parameter pattern: `n₂`",
             Label::new(nat_file_id, 285..289, "unused parameter"),
-        ),
-        // .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()])
+        )
+        .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
         // Unexpected type error
         Diagnostic::new_error(
             "unexpected type in application of `_+_`",
@@ -121,12 +118,12 @@ fn main() {
             ),
         )
         .with_code("E0308")
-        // .with_notes(vec![unindent::unindent(
-        //     "
-        //         expected type `String`
-        //            found type `Nat`
-        //     ",
-        // )])
+        .with_notes(vec![unindent::unindent(
+            "
+                expected type `String`
+                   found type `Nat`
+            ",
+        )])
         .with_secondary_labels(vec![
             Label::new(
                 fizz_buzz_file_id,
@@ -149,12 +146,12 @@ fn main() {
             ),
         )
         .with_code("E0308")
-        // .with_notes(vec![unindent::unindent(
-        //     "
-        //         expected type `String`
-        //            found type `Nat`
-        //     ",
-        // )])
+        .with_notes(vec![unindent::unindent(
+            "
+                expected type `String`
+                   found type `Nat`
+            ",
+        )])
         .with_secondary_labels(vec![
             Label::new(
                 fizz_buzz_file_id,
