@@ -61,7 +61,8 @@ pub struct Label {
     pub file_id: FileId,
     /// The span we are going to include in the final snippet.
     pub span: Span,
-    /// A message to provide some additional information for the underlined code.
+    /// A message to provide some additional information for the underlined
+    /// code. These should not include line breaks.
     pub message: String,
 }
 
@@ -76,11 +77,6 @@ impl Label {
     }
 }
 
-// pub enum Note {
-//     Message(String),
-//     Spanned(FileId, Span, String),
-// }
-
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 #[derive(Clone, Debug)]
@@ -91,11 +87,13 @@ pub struct Diagnostic {
     pub severity: Severity,
     /// An optional code that identifies this diagnostic.
     pub code: Option<String>,
-    /// The main message associated with this diagnostic.
+    /// The main message associated with this diagnostic. These should not
+    /// include line breaks.
     pub message: String,
     /// A label that describes the primary cause of this diagnostic.
     pub primary_label: Label,
     /// Notes that are associated with the primary cause of the diagnostic.
+    /// These can include line breaks for improved formatting.
     pub notes: Vec<String>,
     /// Secondary labels that provide additional context for the diagnostic.
     pub secondary_labels: Vec<Label>,
