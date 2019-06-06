@@ -6,7 +6,7 @@ use crate::emitter::Config;
 /// A new line.
 pub struct NewLine {}
 
-impl<'a> NewLine {
+impl NewLine {
     pub fn new() -> NewLine {
         NewLine {}
     }

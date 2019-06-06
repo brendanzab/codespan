@@ -6,7 +6,7 @@ use crate::emitter::Config;
 /// The left-hand border of a source line.
 pub struct BorderLeft {}
 
-impl<'a> BorderLeft {
+impl BorderLeft {
     pub fn new() -> BorderLeft {
         BorderLeft {}
     }

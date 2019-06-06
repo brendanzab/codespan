@@ -10,7 +10,7 @@ use crate::emitter::Config;
 /// ```
 pub struct NoteBullet {}
 
-impl<'a> NoteBullet {
+impl NoteBullet {
     pub fn new() -> NoteBullet {
         NoteBullet {}
     }

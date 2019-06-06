@@ -10,7 +10,7 @@ pub struct Gutter {
     gutter_padding: usize,
 }
 
-impl<'a> Gutter {
+impl Gutter {
     pub fn new(line_number: impl Into<Option<LineNumber>>, gutter_padding: usize) -> Gutter {
         Gutter {
             line_number: line_number.into(),
