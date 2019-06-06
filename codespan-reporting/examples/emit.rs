@@ -21,30 +21,32 @@ fn main() {
     let opts = Opts::from_args();
     let mut files = Files::new();
 
-    let source = r##"
-(define test 123)
-() (+ test
-      "" 2
-      3) ()
-()
-"##;
+    let source = unindent::unindent(
+        r##"
+            (define test 123)
+            () (+ test
+                  "" 2
+                  3) ()
+            ()
+        "##,
+    );
 
     let file_id = files.add("test", source.to_string());
 
     let error = Diagnostic::new_error(
         "Unexpected type in `+` application",
-        Label::new(file_id, 36..38, "expected `Int` but found `String`"),
+        Label::new(file_id, 35..37, "expected `Int` but found `String`"),
     )
     .with_code("E0001")
     .with_secondary_labels(vec![Label::new(
         file_id,
-        36..38,
+        35..37,
         "expected `Int` but found `String`",
     )]);
 
     let warning = Diagnostic::new_warning(
         "`+` function has no effect unless its result is used",
-        Label::new(file_id, 22..49, "Value discarded"),
+        Label::new(file_id, 21..48, "Value discarded"),
     );
 
     let diagnostics = [error, warning];

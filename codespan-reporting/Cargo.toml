@@ -20,6 +20,7 @@ termcolor = "1.0.4"
 
 [dev-dependencies]
 structopt = "0.2"
+unindent = "0.1"
 
 [features]
 serialization = ["serde", "serde/rc", "codespan/serialization"]
