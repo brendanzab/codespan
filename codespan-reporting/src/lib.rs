@@ -1,7 +1,5 @@
 //! Diagnostic reporting support for the codespan crate.
 
-#[cfg(feature = "serialization")]
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use termcolor::ColorChoice;
 
