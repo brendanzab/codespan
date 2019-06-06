@@ -55,37 +55,55 @@ fn main() {
 
                 _ : Nat
                 _ = 123 + "hello"
+            "#,
+        ),
+    );
 
-                id : {A : Type} → A → A
-                id a = a
+    let fizz_buzz_file_id = files.add(
+        "FizzBuzz.fun",
+        unindent::unindent(
+            r#"
+                module FizzBuzz where
+
+                fizz₁ : Nat → String
+                fizz₁ num = case (mod num 5) (mod num 3) of
+                    0 0 => "FizzBuzz"
+                    0 _ => "Fizz"
+                    _ 0 => "Buzz"
+                    _ _ => num
+
+                fizz₂ num =
+                    case (mod num 5) (mod num 3) of
+                        0 0 => "FizzBuzz"
+                        0 _ => "Fizz"
+                        _ 0 => "Buzz"
+                        _ _ => num
             "#,
         ),
     );
 
     let diagnostics = [
+        // Unknown builtin error
         Diagnostic::new_error(
             "unknown builtin: `NATRAL`",
             Label::new(nat_file_id, 96..102, "unknown builtin"),
         )
+        // .with_notes(vec!["there is a builtin with a similar name: `NATURAL`".to_owned()])
         .with_secondary_labels(vec![Label::new(
             nat_file_id,
             96..102,
             "perhaps you meant: `NATURAL`",
         )]),
-
+        // Unused parameter warning
         Diagnostic::new_warning(
             "unused parameter pattern: `n₂`",
-            Label::new(nat_file_id, 285..289, ""),
-        )
-        .with_secondary_labels(vec![Label::new(
-            nat_file_id,
-            285..289,
-            "consider using a wildcard pattern: `_`",
-        )]),
-
+            Label::new(nat_file_id, 285..289, "unused parameter"),
+        ),
+        // .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()])
+        // Unexpected type error
         Diagnostic::new_error(
             "unexpected type in application of `_+_`",
-            Label::new(test_file_id, 37..44, "expected `Nat` but found `String`"),
+            Label::new(test_file_id, 37..44, "expected `Nat`, found `String`"),
         )
         .with_code("E0001")
         .with_secondary_labels(vec![Label::new(
@@ -93,11 +111,72 @@ fn main() {
             130..155,
             "based on the definition of `_+_`",
         )]),
-
-        Diagnostic::new_warning(
-            "`id` is never used",
-            Label::new(test_file_id, 46..82, "definition is never used"),
-        ),
+        // Incompatible match clause error
+        Diagnostic::new_error(
+            "`case` clauses have incompatible types",
+            Label::new(
+                fizz_buzz_file_id,
+                163..166,
+                "expected `String`, found `Nat`",
+            ),
+        )
+        .with_code("E0308")
+        // .with_notes(vec![unindent::unindent(
+        //     "
+        //         expected type `String`
+        //            found type `Nat`
+        //     ",
+        // )])
+        .with_secondary_labels(vec![
+            Label::new(
+                fizz_buzz_file_id,
+                62..166,
+                "`case` clauses have incompatible types",
+            ),
+            Label::new(
+                fizz_buzz_file_id,
+                41..47,
+                "expected type `String` found here",
+            ),
+        ]),
+        // Incompatible match clause error
+        Diagnostic::new_error(
+            "`case` clauses have incompatible types",
+            Label::new(
+                fizz_buzz_file_id,
+                303..306,
+                "expected `String`, found `Nat`",
+            ),
+        )
+        .with_code("E0308")
+        // .with_notes(vec![unindent::unindent(
+        //     "
+        //         expected type `String`
+        //            found type `Nat`
+        //     ",
+        // )])
+        .with_secondary_labels(vec![
+            Label::new(
+                fizz_buzz_file_id,
+                186..306,
+                "`case` clauses have incompatible types",
+            ),
+            Label::new(
+                fizz_buzz_file_id,
+                233..243,
+                "this is found to be of type `String`",
+            ),
+            Label::new(
+                fizz_buzz_file_id,
+                259..265,
+                "this is found to be of type `String`",
+            ),
+            Label::new(
+                fizz_buzz_file_id,
+                281..287,
+                "this is found to be of type `String`",
+            ),
+        ]),
     ];
 
     let writer = StandardStream::stderr(opts.color.into());
