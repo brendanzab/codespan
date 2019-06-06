@@ -1,32 +1,58 @@
-use codespan::{ByteIndex, File, Files, LineIndex, RawIndex};
+use codespan::{ByteIndex, Files, LineIndex, LineNumber, Location, Span};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
+use unicode_width::UnicodeWidthStr;
 
 use crate::{Diagnostic, Label, Severity};
 
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The color to use when rendering bugs. Defaults to `Color::Red`.
+    /// The color to use when rendering bugs.
+    /// Defaults to `Color::Red`.
     pub bug_color: Color,
-    /// The color to use when rendering errors. Defaults to `Color::Red`.
+    /// The color to use when rendering errors.
+    /// Defaults to `Color::Red`.
     pub error_color: Color,
-    /// The color to use when rendering warnings. Defaults to `Color::Yellow`.
+    /// The color to use when rendering warnings.
+    /// Defaults to `Color::Yellow`.
     pub warning_color: Color,
-    /// The color to use when rendering notes. Defaults to `Color::Green`.
+    /// The color to use when rendering notes.
+    /// Defaults to `Color::Green`.
     pub note_color: Color,
-    /// The color to use when rendering helps. Defaults to `Color::Cyan`.
+    /// The color to use when rendering helps.
+    /// Defaults to `Color::Cyan`.
     pub help_color: Color,
-    /// The color to use when rendering secondary labels. Defaults to
-    /// `Color::Blue` (or `Color::Cyan` on windows).
+    /// The color to use when rendering secondary labels.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
     pub secondary_color: Color,
-    /// The color to use when rendering gutters. Defaults to `Color::Blue`
-    /// (or `Color::Cyan` on windows).
-    pub gutter_color: Color,
-    /// The character to use when underlining a primary label. Defaults to: `^`.
-    pub primary_mark: char,
-    /// The character to use when underlining a secondary label. Defaults to: `-`.
-    pub secondary_mark: char,
+    /// The color to use when rendering the line numbers.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
+    pub line_number_color: Color,
+    /// The color to use when rendering the source code borders.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
+    pub border_color: Color,
+    /// The color to use when rendering the note bullets.
+    /// Defaults `Color::Blue` (or `Color::Cyan` on windows).
+    pub note_bullet_color: Color,
+    /// The character to use when marking the top-left corner of the source.
+    /// Defaults to: `'┌'`.
+    pub border_top_left_char: char,
+    /// The character to use when marking the top border of the source.
+    /// Defaults to: `'─'`.
+    pub border_top_char: char,
+    /// The character to use when marking the left border of the source.
+    /// Defaults to: `'│'`.
+    pub border_left_char: char,
+    /// The character to use when underlining a primary label.
+    /// Defaults to: `'^'`.
+    pub primary_underline_char: char,
+    /// The character to use when underlining a secondary label.
+    /// Defaults to: `'-'`.
+    pub secondary_underline_char: char,
+    /// The character to use for the note bullet.
+    /// Defaults to: `'='`.
+    pub note_bullet_char: char,
 }
 
 impl Default for Config {
@@ -44,9 +70,15 @@ impl Default for Config {
             note_color: Color::Green,
             help_color: Color::Cyan,
             secondary_color: BLUE,
-            gutter_color: BLUE,
-            primary_mark: '^',
-            secondary_mark: '-',
+            line_number_color: BLUE,
+            border_color: BLUE,
+            note_bullet_color: BLUE,
+            border_top_left_char: '┌',
+            border_top_char: '─',
+            border_left_char: '│',
+            primary_underline_char: '^',
+            secondary_underline_char: '-',
+            note_bullet_char: '=',
         }
     }
 }
@@ -67,27 +99,24 @@ impl Config {
 pub fn emit(
     mut writer: impl WriteColor,
     config: &Config,
-    files: &Files<impl AsRef<str>>,
+    files: &Files,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
     Header::new(diagnostic).emit(&mut writer, config)?;
+    NewLine::new().emit(&mut writer, config)?;
 
-    match files.find_file(diagnostic.primary_label.span.start()) {
-        None => SimpleMessage::new(&diagnostic.primary_label).emit(&mut writer, config)?,
-        Some(file) => MarkedSource::new_primary(file, &diagnostic).emit(&mut writer, config)?,
-    }
+    MarkedSource::new_primary(files, &diagnostic).emit(&mut writer, config)?;
+    NewLine::new().emit(&mut writer, config)?;
 
     for label in &diagnostic.secondary_labels {
-        match files.find_file(label.span.start()) {
-            None => SimpleMessage::new(&label).emit(&mut writer, config)?,
-            Some(file) => MarkedSource::new_secondary(file, &label).emit(&mut writer, config)?,
-        }
+        MarkedSource::new_secondary(files, &label).emit(&mut writer, config)?;
+        NewLine::new().emit(&mut writer, config)?;
     }
 
     Ok(())
 }
 
-/// Diagnostic header
+/// Diagnostic header.
 ///
 /// ```text
 /// error[E0001]: Unexpected type in `+` application
@@ -128,7 +157,7 @@ impl<'a> Header<'a> {
 
         // Write severity name
         //
-        // ```
+        // ```text
         // error
         // ```
         writer.set_color(&primary_spec)?;
@@ -136,7 +165,7 @@ impl<'a> Header<'a> {
         if let Some(code) = &self.code {
             // Write error code
             //
-            // ```
+            // ```text
             // [E0001]
             // ```
             write!(writer, "[{}]", code)?;
@@ -144,39 +173,14 @@ impl<'a> Header<'a> {
 
         // Write diagnostic message
         //
-        // ```
+        // ```text
         // : Unexpected type in `+` application
         // ```
         writer.set_color(&message_spec)?;
         write!(writer, ": {}", self.message)?;
-        write!(writer, "\n")?;
         writer.reset()?;
 
-        Ok(())
-    }
-}
-
-/// A simple message
-///
-/// ```text
-/// - Expected integer but got string
-/// ```
-struct SimpleMessage<'a> {
-    message: &'a str,
-}
-
-impl<'a> SimpleMessage<'a> {
-    fn new(label: &'a Label) -> SimpleMessage<'a> {
-        SimpleMessage {
-            message: &label.message,
-        }
-    }
-
-    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
-        if !self.message.is_empty() {
-            write!(writer, "- {}", self.message)?;
-            write!(writer, "\n")?;
-        }
+        NewLine::new().emit(writer, config)?;
 
         Ok(())
     }
@@ -187,44 +191,69 @@ enum MarkStyle {
     Secondary,
 }
 
-/// A marked section of source code
+/// A marked section of source code.
 ///
 /// ```text
-///   ┌╴ <test>:2:9
+///   ┌── test:2:9 ───
 ///   │
 /// 2 │ (+ test "")
-///   │         ^^ Expected integer but got string
-///   ╵
+///   │         ^^ expected `Int` but found `String`
+///   │
+///   = expected type `Int`
+///        found type `String`
 /// ```
-struct MarkedSource<'a, S: AsRef<str>> {
-    file: &'a File<S>,
+struct MarkedSource<'a> {
+    files: &'a Files,
     label: &'a Label,
     mark_style: MarkStyle,
+    notes: &'a [String],
 }
 
-impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
-    fn new_primary(file: &'a File<S>, diagnostic: &'a Diagnostic) -> MarkedSource<'a, S> {
+impl<'a> MarkedSource<'a> {
+    fn new_primary(files: &'a Files, diagnostic: &'a Diagnostic) -> MarkedSource<'a> {
         MarkedSource {
-            file,
+            files,
             label: &diagnostic.primary_label,
             mark_style: MarkStyle::Primary(diagnostic.severity),
+            notes: &diagnostic.notes,
         }
     }
 
-    fn new_secondary(file: &'a File<S>, label: &'a Label) -> MarkedSource<'a, S> {
+    fn new_secondary(files: &'a Files, label: &'a Label) -> MarkedSource<'a> {
         MarkedSource {
-            file,
+            files,
             label,
             mark_style: MarkStyle::Secondary,
+            notes: &[],
         }
+    }
+
+    fn span(&self) -> Span {
+        self.label.span
     }
 
     fn start(&self) -> ByteIndex {
-        self.label.span.start()
+        self.span().start()
     }
 
     fn end(&self) -> ByteIndex {
-        self.label.span.end()
+        self.span().end()
+    }
+
+    fn file_name(&self) -> &'a str {
+        self.files.name(self.label.file_id)
+    }
+
+    fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
+        self.files.location(self.label.file_id, byte_index)
+    }
+
+    fn source_slice(&self, span: Span) -> Result<&'a str, impl std::error::Error> {
+        self.files.source_slice(self.label.file_id, span)
+    }
+
+    fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
+        self.files.line_span(self.label.file_id, line_index)
     }
 
     fn label_color(&self, config: &Config) -> Color {
@@ -236,72 +265,64 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
 
     fn underline_char(&self, config: &Config) -> char {
         match self.mark_style {
-            MarkStyle::Primary(_) => config.primary_mark,
-            MarkStyle::Secondary => config.secondary_mark,
+            MarkStyle::Primary(_) => config.primary_underline_char,
+            MarkStyle::Secondary => config.secondary_underline_char,
         }
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let gutter_spec = ColorSpec::new().set_fg(Some(config.gutter_color)).clone();
         let label_spec = ColorSpec::new()
             .set_fg(Some(self.label_color(config)))
             .clone();
 
-        let start = self.file.location(self.start()).expect("location_start");
-        let end = self.file.location(self.end()).expect("location_end");
-        let start_line_span = self.file.line_span(start.line).expect("line_span");
-        let end_line_span = self.file.line_span(end.line).expect("line_span");
+        let start = self.location(self.start()).expect("location_start");
+        let end = self.location(self.end()).expect("location_end");
+        let start_line_span = self.line_span(start.line).expect("start_line_span");
+        let end_line_span = self.line_span(end.line).expect("end_line_span");
 
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
 
-        // File name
+        // Top left border and locus.
         //
-        // ```
-        // ┌╴ <test>:2:9
+        // ```text
+        // ┌── test:2:9 ───
         // ```
 
-        // Write gutter
-        writer.set_color(&gutter_spec)?;
-        write!(writer, "{: >width$} ┌╴ ", "", width = gutter_padding)?;
-        writer.reset()?;
+        Gutter::new(None, gutter_padding).emit(writer, config)?;
+        BorderTopLeft::new().emit(writer, config)?;
+        BorderTop::new(2).emit(writer, config)?;
+        write!(writer, " ")?;
 
-        // Write file name
-        write!(
-            writer,
-            "{file}:{line}:{column}",
-            file = self.file.name(),
-            line = start.line.number(),
-            column = start.column.number(),
-        )?;
-        write!(writer, "\n")?;
+        Locus::new(self.file_name(), start).emit(writer, config)?;
+
+        write!(writer, " ")?;
+        BorderTop::new(3).emit(writer, config)?;
+        NewLine::new().emit(writer, config)?;
 
         // Source code snippet
         //
-        // ```
+        // ```text
         //   │
         // 2 │ (+ test "")
-        //   │         ^^ Expected integer but got string
-        //   ╵
+        //   │         ^^ expected `Int` but found `String`
+        //   │
         // ```
 
-        // Write line number and gutter
-        writer.set_color(&gutter_spec)?;
-        write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
-        write!(writer, "\n")?;
-        write!(
-            writer,
-            "{: >width$} │ ",
-            start.line.number(),
-            width = gutter_padding,
-        )?;
-        writer.reset()?;
+        // Write initial border
+        Gutter::new(None, gutter_padding).emit(writer, config)?;
+        BorderLeft::new().emit(writer, config)?;
+        NewLine::new().emit(writer, config)?;
+
+        // Write line number and border
+        Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+        BorderLeft::new().emit(writer, config)?;
 
         let line_trimmer = |ch: char| ch == '\r' || ch == '\n';
 
         // Write source prefix before marked section
         let prefix_span = start_line_span.with_end(self.start());
-        let source_prefix = self.file.src_slice(prefix_span).expect("prefix");
+        let source_prefix = self.source_slice(prefix_span).expect("source_prefix");
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
@@ -309,87 +330,301 @@ impl<'a, S: AsRef<str>> MarkedSource<'a, S> {
             // Single line
 
             // Write marked source section
-            let marked_source = self.file.src_slice(self.label.span).expect("marked_source");
+            let marked_source = self.source_slice(self.span()).expect("marked_source");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.len()
+            marked_source.width()
         } else {
             // Multiple lines
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.start());
-            let marked_source = self.file.src_slice(marked_span).expect("start_of_marked");
+            let marked_source = self.source_slice(marked_span).expect("marked_source_1");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
 
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
-                .map(|i| LineIndex::from(i as RawIndex))
+                .map(|i| LineIndex::from(i as u32))
             {
-                // Write line number and gutter
-                writer.set_color(&gutter_spec)?;
-                write!(
-                    writer,
-                    "{: >width$} │ ",
-                    line_index.number(),
-                    width = gutter_padding,
-                )?;
+                // Write line number and border
+                Gutter::new(line_index.number(), gutter_padding).emit(writer, config)?;
+                BorderLeft::new().emit(writer, config)?;
 
                 // Write marked source section
-                let mark_span = self.file.line_span(line_index).expect("marked_line_span");
-                let marked_source = self.file.src_slice(mark_span).expect("marked_source");
+                let marked_span = self.line_span(line_index).expect("marked_span");
+                let marked_source = self.source_slice(marked_span).expect("marked_source_2");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
-                write!(writer, "\n")?;
+                NewLine::new().emit(writer, config)?;
             }
 
-            // Write line number and gutter
-            writer.set_color(&gutter_spec)?;
-            write!(
-                writer,
-                "{: >width$} │ ",
-                end.line.number(),
-                width = gutter_padding,
-            )?;
+            // Write line number and border
+            Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
+            BorderLeft::new().emit(writer, config)?;
 
             // Write marked source section
-            let mark_span = end_line_span.with_end(self.end());
-            let marked_source = self.file.src_slice(mark_span).expect("marked_source");
+            let marked_span = end_line_span.with_end(self.end());
+            let marked_source = self.source_slice(marked_span).expect("marked_source_3");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.len()
+            marked_source.width()
         };
 
         // Write source suffix after marked section
         let suffix_span = end_line_span.with_start(self.end());
-        let source_suffix = self.file.src_slice(suffix_span).expect("suffix");
+        let source_suffix = self.source_slice(suffix_span).expect("source_suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
-        write!(writer, "\n")?;
+        NewLine::new().emit(writer, config)?;
 
-        // Write underline gutter
-        writer.set_color(&gutter_spec)?;
-        write!(writer, "{: >width$} │ ", "", width = gutter_padding)?;
-        writer.reset()?;
+        // Write underline border
+        Gutter::new(None, gutter_padding).emit(writer, config)?;
+        BorderLeft::new().emit(writer, config)?;
 
         // Write underline and label
         writer.set_color(&label_spec)?;
-        write!(writer, "{: >width$}", "", width = source_prefix.len())?;
+        write!(
+            writer,
+            "{space: >width$}",
+            space = "",
+            width = source_prefix.width(),
+        )?;
         for _ in 0..mark_len {
             write!(writer, "{}", self.underline_char(config))?;
         }
         if !self.label.message.is_empty() {
             write!(writer, " {}", self.label.message)?;
-            write!(writer, "\n")?;
         }
+        NewLine::new().emit(writer, config)?;
         writer.reset()?;
 
-        // Write final gutter
-        writer.set_color(&gutter_spec)?;
-        write!(writer, "{: >width$} ╵", "", width = gutter_padding)?;
-        write!(writer, "\n")?;
+        // Write final border
+        Gutter::new(None, gutter_padding).emit(writer, config)?;
+        BorderLeft::new().emit(writer, config)?;
+        NewLine::new().emit(writer, config)?;
+
+        // Additional notes
+        //
+        // ```text
+        // = expected type `Int`
+        //      found type `String`
+        // ```
+
+        for note in self.notes {
+            Note::new(gutter_padding, note).emit(writer, config)?;
+        }
+
+        Ok(())
+    }
+}
+
+/// The 'location focus' of a source code snippet.
+///
+/// This is displayed in a way that other tools can understand, for
+/// example when command+clicking in iTerm.
+///
+/// ```text
+/// test:2:9
+/// ```
+struct Locus<'a> {
+    file_name: &'a str,
+    location: Location,
+}
+
+impl<'a> Locus<'a> {
+    fn new(file_name: &'a str, location: Location) -> Locus<'a> {
+        Locus {
+            file_name,
+            location,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
+        write!(
+            writer,
+            "{file}:{line}:{column}",
+            file = self.file_name,
+            line = self.location.line.number(),
+            column = self.location.column.number(),
+        )
+    }
+}
+
+/// The left-hand gutter of a source line.
+struct Gutter {
+    line_number: Option<LineNumber>,
+    gutter_padding: usize,
+}
+
+impl<'a> Gutter {
+    fn new(line_number: impl Into<Option<LineNumber>>, gutter_padding: usize) -> Gutter {
+        Gutter {
+            line_number: line_number.into(),
+            gutter_padding,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
+        match self.line_number {
+            None => {
+                write!(
+                    writer,
+                    "{space: >width$}",
+                    space = "",
+                    width = self.gutter_padding,
+                )?;
+            },
+            Some(line_number) => {
+                let line_number_spec = ColorSpec::new()
+                    .set_fg(Some(config.line_number_color))
+                    .clone();
+
+                writer.set_color(&line_number_spec)?;
+                write!(
+                    writer,
+                    "{line: >width$}",
+                    line = line_number,
+                    width = self.gutter_padding,
+                )?;
+                writer.reset()?;
+            },
+        }
+        write!(writer, " ")?;
+
+        Ok(())
+    }
+}
+
+/// The top-left corner of a source line.
+struct BorderTopLeft {}
+
+impl BorderTopLeft {
+    fn new() -> BorderTopLeft {
+        BorderTopLeft {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        write!(writer, "{top_left}", top_left = config.border_top_left_char)?;
         writer.reset()?;
 
         Ok(())
+    }
+}
+
+/// The top border of a source line.
+struct BorderTop {
+    width: usize,
+}
+
+impl BorderTop {
+    fn new(width: usize) -> BorderTop {
+        BorderTop { width }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        for _ in 0..self.width {
+            write!(writer, "{top}", top = config.border_top_char)?
+        }
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The left-hand border of a source line.
+struct BorderLeft {}
+
+impl<'a> BorderLeft {
+    fn new() -> BorderLeft {
+        BorderLeft {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        write!(writer, "{left} ", left = config.border_left_char)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// Additional note
+///
+/// ```text
+/// = expected type `Int`
+///      found type `String`
+/// ```
+struct Note<'a> {
+    gutter_padding: usize,
+    message: &'a str,
+}
+
+impl<'a> Note<'a> {
+    fn new(gutter_padding: usize, message: &'a str) -> Note<'a> {
+        Note {
+            gutter_padding,
+            message,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        for (i, line) in self.message.lines().enumerate() {
+            Gutter::new(None, self.gutter_padding).emit(writer, config)?;
+            match i {
+                0 => NoteBullet::new().emit(writer, config)?,
+                _ => write!(writer, " ")?,
+            }
+            // Write line of message
+            write!(writer, " {}", line)?;
+            NewLine::new().emit(writer, config)?;
+        }
+
+        Ok(())
+    }
+}
+
+/// The bullet that appears before a note.
+///
+/// ```text
+/// =
+/// ```
+struct NoteBullet {}
+
+impl<'a> NoteBullet {
+    fn new() -> NoteBullet {
+        NoteBullet {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let note_bullet_spec = ColorSpec::new().set_fg(Some(config.note_bullet_color)).clone();
+
+        writer.set_color(&note_bullet_spec)?;
+        write!(writer, "{}", config.note_bullet_char)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// A new line.
+struct NewLine {}
+
+impl<'a> NewLine {
+    fn new() -> NewLine {
+        NewLine {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
+        write!(writer, "\n")
     }
 }

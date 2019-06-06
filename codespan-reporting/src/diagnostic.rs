@@ -1,4 +1,6 @@
-use codespan::ByteSpan;
+//! Diagnostic reporting support for the codespan crate
+
+use codespan::{FileId, Span};
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -55,17 +57,21 @@ impl PartialOrd for Severity {
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
+    /// The file that we are labelling.
+    pub file_id: FileId,
     /// The span we are going to include in the final snippet.
-    pub span: ByteSpan,
-    /// A message to provide some additional information for the underlined code.
+    pub span: Span,
+    /// A message to provide some additional information for the underlined
+    /// code. These should not include line breaks.
     pub message: String,
 }
 
 impl Label {
     /// Create a new label.
-    pub fn new(span: ByteSpan, message: impl Into<String>) -> Label {
+    pub fn new(file_id: FileId, span: impl Into<Span>, message: impl Into<String>) -> Label {
         Label {
-            span,
+            file_id,
+            span: span.into(),
             message: message.into(),
         }
     }
@@ -81,10 +87,14 @@ pub struct Diagnostic {
     pub severity: Severity,
     /// An optional code that identifies this diagnostic.
     pub code: Option<String>,
-    /// The main message associated with this diagnostic.
+    /// The main message associated with this diagnostic. These should not
+    /// include line breaks.
     pub message: String,
     /// A label that describes the primary cause of this diagnostic.
     pub primary_label: Label,
+    /// Notes that are associated with the primary cause of the diagnostic.
+    /// These can include line breaks for improved formatting.
+    pub notes: Vec<String>,
     /// Secondary labels that provide additional context for the diagnostic.
     pub secondary_labels: Vec<Label>,
 }
@@ -97,6 +107,7 @@ impl Diagnostic {
             code: None,
             message: message.into(),
             primary_label,
+            notes: Vec::new(),
             secondary_labels: Vec::new(),
         }
     }
@@ -129,6 +140,12 @@ impl Diagnostic {
     /// Add an error code to the diagnostic.
     pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic {
         self.code = Some(code.into());
+        self
+    }
+
+    /// Add some notes to the diagnostic.
+    pub fn with_notes(mut self, notes: Vec<String>) -> Diagnostic {
+        self.notes = notes;
         self
     }
 

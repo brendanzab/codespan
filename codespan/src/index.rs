@@ -13,7 +13,7 @@ pub type RawIndex = u32;
 pub type RawOffset = i64;
 
 /// A zero-indexed line offset into a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineIndex(pub RawIndex);
@@ -52,7 +52,7 @@ impl fmt::Debug for LineIndex {
 }
 
 /// A 1-indexed line number. Useful for pretty printing source locations.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineNumber(RawIndex);
@@ -65,14 +65,8 @@ impl fmt::Debug for LineNumber {
     }
 }
 
-impl fmt::Display for LineNumber {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 /// A line offset in a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineOffset(pub RawOffset);
@@ -91,14 +85,8 @@ impl fmt::Debug for LineOffset {
     }
 }
 
-impl fmt::Display for LineOffset {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 /// A zero-indexed column offset into a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ColumnIndex(pub RawIndex);
@@ -137,7 +125,7 @@ impl fmt::Debug for ColumnIndex {
 }
 
 /// A 1-indexed column number. Useful for pretty printing source locations.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ColumnNumber(RawIndex);
@@ -147,12 +135,6 @@ impl fmt::Debug for ColumnNumber {
         write!(f, "ColumnNumber(")?;
         self.0.fmt(f)?;
         write!(f, ")")
-    }
-}
-
-impl fmt::Display for ColumnNumber {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
     }
 }
 
@@ -182,41 +164,13 @@ impl fmt::Display for ColumnOffset {
     }
 }
 
-/// A byte position in a source file. The index is continuous, running over all
-/// files in a `Files`, starting with 1. Zero is reserved for positions that
-/// do not point to a valid file. One byte of padding is added between each file.
-///
-/// For example, for these files:
-///
-/// - `main.rs`: `pub struct` (10 bytes)
-/// - `lib.rs`: `Span::new` (9 bytes)
-///
-/// `ByteIndex(0)` points to no file at all, `ByteIndex(2)` points at the
-/// second byte (index 1) in `main.rs` and `ByteIndex(14)` points at the third
-/// byte (index 2) in `lib.rs`.
-///
-/// You can visualize the indices like this:
-///
-/// ```ascii
-///                  main.rs                                     lib.rs
-///
-/// content    │ █ │ p │ u │ b │   │ s │ t │ r │ u │ c │ t │ █ │ S │ p │ a │ n │ : │ : │ n │ e │ w │
-/// ───────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-/// file index │ █ │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ █ │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │
-/// ───────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-/// ByteIndex  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │10 │11 │12 │13 │14 │15 │16 │17 │18 │19 │20 │
-/// ```
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+/// A byte position in a source file.
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ByteIndex(pub RawIndex);
 
 impl ByteIndex {
-    /// A byte position that will never point to a valid file
-    pub const fn none() -> ByteIndex {
-        ByteIndex(0)
-    }
-
     /// Convert the position into a `usize`, for use in array indexing
     pub const fn to_usize(self) -> usize {
         self.0 as usize
@@ -237,14 +191,8 @@ impl fmt::Debug for ByteIndex {
     }
 }
 
-impl fmt::Display for ByteIndex {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 /// A byte offset in a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ByteOffset(pub RawOffset);
@@ -255,12 +203,12 @@ impl ByteOffset {
     /// ```rust
     /// use codespan::ByteOffset;
     ///
-    /// assert_eq!(ByteOffset::from_char_utf8('A').to_usize(), 1);
-    /// assert_eq!(ByteOffset::from_char_utf8('ß').to_usize(), 2);
-    /// assert_eq!(ByteOffset::from_char_utf8('ℝ').to_usize(), 3);
-    /// assert_eq!(ByteOffset::from_char_utf8('💣').to_usize(), 4);
+    /// assert_eq!(ByteOffset::from_char_len('A').to_usize(), 1);
+    /// assert_eq!(ByteOffset::from_char_len('ß').to_usize(), 2);
+    /// assert_eq!(ByteOffset::from_char_len('ℝ').to_usize(), 3);
+    /// assert_eq!(ByteOffset::from_char_len('💣').to_usize(), 4);
     /// ```
-    pub fn from_char_utf8(ch: char) -> ByteOffset {
+    pub fn from_char_len(ch: char) -> ByteOffset {
         ByteOffset(ch.len_utf8() as RawOffset)
     }
 
@@ -269,12 +217,12 @@ impl ByteOffset {
     /// ```rust
     /// use codespan::ByteOffset;
     ///
-    /// assert_eq!(ByteOffset::from_str("A").to_usize(), 1);
-    /// assert_eq!(ByteOffset::from_str("ß").to_usize(), 2);
-    /// assert_eq!(ByteOffset::from_str("ℝ").to_usize(), 3);
-    /// assert_eq!(ByteOffset::from_str("💣").to_usize(), 4);
+    /// assert_eq!(ByteOffset::from_str_len("A").to_usize(), 1);
+    /// assert_eq!(ByteOffset::from_str_len("ß").to_usize(), 2);
+    /// assert_eq!(ByteOffset::from_str_len("ℝ").to_usize(), 3);
+    /// assert_eq!(ByteOffset::from_str_len("💣").to_usize(), 4);
     /// ```
-    pub fn from_str(value: &str) -> ByteOffset {
+    pub fn from_str_len(value: &str) -> ByteOffset {
         ByteOffset(value.len() as RawOffset)
     }
 
@@ -296,12 +244,6 @@ impl fmt::Debug for ByteOffset {
         write!(f, "ByteOffset(")?;
         self.0.fmt(f)?;
         write!(f, ")")
-    }
-}
-
-impl fmt::Display for ByteOffset {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
     }
 }
 

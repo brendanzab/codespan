@@ -1,529 +1,373 @@
-//! Various source mapping utilities
-
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::{error, fmt, io};
+use std::error;
 
-use crate::index::{
-    ByteIndex, ByteOffset, ColumnIndex, LineIndex, LineOffset, RawIndex, RawOffset,
-};
-use crate::location::Location;
-use crate::span::ByteSpan;
+use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
 
-#[derive(Debug, PartialEq)]
-pub enum LineIndexError {
-    OutOfBounds { given: LineIndex, max: LineIndex },
+#[derive(derive_more::Display, Debug, PartialEq)]
+#[display(fmt = "Line index out of bounds - given: {}, max: {}", given, max)]
+pub struct LineIndexOutOfBoundsError {
+    pub given: LineIndex,
+    pub max: LineIndex,
 }
 
-impl error::Error for LineIndexError {}
+impl error::Error for LineIndexOutOfBoundsError {}
 
-impl fmt::Display for LineIndexError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LineIndexError::OutOfBounds { given, max } => {
-                write!(f, "Line out of bounds - given: {:?}, max: {:?}", given, max)
-            },
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ByteIndexError {
-    OutOfBounds { given: ByteIndex, span: ByteSpan },
-    InvalidCharBoundary { given: ByteIndex },
-}
-
-impl error::Error for ByteIndexError {}
-
-impl fmt::Display for ByteIndexError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ByteIndexError::OutOfBounds { given, span } => write!(
-                f,
-                "Byte index out of bounds - given: {}, span: {}",
-                given, span,
-            ),
-            ByteIndexError::InvalidCharBoundary { given } => write!(
-                f,
-                "Byte index points within a character boundary - given: {}",
-                given,
-            ),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(derive_more::Display, Debug, PartialEq)]
 pub enum LocationError {
-    LineOutOfBounds {
-        given: LineIndex,
-        max: LineIndex,
-    },
-    ColumnOutOfBounds {
-        given: ColumnIndex,
-        max: ColumnIndex,
-    },
+    #[display(fmt = "Byte index out of bounds - given: {}, span: {}", given, span)]
+    OutOfBounds { given: ByteIndex, span: Span },
+    #[display(fmt = "Byte index within character boundary - given: {}", given)]
+    InvalidCharBoundary { given: ByteIndex },
 }
 
 impl error::Error for LocationError {}
 
-impl fmt::Display for LocationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LocationError::LineOutOfBounds { given, max } => {
-                write!(f, "Line out of bounds - given: {:?}, max: {:?}", given, max)
-            },
-            LocationError::ColumnOutOfBounds { given, max } => write!(
-                f,
-                "Column out of bounds - given: {:?}, max: {:?}",
-                given, max,
-            ),
-        }
-    }
+#[derive(derive_more::Display, Debug, PartialEq)]
+#[display(fmt = "Span out of bounds - given: {}, span: {}", given, span)]
+pub struct SpanOutOfBoundsError {
+    pub given: Span,
+    pub span: Span,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum SpanError {
-    OutOfBounds { given: ByteSpan, span: ByteSpan },
-}
+impl error::Error for SpanOutOfBoundsError {}
 
-impl error::Error for SpanError {}
-
-impl fmt::Display for SpanError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SpanError::OutOfBounds { given, span } => {
-                write!(f, "Span out of bounds - given: {}, span: {}", given, span)
-            },
-        }
-    }
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
+/// A handle that points to a file in the database.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
-/// Some source code
-pub struct File<S = String> {
-    /// The name of the file that the source came from, to be used when
-    /// displaying diagnostics
-    name: String,
-    /// The complete source code
-    src: S,
-    /// The span of the source in the `Files`
-    span: ByteSpan,
-    /// Offsets to the line beginnings in the source
-    lines: Vec<ByteOffset>,
+pub struct FileId(u32);
+
+/// A database of source files.
+#[derive(Debug, Clone)]
+pub struct Files {
+    files: Vec<File>,
 }
 
-impl<S: AsRef<str> + From<String>> File<S> {
-    /// Read some source code from a file, loading it into a file
-    pub(crate) fn from_disk(name: String, start: ByteIndex) -> io::Result<File<S>> {
-        use std::fs;
-
-        let src = fs::read_to_string(&name)?;
-
-        Ok(File::with_index(name, src.into(), start))
+impl Files {
+    /// Create a new, empty database of files.
+    pub fn new() -> Files {
+        Files { files: Vec::new() }
     }
-}
 
-impl<S> File<S>
-where
-    S: AsRef<str>,
-{
-    /// Construct a new, standalone file.
+    /// Add a file to the database, returning the handle that can be used to
+    /// refer to it again.
+    pub fn add(&mut self, name: impl Into<String>, source: impl Into<String>) -> FileId {
+        let file_id = FileId(self.files.len() as u32);
+        self.files.push(File::new(name.into(), source.into()));
+        file_id
+    }
+
+    /// Update a source file in place.
     ///
-    /// This can be useful for tests that consist of a single source file. Production code should however
-    /// use `Files::add_file` or `Files::add_file_from_disk` instead.
-    pub fn new(name: String, src: S) -> File<S> {
-        File::with_index(name, src, ByteIndex(1))
+    /// This will mean that any outstanding byte indexes will now point to
+    /// invalid locations.
+    pub fn update(&mut self, file_id: FileId, source: impl Into<String>) {
+        self.get_mut(file_id).update(source.into())
     }
 
-    pub(crate) fn with_index(name: String, src: S, start: ByteIndex) -> File<S> {
-        use std::iter;
+    /// Get a the source file using the file id.
+    // FIXME: return an option or result?
+    fn get(&self, file_id: FileId) -> &File {
+        &self.files[file_id.0 as usize]
+    }
 
-        let span = ByteSpan::from_offset(start, ByteOffset::from_str(src.as_ref()));
-        let lines = {
-            let newline_off = ByteOffset::from_char_utf8('\n');
-            let offsets = src
-                .as_ref()
-                .match_indices('\n')
-                .map(|(i, _)| ByteOffset(i as RawOffset) + newline_off);
+    /// Get a the source file using the file id.
+    // FIXME: return an option or result?
+    fn get_mut(&mut self, file_id: FileId) -> &mut File {
+        &mut self.files[file_id.0 as usize]
+    }
 
-            iter::once(ByteOffset(0)).chain(offsets).collect()
-        };
+    /// Get the name of the source file.
+    ///
+    /// ```rust
+    /// use codespan::Files;
+    ///
+    /// let name = "test";
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add(name, "hello world!");
+    ///
+    /// assert_eq!(files.name(file_id), name);
+    /// ```
+    pub fn name(&self, file_id: FileId) -> &str {
+        self.get(file_id).name()
+    }
+
+    /// Get the span at the given line index.
+    ///
+    /// ```rust
+    /// use codespan::{Files, LineIndex, LineIndexOutOfBoundsError, Span};
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
+    ///
+    /// let line_sources = (0..5)
+    ///     .map(|line| files.line_span(file_id, line))
+    ///     .collect::<Vec<_>>();
+    ///
+    /// assert_eq!(
+    ///     line_sources,
+    ///     [
+    ///         Ok(Span::new(0, 4)),    // 0: "foo\n"
+    ///         Ok(Span::new(4, 9)),    // 1: "bar\r\n"
+    ///         Ok(Span::new(9, 10)),   // 2: ""
+    ///         Ok(Span::new(10, 13)),  // 3: "baz"
+    ///         Err(LineIndexOutOfBoundsError {
+    ///             given: LineIndex::from(5),
+    ///             max: LineIndex::from(4),
+    ///         }),
+    ///     ]
+    /// );
+    /// ```
+    pub fn line_span(
+        &self,
+        file_id: FileId,
+        line_index: impl Into<LineIndex>,
+    ) -> Result<Span, LineIndexOutOfBoundsError> {
+        self.get(file_id).line_span(line_index.into())
+    }
+
+    /// Get the location at the given byte index in the source file.
+    ///
+    /// ```rust
+    /// use codespan::{ByteIndex, Files, Location, LocationError, Span};
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
+    ///
+    /// assert_eq!(files.location(file_id, 0), Ok(Location::new(0, 0)));
+    /// assert_eq!(files.location(file_id, 7), Ok(Location::new(1, 3)));
+    /// assert_eq!(files.location(file_id, 8), Ok(Location::new(1, 4)));
+    /// assert_eq!(files.location(file_id, 9), Ok(Location::new(2, 0)));
+    /// assert_eq!(
+    ///     files.location(file_id, 100),
+    ///     Err(LocationError::OutOfBounds {
+    ///         given: ByteIndex::from(100),
+    ///         span: Span::new(0, 13),
+    ///     }),
+    /// );
+    /// ```
+    pub fn location(
+        &self,
+        file_id: FileId,
+        byte_index: impl Into<ByteIndex>,
+    ) -> Result<Location, LocationError> {
+        self.get(file_id).location(byte_index.into())
+    }
+
+    /// Get the source of the file.
+    ///
+    /// ```rust
+    /// use codespan::Files;
+    ///
+    /// let source = "hello world!";
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test", source);
+    ///
+    /// assert_eq!(files.source(file_id), source);
+    /// ```
+    pub fn source(&self, file_id: FileId) -> &str {
+        self.get(file_id).source()
+    }
+
+    /// Return the span of the full source.
+    ///
+    /// ```rust
+    /// use codespan::{Files, Span};
+    ///
+    /// let source = "hello world!";
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test", source);
+    ///
+    /// assert_eq!(files.source_span(file_id), Span::from_str(source));
+    /// ```
+    pub fn source_span(&self, file_id: FileId) -> Span {
+        self.get(file_id).source_span()
+    }
+
+    /// Return a slice of the source file, given a span.
+    ///
+    /// ```rust
+    /// use codespan::{Files, Span};
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test",  "hello world!");
+    ///
+    /// assert_eq!(files.source_slice(file_id, Span::new(0, 5)), Ok("hello"));
+    /// assert!(files.source_slice(file_id, Span::new(0, 100)).is_err());
+    /// ```
+    pub fn source_slice(
+        &self,
+        file_id: FileId,
+        span: impl Into<Span>,
+    ) -> Result<&str, SpanOutOfBoundsError> {
+        self.get(file_id).source_slice(span.into())
+    }
+}
+
+/// A file that is stored in the database.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
+struct File {
+    /// The name of the file.
+    name: String,
+    /// The source code of the file.
+    source: String,
+    /// The starting byte indices in the source code.
+    line_starts: Vec<ByteIndex>,
+}
+
+// FIXME: Check file size
+fn compute_line_starts(source: &str) -> Vec<ByteIndex> {
+    std::iter::once(0)
+        .chain(source.match_indices('\n').map(|(i, _)| i as u32 + 1))
+        .map(ByteIndex::from)
+        .collect()
+}
+
+impl File {
+    fn new(name: String, source: String) -> File {
+        let line_starts = compute_line_starts(&source);
 
         File {
             name,
-            src,
-            span,
-            lines,
+            source,
+            line_starts,
         }
     }
 
-    /// The name of the file that the source came from
-    pub fn name(&self) -> &str {
+    fn update(&mut self, source: String) {
+        let line_starts = compute_line_starts(&source);
+        self.source = source;
+        self.line_starts = line_starts;
+    }
+
+    fn name(&self) -> &str {
         &self.name
     }
 
-    /// The underlying source code
-    pub fn src(&self) -> &str {
-        &self.src.as_ref()
+    fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, LineIndexOutOfBoundsError> {
+        use std::cmp::Ordering;
+
+        match line_index.cmp(&self.last_line_index()) {
+            Ordering::Less => Ok(self.line_starts[line_index.to_usize()]),
+            Ordering::Equal => Ok(self.source_span().end()),
+            Ordering::Greater => Err(LineIndexOutOfBoundsError {
+                given: line_index,
+                max: self.last_line_index(),
+            }),
+        }
     }
 
-    /// The span of the source in the `Files`
-    pub fn span(&self) -> ByteSpan {
-        self.span
+    fn last_line_index(&self) -> LineIndex {
+        LineIndex::from(self.line_starts.len() as RawIndex)
     }
 
-    pub fn offset(
-        &self,
-        line: LineIndex,
-        column: ColumnIndex,
-    ) -> Result<ByteOffset, LocationError> {
-        self.byte_index(line, column)
-            .map(|index| index - self.span.start())
+    fn line_span(&self, line_index: LineIndex) -> Result<Span, LineIndexOutOfBoundsError> {
+        let line_start = self.line_start(line_index)?;
+        let next_line_start = self.line_start(line_index + LineOffset::from(1))?;
+
+        Ok(Span::new(line_start, next_line_start))
     }
 
-    pub fn byte_index(
-        &self,
-        line: LineIndex,
-        column: ColumnIndex,
-    ) -> Result<ByteIndex, LocationError> {
-        self.line_span(line)
-            .map_err(
-                |LineIndexError::OutOfBounds { given, max }| LocationError::LineOutOfBounds {
-                    given,
-                    max,
-                },
-            )
-            .and_then(|span| {
-                let distance = ColumnIndex(span.end().0 - span.start().0);
-                if column > distance {
-                    Err(LocationError::ColumnOutOfBounds {
-                        given: column,
-                        max: distance,
-                    })
-                } else {
-                    Ok(span.start() + ByteOffset::from(column.0 as i64))
-                }
-            })
-    }
+    fn location(&self, byte_index: ByteIndex) -> Result<Location, LocationError> {
+        use unicode_segmentation::UnicodeSegmentation;
 
-    /// Returns the byte offset to the start of `line`.
-    ///
-    /// Lines may be delimited with either `\n` or `\r\n`.
-    pub fn line_offset(&self, index: LineIndex) -> Result<ByteOffset, LineIndexError> {
-        self.lines
-            .get(index.to_usize())
-            .cloned()
-            .ok_or_else(|| LineIndexError::OutOfBounds {
-                given: index,
-                max: LineIndex(self.lines.len() as RawIndex - 1),
-            })
-    }
+        match self.line_starts.binary_search(&byte_index) {
+            // Found the start of a line
+            Ok(line) => Ok(Location::new(line as u32, 0)),
+            // Found something in the middle of a line
+            Err(next_line) => {
+                let line_index = LineIndex::from(next_line as u32 - 1);
+                let line_start_index =
+                    self.line_start(line_index)
+                        .map_err(|_| LocationError::OutOfBounds {
+                            given: byte_index,
+                            span: self.source_span(),
+                        })?;
+                let line_src = self
+                    .source()
+                    .get(line_start_index.to_usize()..byte_index.to_usize())
+                    .ok_or_else(|| {
+                        let given = byte_index;
+                        if given >= self.source_span().end() {
+                            let span = self.source_span();
+                            LocationError::OutOfBounds { given, span }
+                        } else {
+                            LocationError::InvalidCharBoundary { given }
+                        }
+                    })?;
 
-    /// Returns the byte index of the start of `line`.
-    ///
-    /// Lines may be delimited with either `\n` or `\r\n`.
-    pub fn line_byte_index(&self, index: LineIndex) -> Result<ByteIndex, LineIndexError> {
-        self.line_offset(index)
-            .map(|offset| self.span.start() + offset)
-    }
-
-    /// Returns the byte offset to the start of `line`.
-    ///
-    /// Lines may be delimited with either `\n` or `\r\n`.
-    pub fn line_span(&self, line: LineIndex) -> Result<ByteSpan, LineIndexError> {
-        let start = self.span.start() + self.line_offset(line)?;
-        let end = match self.line_offset(line + LineOffset(1)) {
-            Ok(offset_hi) => self.span.start() + offset_hi,
-            Err(_) => self.span.end(),
-        };
-
-        Ok(ByteSpan::new(end, start))
-    }
-
-    /// Returns the line and column location of `byte`
-    pub fn location(&self, index: ByteIndex) -> Result<Location, ByteIndexError> {
-        let line_index = self.find_line(index)?;
-        let line_span = self.line_span(line_index).unwrap(); // line_index should be valid!
-        let line_slice = self.src_slice(line_span).unwrap(); // line_span should be valid!
-        let byte_col = index - line_span.start();
-        let column_index =
-            ColumnIndex(line_slice[..byte_col.to_usize()].chars().count() as RawIndex);
-
-        Ok(Location::new(line_index, column_index))
-    }
-
-    /// Returns the line index that the byte index points to
-    pub fn find_line(&self, index: ByteIndex) -> Result<LineIndex, ByteIndexError> {
-        if index < self.span.start() || index > self.span.end() {
-            Err(ByteIndexError::OutOfBounds {
-                given: index,
-                span: self.span,
-            })
-        } else {
-            let offset = index - self.span.start();
-
-            if self.src.as_ref().is_char_boundary(offset.to_usize()) {
-                match self.lines.binary_search(&offset) {
-                    Ok(i) => Ok(LineIndex(i as RawIndex)),
-                    Err(i) => Ok(LineIndex(i as RawIndex - 1)),
-                }
-            } else {
-                Err(ByteIndexError::InvalidCharBoundary {
-                    given: self.span.start(),
+                Ok(Location {
+                    line: line_index,
+                    column: ColumnIndex::from(line_src.graphemes(true).count() as u32),
                 })
-            }
+            },
         }
     }
 
-    /// Get the corresponding source string for a span
-    ///
-    /// Returns `Err` if the span is outside the bounds of the file
-    pub fn src_slice(&self, span: ByteSpan) -> Result<&str, SpanError> {
-        if self.span.contains(span) {
-            let start = (span.start() - self.span.start()).to_usize();
-            let end = (span.end() - self.span.start()).to_usize();
+    fn source(&self) -> &str {
+        &self.source
+    }
 
-            // TODO: check char boundaries
-            Ok(&self.src.as_ref()[start..end])
-        } else {
-            Err(SpanError::OutOfBounds {
-                given: span,
-                span: self.span,
-            })
-        }
+    fn source_span(&self) -> Span {
+        Span::from_str(self.source())
+    }
+
+    fn source_slice(&self, span: Span) -> Result<&str, SpanOutOfBoundsError> {
+        let start = span.start().to_usize();
+        let end = span.end().to_usize();
+
+        self.source.get(start..end).ok_or_else(|| {
+            let span = Span::from_str(self.source());
+            SpanOutOfBoundsError { given: span, span }
+        })
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
-    use std::sync::Arc;
-
-    use crate::Files;
-
-    struct TestData {
-        file: Arc<File>,
-        lines: &'static [&'static str],
-    }
-
-    impl TestData {
-        fn new() -> TestData {
-            let mut files = Files::new();
-            let lines = &[
-                "hello!\n",
-                "howdy\n",
-                "\r\n",
-                "hi萤\n",
-                "bloop\n",
-                "goopey\r\n",
-            ];
-            let file = files.add_file("test".to_owned(), lines.concat());
-
-            TestData { file, lines }
-        }
-
-        fn byte_offsets(&self) -> Vec<ByteOffset> {
-            let mut offset = ByteOffset(0);
-            let mut byte_offsets = Vec::new();
-
-            for line in self.lines {
-                byte_offsets.push(offset);
-                offset += ByteOffset::from_str(line);
-
-                let line_end = if line.ends_with("\r\n") {
-                    offset + -ByteOffset::from_char_utf8('\r') + -ByteOffset::from_char_utf8('\n')
-                } else if line.ends_with("\n") {
-                    offset + -ByteOffset::from_char_utf8('\n')
-                } else {
-                    offset
-                };
-
-                byte_offsets.push(line_end);
-            }
-
-            // bump us past the end
-            byte_offsets.push(offset);
-
-            byte_offsets
-        }
-
-        fn byte_indices(&self) -> Vec<ByteIndex> {
-            let mut offsets = vec![ByteIndex::none()];
-            offsets.extend(self.byte_offsets().iter().map(|&off| ByteIndex(1) + off));
-            let out_of_bounds = *offsets.last().unwrap() + ByteOffset(1);
-            offsets.push(out_of_bounds);
-            offsets
-        }
-
-        fn line_indices(&self) -> Vec<LineIndex> {
-            (0..self.lines.len() + 2)
-                .map(|i| LineIndex(i as RawIndex))
-                .collect()
-        }
-    }
+    const TEST_SOURCE: &str = "foo\nbar\r\n\nbaz";
 
     #[test]
-    fn offset() {
-        let test_data = TestData::new();
-        assert!(test_data
-            .file
-            .offset(
-                (test_data.lines.len() as u32 - 1).into(),
-                (test_data.lines.last().unwrap().len() as u32).into()
-            )
-            .is_ok());
-        assert!(test_data
-            .file
-            .offset(
-                (test_data.lines.len() as u32 - 1).into(),
-                (test_data.lines.last().unwrap().len() as u32 + 1).into()
-            )
-            .is_err());
-    }
-
-    #[test]
-    fn line_offset() {
-        let test_data = TestData::new();
-        let offsets: Vec<_> = test_data
-            .line_indices()
-            .iter()
-            .map(|&i| test_data.file.line_offset(i))
-            .collect();
+    fn line_starts() {
+        let mut files = Files::new();
+        let file_id = files.add("test", TEST_SOURCE);
 
         assert_eq!(
-            offsets,
-            vec![
-                Ok(ByteOffset(0)),
-                Ok(ByteOffset(7)),
-                Ok(ByteOffset(13)),
-                Ok(ByteOffset(15)),
-                Ok(ByteOffset(21)),
-                Ok(ByteOffset(27)),
-                Ok(ByteOffset(35)),
-                Err(LineIndexError::OutOfBounds {
-                    given: LineIndex(7),
-                    max: LineIndex(6),
-                }),
+            files.get(file_id).line_starts,
+            [
+                ByteIndex::from(0),  // "foo\n"
+                ByteIndex::from(4),  // "bar\r\n"
+                ByteIndex::from(9),  // ""
+                ByteIndex::from(10), // "baz"
             ],
         );
     }
 
     #[test]
-    fn line_byte_index() {
-        let test_data = TestData::new();
-        let offsets: Vec<_> = test_data
-            .line_indices()
-            .iter()
-            .map(|&i| test_data.file.line_byte_index(i))
-            .collect();
+    fn line_span_sources() {
+        let mut files = Files::new();
+        let file_id = files.add("test", TEST_SOURCE);
+
+        let line_sources = (0..4)
+            .map(|line| {
+                let line_span = files.line_span(file_id, line).unwrap();
+                files.source_slice(file_id, line_span)
+            })
+            .collect::<Vec<_>>();
 
         assert_eq!(
-            offsets,
-            vec![
-                Ok(test_data.file.span().start() + ByteOffset(0)),
-                Ok(test_data.file.span().start() + ByteOffset(7)),
-                Ok(test_data.file.span().start() + ByteOffset(13)),
-                Ok(test_data.file.span().start() + ByteOffset(15)),
-                Ok(test_data.file.span().start() + ByteOffset(21)),
-                Ok(test_data.file.span().start() + ByteOffset(27)),
-                Ok(test_data.file.span().start() + ByteOffset(35)),
-                Err(LineIndexError::OutOfBounds {
-                    given: LineIndex(7),
-                    max: LineIndex(6),
-                }),
-            ],
-        );
-    }
-
-    // #[test]
-    // fn line_span() {
-    //     let file = file();
-    //     let start = file.span().start();
-
-    //     assert_eq!(file.line_byte_index(Li(0)), Some(start + BOff(0)));
-    //     assert_eq!(file.line_byte_index(Li(1)), Some(start + BOff(7)));
-    //     assert_eq!(file.line_byte_index(Li(2)), Some(start + BOff(13)));
-    //     assert_eq!(file.line_byte_index(Li(3)), Some(start + BOff(14)));
-    //     assert_eq!(file.line_byte_index(Li(4)), Some(start + BOff(20)));
-    //     assert_eq!(file.line_byte_index(Li(5)), Some(start + BOff(26)));
-    //     assert_eq!(file.line_byte_index(Li(6)), None);
-    // }
-
-    #[test]
-    fn location() {
-        let test_data = TestData::new();
-        let lines: Vec<_> = test_data
-            .byte_indices()
-            .iter()
-            .map(|&index| test_data.file.location(index))
-            .collect();
-
-        assert_eq!(
-            lines,
-            vec![
-                Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(0),
-                    span: test_data.file.span(),
-                }),
-                Ok(Location::new(0, 0)),
-                Ok(Location::new(0, 6)),
-                Ok(Location::new(1, 0)),
-                Ok(Location::new(1, 5)),
-                Ok(Location::new(2, 0)),
-                Ok(Location::new(2, 0)),
-                Ok(Location::new(3, 0)),
-                Ok(Location::new(3, 3)),
-                Ok(Location::new(4, 0)),
-                Ok(Location::new(4, 5)),
-                Ok(Location::new(5, 0)),
-                Ok(Location::new(5, 6)),
-                Ok(Location::new(6, 0)),
-                Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(37),
-                    span: test_data.file.span()
-                }),
-            ],
-        );
-    }
-
-    #[test]
-    fn find_line() {
-        let test_data = TestData::new();
-        let lines: Vec<_> = test_data
-            .byte_indices()
-            .iter()
-            .map(|&index| test_data.file.find_line(index))
-            .collect();
-
-        assert_eq!(
-            lines,
-            vec![
-                Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(0),
-                    span: test_data.file.span(),
-                }),
-                Ok(LineIndex(0)),
-                Ok(LineIndex(0)),
-                Ok(LineIndex(1)),
-                Ok(LineIndex(1)),
-                Ok(LineIndex(2)),
-                Ok(LineIndex(2)),
-                Ok(LineIndex(3)),
-                Ok(LineIndex(3)),
-                Ok(LineIndex(4)),
-                Ok(LineIndex(4)),
-                Ok(LineIndex(5)),
-                Ok(LineIndex(5)),
-                Ok(LineIndex(6)),
-                Err(ByteIndexError::OutOfBounds {
-                    given: ByteIndex(37),
-                    span: test_data.file.span(),
-                }),
-            ],
+            line_sources,
+            [Ok("foo\n"), Ok("bar\r\n"), Ok("\n"), Ok("baz")],
         );
     }
 }
