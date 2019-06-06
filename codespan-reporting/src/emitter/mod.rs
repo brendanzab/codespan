@@ -98,23 +98,12 @@ impl Config {
 }
 
 pub fn emit(
-    mut writer: impl WriteColor,
+    writer: &mut impl WriteColor,
     config: &Config,
     files: &Files,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
-    use self::views::{Header, NewLine, SourceSnippet};
+    use self::views::RichDiagnostic;
 
-    Header::new(diagnostic).emit(&mut writer, config)?;
-    NewLine::new().emit(&mut writer, config)?;
-
-    SourceSnippet::new_primary(files, &diagnostic).emit(&mut writer, config)?;
-    NewLine::new().emit(&mut writer, config)?;
-
-    for label in &diagnostic.secondary_labels {
-        SourceSnippet::new_secondary(files, &label).emit(&mut writer, config)?;
-        NewLine::new().emit(&mut writer, config)?;
-    }
-
-    Ok(())
+    RichDiagnostic::new(files, diagnostic).emit(writer, config)
 }
