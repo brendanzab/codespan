@@ -224,7 +224,7 @@ mod tests {
             let mut files = Files::new();
 
             let file_id = files.add(
-                "FizzBuzz.fun",
+                "tabbed",
                 [
                     "Entity:",
                     "\tArmament:",
