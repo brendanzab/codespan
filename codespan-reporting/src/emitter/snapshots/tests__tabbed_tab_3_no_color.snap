@@ -1,0 +1,31 @@
+---
+created: "2019-06-09T12:36:32.876902Z"
+creator: insta@0.8.1
+source: codespan-reporting/src/emitter/mod.rs
+expression: result
+---
+warning: unknown weapon `DogJaw`
+
+   ┌── FizzBuzz.fun:3:11 ───
+   │ 
+ 3 │       Weapon: DogJaw
+   │               ^^^^^^ the weapon
+   │ 
+
+warning: unknown condition `attack-cooldown`
+
+   ┌── FizzBuzz.fun:4:23 ───
+   │ 
+ 4 │       ReloadingCondition:   attack-cooldown
+   │                             ^^^^^^^^^^^^^^^ the condition
+   │ 
+
+warning: unknown field `Foo`
+
+   ┌── FizzBuzz.fun:5:2 ───
+   │ 
+ 5 │    Foo: Bar
+   │    ^^^ the field
+   │ 
+
+
