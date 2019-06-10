@@ -6,7 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::emitter::Config;
 use crate::{Diagnostic, Label, Severity};
 
-use super::{BorderLeft, BorderTop, BorderTopLeft, Gutter, Locus, NewLine, Note};
+use super::{Gutter, Locus, NewLine, Note};
 
 enum MarkStyle {
     Primary(Severity),
@@ -236,6 +236,67 @@ impl<'a> SourceSnippet<'a> {
         for note in self.notes {
             Note::new(gutter_padding, note).emit(writer, config)?;
         }
+
+        Ok(())
+    }
+}
+
+/// The top-left corner of a source line.
+struct BorderTopLeft {}
+
+impl BorderTopLeft {
+    fn new() -> BorderTopLeft {
+        BorderTopLeft {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        write!(writer, "{top_left}", top_left = config.border_top_left_char)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The top border of a source line.
+struct BorderTop {
+    width: usize,
+}
+
+impl BorderTop {
+    fn new(width: usize) -> BorderTop {
+        BorderTop { width }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        for _ in 0..self.width {
+            write!(writer, "{top}", top = config.border_top_char)?
+        }
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The left-hand border of a source line.
+struct BorderLeft {}
+
+impl BorderLeft {
+    fn new() -> BorderLeft {
+        BorderLeft {}
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
+
+        writer.set_color(&border_spec)?;
+        write!(writer, "{left} ", left = config.border_left_char)?;
+        writer.reset()?;
 
         Ok(())
     }
