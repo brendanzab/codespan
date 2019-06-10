@@ -1,7 +1,6 @@
 use codespan::{ByteIndex, Files, LineIndex, Location, Span};
 use std::io;
 use termcolor::{Color, ColorSpec, WriteColor};
-use unicode_width::UnicodeWidthStr;
 
 use crate::emitter::Config;
 use crate::{Diagnostic, Label, Severity};
@@ -70,8 +69,12 @@ impl<'a> SourceSnippet<'a> {
         self.files.location(self.label.file_id, byte_index)
     }
 
-    fn source_slice(&self, span: Span) -> Result<&'a str, impl std::error::Error> {
-        self.files.source_slice(self.label.file_id, span)
+    fn source_slice(&self, span: Span, tab: &'a str) -> Result<String, impl std::error::Error> {
+        // NOTE: Not sure if we can do this more efficiently? Perhaps a custom
+        // writer might be better?
+        self.files
+            .source_slice(self.label.file_id, span)
+            .map(|s| s.replace('\t', tab))
     }
 
     fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
@@ -104,6 +107,8 @@ impl<'a> SourceSnippet<'a> {
 
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
+        // Cache the tabs we'll be using to pad the source strings.
+        let tab = config.tab_padding();
 
         // Top left border and locus.
         //
@@ -144,7 +149,7 @@ impl<'a> SourceSnippet<'a> {
 
         // Write source prefix before marked section
         let prefix_span = start_line_span.with_end(self.start());
-        let source_prefix = self.source_slice(prefix_span).expect("source_prefix");
+        let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
         write!(writer, "{}", source_prefix)?;
 
         // Write marked section
@@ -152,17 +157,19 @@ impl<'a> SourceSnippet<'a> {
             // Single line
 
             // Write marked source section
-            let marked_source = self.source_slice(self.span()).expect("marked_source");
+            let marked_source = self.source_slice(self.span(), &tab).expect("marked_source");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.width()
+            config.width(&marked_source)
         } else {
             // Multiple lines
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.start());
-            let marked_source = self.source_slice(marked_span).expect("marked_source_1");
+            let marked_source = self
+                .source_slice(marked_span, &tab)
+                .expect("marked_source_1");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
 
@@ -175,7 +182,9 @@ impl<'a> SourceSnippet<'a> {
 
                 // Write marked source section
                 let marked_span = self.line_span(line_index).expect("marked_span");
-                let marked_source = self.source_slice(marked_span).expect("marked_source_2");
+                let marked_source = self
+                    .source_slice(marked_span, &tab)
+                    .expect("marked_source_2");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
                 NewLine::new().emit(writer, config)?;
@@ -187,16 +196,18 @@ impl<'a> SourceSnippet<'a> {
 
             // Write marked source section
             let marked_span = end_line_span.with_end(self.end());
-            let marked_source = self.source_slice(marked_span).expect("marked_source_3");
+            let marked_source = self
+                .source_slice(marked_span, &tab)
+                .expect("marked_source_3");
             writer.set_color(&label_spec)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            marked_source.width()
+            config.width(&marked_source)
         };
 
         // Write source suffix after marked section
         let suffix_span = end_line_span.with_start(self.end());
-        let source_suffix = self.source_slice(suffix_span).expect("source_suffix");
+        let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
         NewLine::new().emit(writer, config)?;
 
@@ -210,7 +221,7 @@ impl<'a> SourceSnippet<'a> {
             writer,
             "{space: >width$}",
             space = "",
-            width = source_prefix.width(),
+            width = config.width(&source_prefix),
         )?;
         for _ in 0..mark_len {
             write!(writer, "{}", self.underline_char(config))?;
