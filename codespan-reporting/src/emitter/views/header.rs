@@ -9,7 +9,7 @@ use super::NewLine;
 /// Diagnostic header.
 ///
 /// ```text
-/// error[E0001]: Unexpected type in `+` application
+/// error[E0001]: unexpected type in `+` application
 /// ```
 #[derive(Copy, Clone, Debug)]
 pub struct Header<'a> {
@@ -64,7 +64,7 @@ impl<'a> Header<'a> {
         // Write diagnostic message
         //
         // ```text
-        // : Unexpected type in `+` application
+        // : unexpected type in `+` application
         // ```
         writer.set_color(&message_spec)?;
         write!(writer, ": {}", self.message)?;

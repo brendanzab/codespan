@@ -9,7 +9,7 @@ mod emitter;
 pub use termcolor;
 
 pub use self::diagnostic::{Diagnostic, Label, Severity};
-pub use self::emitter::{emit, Config};
+pub use self::emitter::{emit, Config, DisplayStyle};
 
 /// A command line argument that configures the coloring of the output.
 ///

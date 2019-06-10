@@ -6,9 +6,37 @@ use crate::{Diagnostic, Severity};
 
 mod views;
 
+/// The display style to use when rendering diagnostics.
+#[derive(Clone, Debug)]
+pub enum DisplayStyle {
+    /// Output a richly formatted diagnostic, with source code previews.
+    ///
+    /// ```text
+    /// error[E0001]: unexpected type in `+` application
+    ///
+    ///    ┌── test:2:9 ───
+    ///    │
+    ///  2 │ (+ test "")
+    ///    │         ^^ expected `Int` but found `String`
+    ///    │
+    ///    = expected type `Int`
+    ///         found type `String`
+    /// ```
+    Rich,
+    /// Output a short diagnostic, with a line number, severity, and message.
+    ///
+    /// ```text
+    /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// ```
+    Short,
+}
+
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
 pub struct Config {
+    /// The display style to use when rendering diagnostics.
+    /// Defaults to: `DisplayStyle::Rich`.
+    pub display_style: DisplayStyle,
     /// Column width of tabs.
     /// Defaults to: `4`.
     pub tab_width: usize,
@@ -68,6 +96,7 @@ impl Default for Config {
         const BLUE: Color = Color::Blue;
 
         Config {
+            display_style: DisplayStyle::Rich,
             tab_width: 4,
             bug_color: Color::Red,
             error_color: Color::Red,
@@ -124,9 +153,12 @@ pub fn emit(
     files: &Files,
     diagnostic: &Diagnostic,
 ) -> io::Result<()> {
-    use self::views::RichDiagnostic;
+    use self::views::{RichDiagnostic, ShortDiagnostic};
 
-    RichDiagnostic::new(files, diagnostic).emit(writer, config)
+    match config.display_style {
+        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
+        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
+    }
 }
 
 #[cfg(test)]
@@ -140,7 +172,7 @@ mod tests {
     mod fizz_buzz {
         use super::*;
 
-        fn emit_test(writer: &mut impl WriteColor) {
+        fn emit_test(writer: &mut impl WriteColor, config: &Config) {
             let mut files = Files::new();
 
             let file_id = files.add(
@@ -204,16 +236,34 @@ mod tests {
             ];
 
             for diagnostic in &diagnostics {
-                emit(writer, &Config::default(), &files, &diagnostic).unwrap();
+                emit(writer, config, &files, &diagnostic).unwrap();
             }
         }
 
         #[test]
-        fn no_color() {
+        fn rich_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Rich,
+                ..Config::default()
+            };
+
             let mut buffer = Buffer::no_color();
-            emit_test(&mut buffer);
+            emit_test(&mut buffer, &config);
             let result = String::from_utf8_lossy(buffer.as_slice());
-            insta::assert_snapshot_matches!("no_color", result);
+            insta::assert_snapshot_matches!("rich_no_color", result);
+        }
+
+        #[test]
+        fn simple_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Short,
+                ..Config::default()
+            };
+
+            let mut buffer = Buffer::no_color();
+            emit_test(&mut buffer, &config);
+            let result = String::from_utf8_lossy(buffer.as_slice());
+            insta::assert_snapshot_matches!("short_no_color", result);
         }
     }
 
@@ -258,6 +308,7 @@ mod tests {
         #[test]
         fn tab_width_default_no_color() {
             let config = Config::default();
+
             let mut buffer = Buffer::no_color();
             emit_test(&mut buffer, &config);
             let result = String::from_utf8_lossy(buffer.as_slice());
@@ -270,6 +321,7 @@ mod tests {
                 tab_width: 3,
                 ..Config::default()
             };
+
             let mut buffer = Buffer::no_color();
             emit_test(&mut buffer, &config);
             let result = String::from_utf8_lossy(buffer.as_slice());
@@ -282,6 +334,7 @@ mod tests {
                 tab_width: 6,
                 ..Config::default()
             };
+
             let mut buffer = Buffer::no_color();
             emit_test(&mut buffer, &config);
             let result = String::from_utf8_lossy(buffer.as_slice());

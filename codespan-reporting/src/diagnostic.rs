@@ -87,8 +87,11 @@ pub struct Diagnostic {
     pub severity: Severity,
     /// An optional code that identifies this diagnostic.
     pub code: Option<String>,
-    /// The main message associated with this diagnostic. These should not
-    /// include line breaks.
+    /// The main message associated with this diagnostic.
+    ///
+    /// These should not include line breaks, and the message should be specific
+    /// enough to make sense when paired only with the location given by the
+    /// `primary_label`.
     pub message: String,
     /// A label that describes the primary cause of this diagnostic.
     pub primary_label: Label,
