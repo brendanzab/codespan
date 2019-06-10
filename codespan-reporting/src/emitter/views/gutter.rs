@@ -1,6 +1,6 @@
 use codespan::LineNumber;
 use std::io;
-use termcolor::{ColorSpec, WriteColor};
+use termcolor::WriteColor;
 
 use crate::emitter::Config;
 
@@ -30,11 +30,7 @@ impl Gutter {
                 )?;
             },
             Some(line_number) => {
-                let line_number_spec = ColorSpec::new()
-                    .set_fg(Some(config.line_number_color))
-                    .clone();
-
-                writer.set_color(&line_number_spec)?;
+                writer.set_color(&config.styles.line_number)?;
                 write!(
                     writer,
                     "{line: >width$}",

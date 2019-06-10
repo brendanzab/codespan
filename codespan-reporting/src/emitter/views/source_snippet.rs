@@ -1,6 +1,6 @@
 use codespan::{ByteIndex, Files, LineIndex, Location, Span};
 use std::io;
-use termcolor::{Color, ColorSpec, WriteColor};
+use termcolor::{ColorSpec, WriteColor};
 
 use crate::emitter::Config;
 use crate::{Diagnostic, Label, Severity};
@@ -81,10 +81,10 @@ impl<'a> SourceSnippet<'a> {
         self.files.line_span(self.label.file_id, line_index)
     }
 
-    fn label_color(&self, config: &Config) -> Color {
+    fn label_style<'config>(&self, config: &'config Config) -> &'config ColorSpec {
         match self.mark_style {
-            MarkStyle::Primary(severity) => config.severity_color(severity),
-            MarkStyle::Secondary => config.secondary_color,
+            MarkStyle::Primary(severity) => config.styles.primary_label(severity),
+            MarkStyle::Secondary => &config.styles.secondary_label,
         }
     }
 
@@ -96,15 +96,12 @@ impl<'a> SourceSnippet<'a> {
     }
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let label_spec = ColorSpec::new()
-            .set_fg(Some(self.label_color(config)))
-            .clone();
-
         let start = self.location(self.start()).expect("location_start");
         let end = self.location(self.end()).expect("location_end");
         let start_line_span = self.line_span(start.line).expect("start_line_span");
         let end_line_span = self.line_span(end.line).expect("end_line_span");
 
+        let label_style = self.label_style(config);
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
         // Cache the tabs we'll be using to pad the source strings.
@@ -158,7 +155,7 @@ impl<'a> SourceSnippet<'a> {
 
             // Write marked source section
             let marked_source = self.source_slice(self.span(), &tab).expect("marked_source");
-            writer.set_color(&label_spec)?;
+            writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
             config.width(&marked_source)
@@ -170,7 +167,7 @@ impl<'a> SourceSnippet<'a> {
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_1");
-            writer.set_color(&label_spec)?;
+            writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
             writer.reset()?;
             NewLine::new().emit(writer, config)?;
@@ -187,7 +184,7 @@ impl<'a> SourceSnippet<'a> {
                 let marked_source = self
                     .source_slice(marked_span, &tab)
                     .expect("marked_source_2");
-                writer.set_color(&label_spec)?;
+                writer.set_color(&label_style)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
@@ -202,7 +199,7 @@ impl<'a> SourceSnippet<'a> {
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_3");
-            writer.set_color(&label_spec)?;
+            writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
             config.width(&marked_source)
@@ -225,7 +222,7 @@ impl<'a> SourceSnippet<'a> {
             space = "",
             width = config.width(&source_prefix),
         )?;
-        writer.set_color(&label_spec)?;
+        writer.set_color(&label_style)?;
         // We use `usize::max` here to ensure that we print at least one
         // underline character - even when we have a zero-length span.
         for _ in 0..usize::max(mark_len, 1) {
@@ -266,9 +263,7 @@ impl BorderTopLeft {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
-
-        writer.set_color(&border_spec)?;
+        writer.set_color(&config.styles.border)?;
         write!(writer, "{top_left}", top_left = config.border_top_left_char)?;
         writer.reset()?;
 
@@ -287,9 +282,7 @@ impl BorderTop {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
-
-        writer.set_color(&border_spec)?;
+        writer.set_color(&config.styles.border)?;
         for _ in 0..self.width {
             write!(writer, "{top}", top = config.border_top_char)?
         }
@@ -308,9 +301,7 @@ impl BorderLeft {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let border_spec = ColorSpec::new().set_fg(Some(config.border_color)).clone();
-
-        writer.set_color(&border_spec)?;
+        writer.set_color(&config.styles.border)?;
         write!(writer, "{left} ", left = config.border_left_char)?;
         writer.reset()?;
 
