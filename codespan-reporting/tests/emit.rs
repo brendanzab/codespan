@@ -2,6 +2,110 @@ use codespan::Files;
 use codespan_reporting::termcolor::{Buffer, WriteColor};
 use codespan_reporting::{emit, Config, Diagnostic, DisplayStyle, Label};
 
+mod multifile {
+    use super::*;
+
+    fn emit_test(writer: &mut impl WriteColor, config: &Config) {
+        let mut files = Files::new();
+
+        let file_id1 = files.add(
+            "Data/Nat.fun",
+            unindent::unindent(
+                "
+                    module Data.Nat where
+
+                    data Nat : Type where
+                        zero : Nat
+                        succ : Nat → Nat
+
+                    {-# BUILTIN NATRAL Nat #-}
+
+                    infixl 6 _+_ _-_
+
+                    _+_ : Nat → Nat → Nat
+                    zero    + n₂ = n₂
+                    succ n₁ + n₂ = succ (n₁ + n₂)
+
+                    _-_ : Nat → Nat → Nat
+                    n₁      - zero    = n₁
+                    zero    - succ n₂ = zero
+                    succ n₁ - succ n₂ = n₁ - n₂
+                ",
+            ),
+        );
+
+        let file_id2 = files.add(
+            "Test.fun",
+            unindent::unindent(
+                r#"
+                    module Test where
+
+                    _ : Nat
+                    _ = 123 + "hello"
+                "#,
+            ),
+        );
+
+        let diagnostics = [
+            // Unknown builtin error
+            Diagnostic::new_error(
+                "unknown builtin: `NATRAL`",
+                Label::new(file_id1, 96..102, "unknown builtin"),
+            )
+            .with_notes(vec![
+                "there is a builtin with a similar name: `NATURAL`".to_owned()
+            ]),
+            // Unused parameter warning
+            Diagnostic::new_warning(
+                "unused parameter pattern: `n₂`",
+                Label::new(file_id1, 285..289, "unused parameter"),
+            )
+            .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
+            // Unexpected type error
+            Diagnostic::new_error(
+                "unexpected type in application of `_+_`",
+                Label::new(file_id2, 37..44, "expected `Nat`, found `String`"),
+            )
+            .with_code("E0001")
+            .with_secondary_labels(vec![Label::new(
+                file_id1,
+                130..155,
+                "based on the definition of `_+_`",
+            )]),
+        ];
+
+        for diagnostic in &diagnostics {
+            emit(writer, config, &files, &diagnostic).unwrap();
+        }
+    }
+
+    #[test]
+    fn rich_no_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            ..Config::default()
+        };
+
+        let mut buffer = Buffer::no_color();
+        emit_test(&mut buffer, &config);
+        let result = String::from_utf8_lossy(buffer.as_slice());
+        insta::assert_snapshot_matches!("rich_no_color", result);
+    }
+
+    #[test]
+    fn simple_no_color() {
+        let config = Config {
+            display_style: DisplayStyle::Short,
+            ..Config::default()
+        };
+
+        let mut buffer = Buffer::no_color();
+        emit_test(&mut buffer, &config);
+        let result = String::from_utf8_lossy(buffer.as_slice());
+        insta::assert_snapshot_matches!("short_no_color", result);
+    }
+}
+
 mod fizz_buzz {
     use super::*;
 
