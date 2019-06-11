@@ -44,4 +44,9 @@ Codespan is used in the following projects:
 
 ## Acknowledgments
 
-Inspired by rustc's error reporting infrastructure and the codemap crate
+Inspired by [rustc's error reporting infrastructure][libsyntax], the [codemap][codemap]
+crate, and [language-reporting][language-reporting] (a fork of codespan).
+
+[libsyntax]: https://github.com/rust-lang/rust/tree/master/src/libsyntax
+[codemap]: https://crates.io/crates/codemap
+[language-reporting]: https://crates.io/crates/language-reporting
