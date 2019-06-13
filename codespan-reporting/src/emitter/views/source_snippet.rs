@@ -223,9 +223,9 @@ impl<'a> SourceSnippet<'a> {
             space = "",
             width = config.width(&source_prefix),
         )?;
-        // We use `std::cmp::max` here to ensure that we print at least one
+        // We use `usize::max` here to ensure that we print at least one
         // underline character - even when we have a zero-length span.
-        for _ in 0..std::cmp::max(mark_len, 1) {
+        for _ in 0..usize::max(mark_len, 1) {
             write!(writer, "{}", self.underline_char(config))?;
         }
         if !self.label.message.is_empty() {
