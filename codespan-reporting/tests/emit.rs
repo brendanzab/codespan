@@ -2,6 +2,40 @@ use codespan::Files;
 use codespan_reporting::termcolor::{Buffer, WriteColor};
 use codespan_reporting::{emit, Config, Diagnostic, DisplayStyle, Label};
 
+mod empty_spans {
+    use super::*;
+
+    fn emit_test(writer: &mut impl WriteColor, config: &Config) {
+        let mut files = Files::new();
+
+        let file_id = files.add("hello", "Hello world!\nBye world!");
+        let eof = files.source_span(file_id).end();
+
+        let diagnostics = vec![
+            Diagnostic::new_note("middle", Label::new(file_id, 6..6, "middle")),
+            Diagnostic::new_note("end of line", Label::new(file_id, 12..12, "end of line")),
+            Diagnostic::new_note("end of file", Label::new(file_id, eof..eof, "end of file")),
+        ];
+
+        for diagnostic in &diagnostics {
+            emit(writer, config, &files, &diagnostic).unwrap();
+        }
+    }
+
+    #[test]
+    fn rich_no_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            ..Config::default()
+        };
+
+        let mut buffer = Buffer::no_color();
+        emit_test(&mut buffer, &config);
+        let result = String::from_utf8_lossy(buffer.as_slice());
+        insta::assert_snapshot_matches!("rich_no_color", result);
+    }
+}
+
 mod multifile {
     use super::*;
 
