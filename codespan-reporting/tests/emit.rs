@@ -2,6 +2,10 @@ use codespan::Files;
 use codespan_reporting::termcolor::{Buffer, WriteColor};
 use codespan_reporting::{emit, Config, Diagnostic, DisplayStyle, Label};
 
+mod support;
+
+use self::support::ColorBuffer;
+
 mod empty_spans {
     use super::*;
 
@@ -20,6 +24,19 @@ mod empty_spans {
         for diagnostic in &diagnostics {
             emit(writer, config, &files, &diagnostic).unwrap();
         }
+    }
+
+    #[test]
+    fn rich_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            ..Config::default()
+        };
+
+        let mut buffer = ColorBuffer::new();
+        emit_test(&mut buffer, &config);
+        let result = buffer.into_string();
+        insta::assert_snapshot_matches!("rich_color", result);
     }
 
     #[test]
@@ -114,6 +131,32 @@ mod multifile {
     }
 
     #[test]
+    fn rich_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            ..Config::default()
+        };
+
+        let mut buffer = ColorBuffer::new();
+        emit_test(&mut buffer, &config);
+        let result = buffer.into_string();
+        insta::assert_snapshot_matches!("rich_color", result);
+    }
+
+    #[test]
+    fn short_color() {
+        let config = Config {
+            display_style: DisplayStyle::Short,
+            ..Config::default()
+        };
+
+        let mut buffer = ColorBuffer::new();
+        emit_test(&mut buffer, &config);
+        let result = buffer.into_string();
+        insta::assert_snapshot_matches!("short_color", result);
+    }
+
+    #[test]
     fn rich_no_color() {
         let config = Config {
             display_style: DisplayStyle::Rich,
@@ -127,7 +170,7 @@ mod multifile {
     }
 
     #[test]
-    fn simple_no_color() {
+    fn short_no_color() {
         let config = Config {
             display_style: DisplayStyle::Short,
             ..Config::default()
@@ -212,6 +255,32 @@ mod fizz_buzz {
     }
 
     #[test]
+    fn rich_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            ..Config::default()
+        };
+
+        let mut buffer = ColorBuffer::new();
+        emit_test(&mut buffer, &config);
+        let result = buffer.into_string();
+        insta::assert_snapshot_matches!("rich_color", result);
+    }
+
+    #[test]
+    fn short_color() {
+        let config = Config {
+            display_style: DisplayStyle::Short,
+            ..Config::default()
+        };
+
+        let mut buffer = ColorBuffer::new();
+        emit_test(&mut buffer, &config);
+        let result = buffer.into_string();
+        insta::assert_snapshot_matches!("short_color", result);
+    }
+
+    #[test]
     fn rich_no_color() {
         let config = Config {
             display_style: DisplayStyle::Rich,
@@ -225,7 +294,7 @@ mod fizz_buzz {
     }
 
     #[test]
-    fn simple_no_color() {
+    fn short_no_color() {
         let config = Config {
             display_style: DisplayStyle::Short,
             ..Config::default()
