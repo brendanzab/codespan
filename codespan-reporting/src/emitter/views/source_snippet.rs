@@ -219,13 +219,13 @@ impl<'a> SourceSnippet<'a> {
         BorderLeft::new().emit(writer, config)?;
 
         // Write underline and label
-        writer.set_color(&label_spec)?;
         write!(
             writer,
             "{space: >width$}",
             space = "",
             width = config.width(&source_prefix),
         )?;
+        writer.set_color(&label_spec)?;
         // We use `usize::max` here to ensure that we print at least one
         // underline character - even when we have a zero-length span.
         for _ in 0..usize::max(mark_len, 1) {

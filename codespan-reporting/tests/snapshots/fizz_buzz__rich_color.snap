@@ -1,5 +1,5 @@
 ---
-created: "2019-06-17T13:48:24.839218Z"
+created: "2019-06-17T13:57:18.683891Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/emit.rs
 expression: result
@@ -9,7 +9,7 @@ expression: result
    {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:8:12 {fg:Blue}───{/}
    {fg:Blue}│ {/}
  {fg:Blue}8{/} {fg:Blue}│ {/}    _ _ => {fg:Red}num{/}
-   {fg:Blue}│ {/}{fg:Red}           ^^^ expected `String`, found `Nat`{/}
+   {fg:Blue}│ {/}           {fg:Red}^^^ expected `String`, found `Nat`{/}
    {fg:Blue}│ {/}
    {fg:Blue}={/} expected type `String`
         found type `Nat`
@@ -21,13 +21,13 @@ expression: result
  {fg:Blue}6{/} {fg:Blue}│ {/}{fg:Blue}    0 _ => "Fizz"{/}
  {fg:Blue}7{/} {fg:Blue}│ {/}{fg:Blue}    _ 0 => "Buzz"{/}
  {fg:Blue}8{/} {fg:Blue}│ {/}{fg:Blue}    _ _ => num{/}
-   {fg:Blue}│ {/}{fg:Blue}            -------------- `case` clauses have incompatible types{/}
+   {fg:Blue}│ {/}            {fg:Blue}-------------- `case` clauses have incompatible types{/}
    {fg:Blue}│ {/}
 
    {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:3:15 {fg:Blue}───{/}
    {fg:Blue}│ {/}
  {fg:Blue}3{/} {fg:Blue}│ {/}fizz₁ : Nat → {fg:Blue}String{/}
-   {fg:Blue}│ {/}{fg:Blue}              ------ expected type `String` found here{/}
+   {fg:Blue}│ {/}              {fg:Blue}------ expected type `String` found here{/}
    {fg:Blue}│ {/}
 
 {fg:Red bold bright}error[E0308]{bold bright}: `case` clauses have incompatible types{/}
@@ -35,7 +35,7 @@ expression: result
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:15:16 {fg:Blue}───{/}
     {fg:Blue}│ {/}
  {fg:Blue}15{/} {fg:Blue}│ {/}        _ _ => {fg:Red}num{/}
-    {fg:Blue}│ {/}{fg:Red}               ^^^ expected `String`, found `Nat`{/}
+    {fg:Blue}│ {/}               {fg:Red}^^^ expected `String`, found `Nat`{/}
     {fg:Blue}│ {/}
     {fg:Blue}={/} expected type `String`
          found type `Nat`
@@ -47,25 +47,25 @@ expression: result
  {fg:Blue}13{/} {fg:Blue}│ {/}{fg:Blue}        0 _ => "Fizz"{/}
  {fg:Blue}14{/} {fg:Blue}│ {/}{fg:Blue}        _ 0 => "Buzz"{/}
  {fg:Blue}15{/} {fg:Blue}│ {/}{fg:Blue}        _ _ => num{/}
-    {fg:Blue}│ {/}{fg:Blue}    ------------------ `case` clauses have incompatible types{/}
+    {fg:Blue}│ {/}    {fg:Blue}------------------ `case` clauses have incompatible types{/}
     {fg:Blue}│ {/}
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:12:16 {fg:Blue}───{/}
     {fg:Blue}│ {/}
  {fg:Blue}12{/} {fg:Blue}│ {/}        0 0 => {fg:Blue}"FizzBuzz"{/}
-    {fg:Blue}│ {/}{fg:Blue}               ---------- this is found to be of type `String`{/}
+    {fg:Blue}│ {/}               {fg:Blue}---------- this is found to be of type `String`{/}
     {fg:Blue}│ {/}
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:13:16 {fg:Blue}───{/}
     {fg:Blue}│ {/}
  {fg:Blue}13{/} {fg:Blue}│ {/}        0 _ => {fg:Blue}"Fizz"{/}
-    {fg:Blue}│ {/}{fg:Blue}               ------ this is found to be of type `String`{/}
+    {fg:Blue}│ {/}               {fg:Blue}------ this is found to be of type `String`{/}
     {fg:Blue}│ {/}
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:14:16 {fg:Blue}───{/}
     {fg:Blue}│ {/}
  {fg:Blue}14{/} {fg:Blue}│ {/}        _ 0 => {fg:Blue}"Buzz"{/}
-    {fg:Blue}│ {/}{fg:Blue}               ------ this is found to be of type `String`{/}
+    {fg:Blue}│ {/}               {fg:Blue}------ this is found to be of type `String`{/}
     {fg:Blue}│ {/}
 
 

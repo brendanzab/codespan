@@ -1,5 +1,5 @@
 ---
-created: "2019-06-17T13:43:51.972418Z"
+created: "2019-06-17T13:57:18.684239Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/emit.rs
 expression: result
@@ -9,7 +9,7 @@ expression: result
    {fg:Blue}┌{/}{fg:Blue}──{/} hello:1:7 {fg:Blue}───{/}
    {fg:Blue}│ {/}
  {fg:Blue}1{/} {fg:Blue}│ {/}Hello {fg:Green}{/}world!
-   {fg:Blue}│ {/}{fg:Green}      ^ middle{/}
+   {fg:Blue}│ {/}      {fg:Green}^ middle{/}
    {fg:Blue}│ {/}
 
 {fg:Green bold bright}note{bold bright}: end of line{/}
@@ -17,7 +17,7 @@ expression: result
    {fg:Blue}┌{/}{fg:Blue}──{/} hello:1:13 {fg:Blue}───{/}
    {fg:Blue}│ {/}
  {fg:Blue}1{/} {fg:Blue}│ {/}Hello world!{fg:Green}{/}
-   {fg:Blue}│ {/}{fg:Green}            ^ end of line{/}
+   {fg:Blue}│ {/}            {fg:Green}^ end of line{/}
    {fg:Blue}│ {/}
 
 {fg:Green bold bright}note{bold bright}: end of file{/}
@@ -25,7 +25,7 @@ expression: result
    {fg:Blue}┌{/}{fg:Blue}──{/} hello:2:11 {fg:Blue}───{/}
    {fg:Blue}│ {/}
  {fg:Blue}2{/} {fg:Blue}│ {/}Bye world!{fg:Green}{/}
-   {fg:Blue}│ {/}{fg:Green}          ^ end of file{/}
+   {fg:Blue}│ {/}          {fg:Green}^ end of file{/}
    {fg:Blue}│ {/}
 
 
