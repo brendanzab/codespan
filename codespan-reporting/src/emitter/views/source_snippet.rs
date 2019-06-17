@@ -171,7 +171,9 @@ impl<'a> SourceSnippet<'a> {
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_1");
             writer.set_color(&label_spec)?;
-            write!(writer, "{}", marked_source)?;
+            write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
+            writer.reset()?;
+            NewLine::new().emit(writer, config)?;
 
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                 .map(|i| LineIndex::from(i as u32))
@@ -187,6 +189,7 @@ impl<'a> SourceSnippet<'a> {
                     .expect("marked_source_2");
                 writer.set_color(&label_spec)?;
                 write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
+                writer.reset()?;
                 NewLine::new().emit(writer, config)?;
             }
 
@@ -216,13 +219,13 @@ impl<'a> SourceSnippet<'a> {
         BorderLeft::new().emit(writer, config)?;
 
         // Write underline and label
-        writer.set_color(&label_spec)?;
         write!(
             writer,
             "{space: >width$}",
             space = "",
             width = config.width(&source_prefix),
         )?;
+        writer.set_color(&label_spec)?;
         // We use `usize::max` here to ensure that we print at least one
         // underline character - even when we have a zero-length span.
         for _ in 0..usize::max(mark_len, 1) {
@@ -231,8 +234,8 @@ impl<'a> SourceSnippet<'a> {
         if !self.label.message.is_empty() {
             write!(writer, " {}", self.label.message)?;
         }
-        NewLine::new().emit(writer, config)?;
         writer.reset()?;
+        NewLine::new().emit(writer, config)?;
 
         // Write final border
         Gutter::new(None, gutter_padding).emit(writer, config)?;
