@@ -1,5 +1,5 @@
 use std::io;
-use termcolor::{ColorSpec, WriteColor};
+use termcolor::WriteColor;
 
 use crate::emitter::Config;
 use crate::{Diagnostic, Severity};
@@ -38,19 +38,12 @@ impl<'a> Header<'a> {
     }
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let message_spec = ColorSpec::new().set_bold(true).set_intense(true).clone();
-        let primary_spec = ColorSpec::new()
-            .set_bold(true)
-            .set_intense(true)
-            .set_fg(Some(config.severity_color(self.severity)))
-            .clone();
-
         // Write severity name
         //
         // ```text
         // error
         // ```
-        writer.set_color(&primary_spec)?;
+        writer.set_color(config.styles.header(self.severity))?;
         write!(writer, "{}", self.severity_name())?;
         if let Some(code) = &self.code {
             // Write error code
@@ -66,7 +59,7 @@ impl<'a> Header<'a> {
         // ```text
         // : unexpected type in `+` application
         // ```
-        writer.set_color(&message_spec)?;
+        writer.set_color(&config.styles.header_message)?;
         write!(writer, ": {}", self.message)?;
         writer.reset()?;
 

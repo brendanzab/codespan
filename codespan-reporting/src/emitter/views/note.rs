@@ -1,5 +1,5 @@
 use std::io;
-use termcolor::{ColorSpec, WriteColor};
+use termcolor::WriteColor;
 
 use crate::emitter::Config;
 
@@ -53,11 +53,7 @@ impl Bullet {
     }
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let note_bullet_spec = ColorSpec::new()
-            .set_fg(Some(config.note_bullet_color))
-            .clone();
-
-        writer.set_color(&note_bullet_spec)?;
+        writer.set_color(&config.styles.note_bullet)?;
         write!(writer, "{}", config.note_bullet_char)?;
         writer.reset()?;
 
