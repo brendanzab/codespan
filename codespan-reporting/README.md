@@ -22,8 +22,8 @@ To get an idea of what the colored CLI output looks like with
 `codespan-reporting`, clone the repository and run the following:
 
 ```sh
-cargo run -p codespan-reporting --example=emit
-cargo run -p codespan-reporting --example=emit -- --color never
+cargo run -p codespan-reporting --example=term
+cargo run -p codespan-reporting --example=term -- --color never
 ```
 
 You should see something like the following in your terminal:

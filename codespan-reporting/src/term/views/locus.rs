@@ -2,7 +2,7 @@ use codespan::Location;
 use std::io;
 use termcolor::WriteColor;
 
-use crate::emitter::Config;
+use crate::term::Config;
 
 /// The 'location focus' of a source code snippet.
 ///

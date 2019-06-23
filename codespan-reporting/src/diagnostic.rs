@@ -1,4 +1,4 @@
-//! Diagnostic reporting support for the codespan crate
+//! Diagnostic data structures.
 
 use codespan::{FileId, Span};
 #[cfg(feature = "serialization")]
@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 /// These are ordered in the following way:
 ///
 /// ```rust
-/// use codespan_reporting::Severity;
+/// use codespan_reporting::diagnostic::Severity;
 ///
 /// assert!(Severity::Bug > Severity::Error);
 /// assert!(Severity::Error > Severity::Warning);

@@ -1,34 +1,29 @@
+//! Terminal back-end for emitting diagnostics.
+
 use codespan::Files;
 use std::io;
-use termcolor::{Color, ColorSpec, WriteColor};
+use std::str::FromStr;
+use termcolor::{Color, ColorChoice, ColorSpec, WriteColor};
 
-use crate::{Diagnostic, Severity};
+use crate::diagnostic::{Diagnostic, Severity};
+
+pub use termcolor;
 
 mod views;
 
-/// The display style to use when rendering diagnostics.
-#[derive(Clone, Debug)]
-pub enum DisplayStyle {
-    /// Output a richly formatted diagnostic, with source code previews.
-    ///
-    /// ```text
-    /// error[E0001]: unexpected type in `+` application
-    ///
-    ///    ┌── test:2:9 ───
-    ///    │
-    ///  2 │ (+ test "")
-    ///    │         ^^ expected `Int` but found `String`
-    ///    │
-    ///    = expected type `Int`
-    ///         found type `String`
-    /// ```
-    Rich,
-    /// Output a short diagnostic, with a line number, severity, and message.
-    ///
-    /// ```text
-    /// test:2:9: error[E0001]: unexpected type in `+` application
-    /// ```
-    Short,
+/// Emit a diagnostic using the given writer, context, config, and files.
+pub fn emit(
+    writer: &mut impl WriteColor,
+    config: &Config,
+    files: &Files,
+    diagnostic: &Diagnostic,
+) -> io::Result<()> {
+    use self::views::{RichDiagnostic, ShortDiagnostic};
+
+    match config.display_style {
+        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
+        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
+    }
 }
 
 /// Configures how a diagnostic is rendered.
@@ -95,6 +90,31 @@ impl Config {
     pub fn tab_padding(&self) -> String {
         (0..self.tab_width).map(|_| ' ').collect()
     }
+}
+
+/// The display style to use when rendering diagnostics.
+#[derive(Clone, Debug)]
+pub enum DisplayStyle {
+    /// Output a richly formatted diagnostic, with source code previews.
+    ///
+    /// ```text
+    /// error[E0001]: unexpected type in `+` application
+    ///
+    ///    ┌── test:2:9 ───
+    ///    │
+    ///  2 │ (+ test "")
+    ///    │         ^^ expected `Int` but found `String`
+    ///    │
+    ///    = expected type `Int`
+    ///         found type `String`
+    /// ```
+    Rich,
+    /// Output a short diagnostic, with a line number, severity, and message.
+    ///
+    /// ```text
+    /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// ```
+    Short,
 }
 
 /// Styles to use when rendering the diagnostic.
@@ -205,16 +225,62 @@ impl Default for Styles {
     }
 }
 
-pub fn emit(
-    writer: &mut impl WriteColor,
-    config: &Config,
-    files: &Files,
-    diagnostic: &Diagnostic,
-) -> io::Result<()> {
-    use self::views::{RichDiagnostic, ShortDiagnostic};
+/// A command line argument that configures the coloring of the output.
+///
+/// This can be used with command line argument parsers like `clap` or `structopt`.
+///
+/// # Example
+///
+/// ```rust
+/// use structopt::StructOpt;
+/// use codespan_reporting::term::termcolor::StandardStream;
+/// use codespan_reporting::term::ColorArg;
+///
+/// #[derive(Debug, StructOpt)]
+/// #[structopt(name = "groovey-app")]
+/// pub struct Opts {
+///     /// Configure coloring of output
+///     #[structopt(
+///         long = "color",
+///         parse(try_from_str),
+///         default_value = "auto",
+///         raw(possible_values = "ColorArg::VARIANTS", case_insensitive = "true")
+///     )]
+///     pub color: ColorArg,
+/// }
+///
+/// fn main() {
+///     let opts = Opts::from_args();
+///     let writer = StandardStream::stderr(opts.color.into());
+/// }
+/// ```
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct ColorArg(pub ColorChoice);
 
-    match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
-        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
+impl ColorArg {
+    /// Allowed values the argument.
+    ///
+    /// This is useful for generating documentation via `clap` or `structopt`'s
+    /// `possible_values` configuration.
+    pub const VARIANTS: &'static [&'static str] = &["auto", "always", "ansi", "never"];
+}
+
+impl FromStr for ColorArg {
+    type Err = &'static str;
+
+    fn from_str(src: &str) -> Result<ColorArg, &'static str> {
+        match src {
+            _ if src.eq_ignore_ascii_case("auto") => Ok(ColorArg(ColorChoice::Auto)),
+            _ if src.eq_ignore_ascii_case("always") => Ok(ColorArg(ColorChoice::Always)),
+            _ if src.eq_ignore_ascii_case("ansi") => Ok(ColorArg(ColorChoice::AlwaysAnsi)),
+            _ if src.eq_ignore_ascii_case("never") => Ok(ColorArg(ColorChoice::Never)),
+            _ => Err("valid values: auto, always, ansi, never"),
+        }
+    }
+}
+
+impl Into<ColorChoice> for ColorArg {
+    fn into(self) -> ColorChoice {
+        self.0
     }
 }
