@@ -1,5 +1,5 @@
 ---
-created: "2019-06-23T06:38:18.076952Z"
+created: "2019-06-23T07:18:02.238401Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/term.rs
 expression: result
@@ -16,12 +16,13 @@ expression: result
 
    {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:4:13 {fg:Blue}───{/}
    {fg:Blue}│{/}
- {fg:Blue}4{/} {fg:Blue}│{/} fizz₁ num = {fg:Blue}case (mod num 5) (mod num 3) of{/}
- {fg:Blue}5{/} {fg:Blue}│{/} {fg:Blue}    0 0 => "FizzBuzz"{/}
- {fg:Blue}6{/} {fg:Blue}│{/} {fg:Blue}    0 _ => "Fizz"{/}
- {fg:Blue}7{/} {fg:Blue}│{/} {fg:Blue}    _ 0 => "Buzz"{/}
- {fg:Blue}8{/} {fg:Blue}│{/} {fg:Blue}    _ _ => num{/}
-   {fg:Blue}│{/} {fg:Blue}-------------- `case` clauses have incompatible types{/}
+ {fg:Blue}4{/} {fg:Blue}│{/}   fizz₁ num = {fg:Blue}case (mod num 5) (mod num 3) of{/}
+   {fg:Blue}│{/} {fg:Blue}╭─────────────-{/}
+ {fg:Blue}5{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}    0 0 => "FizzBuzz"{/}
+ {fg:Blue}6{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}    0 _ => "Fizz"{/}
+ {fg:Blue}7{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}    _ 0 => "Buzz"{/}
+ {fg:Blue}8{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}    _ _ => num{/}
+   {fg:Blue}│{/} {fg:Blue}╰──────────────- `case` clauses have incompatible types{/}
    {fg:Blue}│{/}
 
    {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:3:15 {fg:Blue}───{/}
@@ -42,12 +43,13 @@ expression: result
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:11:5 {fg:Blue}───{/}
     {fg:Blue}│{/}
- {fg:Blue}11{/} {fg:Blue}│{/}     {fg:Blue}case (mod num 5) (mod num 3) of{/}
- {fg:Blue}12{/} {fg:Blue}│{/} {fg:Blue}        0 0 => "FizzBuzz"{/}
- {fg:Blue}13{/} {fg:Blue}│{/} {fg:Blue}        0 _ => "Fizz"{/}
- {fg:Blue}14{/} {fg:Blue}│{/} {fg:Blue}        _ 0 => "Buzz"{/}
- {fg:Blue}15{/} {fg:Blue}│{/} {fg:Blue}        _ _ => num{/}
-    {fg:Blue}│{/} {fg:Blue}------------------ `case` clauses have incompatible types{/}
+ {fg:Blue}11{/} {fg:Blue}│{/}       {fg:Blue}case (mod num 5) (mod num 3) of{/}
+    {fg:Blue}│{/} {fg:Blue}╭─────-{/}
+ {fg:Blue}12{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}        0 0 => "FizzBuzz"{/}
+ {fg:Blue}13{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}        0 _ => "Fizz"{/}
+ {fg:Blue}14{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}        _ 0 => "Buzz"{/}
+ {fg:Blue}15{/} {fg:Blue}│{/} {fg:Blue}│{/} {fg:Blue}        _ _ => num{/}
+    {fg:Blue}│{/} {fg:Blue}╰──────────────────- `case` clauses have incompatible types{/}
     {fg:Blue}│{/}
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:12:16 {fg:Blue}───{/}

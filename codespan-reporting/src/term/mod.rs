@@ -37,21 +37,36 @@ pub struct Config {
     pub tab_width: usize,
     /// Styles to use when rendering the diagnostic.
     pub styles: Styles,
-    /// The character to use when marking the top-left corner of the source.
+    /// The character to use for the top-left corner of the source.
     /// Defaults to: `'┌'`.
     pub border_top_left_char: char,
-    /// The character to use when marking the top border of the source.
+    /// The character to use for the top border of the source.
     /// Defaults to: `'─'`.
     pub border_top_char: char,
-    /// The character to use when marking the left border of the source.
+    /// The character to use for the left border of the source.
     /// Defaults to: `'│'`.
     pub border_left_char: char,
-    /// The character to use when underlining a primary label.
+    /// The character to use for marking a primary label.
     /// Defaults to: `'^'`.
-    pub primary_underline_char: char,
-    /// The character to use when underlining a secondary label.
+    pub primary_mark_char: char,
+    /// The character to use for marking a secondary label.
     /// Defaults to: `'-'`.
-    pub secondary_underline_char: char,
+    pub secondary_mark_char: char,
+    /// The character to use for the top-left corner of a multi-line span.
+    /// Defaults to: `'╭'`.
+    pub underline_top_left_char: char,
+    /// The character to use for the top of a multi-line span.
+    /// Defaults to: `'─'`.
+    pub underline_top_char: char,
+    /// The character to use for the bottom-left corner of a multi-line span.
+    /// Defaults to: `'╰'`.
+    pub underline_bottom_left_char: char,
+    /// The character to use when marking the bottom of a multi-line span.
+    /// Defaults to: `'─'`.
+    pub underline_bottom_char: char,
+    /// The character to use for the left of a multi-line span.
+    /// Defaults to: `'│'`.
+    pub underline_left_char: char,
     /// The character to use for the note bullet.
     /// Defaults to: `'='`.
     pub note_bullet_char: char,
@@ -66,8 +81,13 @@ impl Default for Config {
             border_top_left_char: '┌',
             border_top_char: '─',
             border_left_char: '│',
-            primary_underline_char: '^',
-            secondary_underline_char: '-',
+            primary_mark_char: '^',
+            secondary_mark_char: '-',
+            underline_top_left_char: '╭',
+            underline_top_char: '─',
+            underline_bottom_left_char: '╰',
+            underline_bottom_char: '─',
+            underline_left_char: '│',
             note_bullet_char: '=',
         }
     }
