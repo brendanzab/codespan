@@ -258,6 +258,13 @@ impl<'a> SourceSnippet<'a> {
                 NewLine::new().emit(writer, config)?;
             }
 
+            // Write marked lines
+            //
+            // ```text
+            // 5 │ │     0 0 => "FizzBuzz"
+            // 6 │ │     0 _ => "Fizz"
+            // 7 │ │     _ 0 => "Buzz"
+            // ```
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                 .map(|i| LineIndex::from(i as u32))
             {
@@ -276,6 +283,13 @@ impl<'a> SourceSnippet<'a> {
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
             }
+
+            // Write last marked line
+            //
+            // ```text
+            // 8 │ │     _ _ => num
+            //   │ ╰──────────────^ `case` clauses have incompatible types
+            // ```
 
             // Write line number, border, and underline
             Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;

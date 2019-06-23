@@ -11,6 +11,10 @@ pub enum MarkStyle {
 }
 
 /// The underline of a single source line.
+///
+/// ```text
+///       ^^ expected `Int` but found `String`
+/// ```
 pub struct Underline<'a> {
     mark_style: MarkStyle,
     source_prefix: &'a str,
@@ -54,6 +58,10 @@ impl<'a> Underline<'a> {
 }
 
 /// The top-left of a multi-line underline.
+///
+/// ```text
+///  ╭
+/// ```
 pub struct UnderlineTopLeft {
     mark_style: MarkStyle,
 }
@@ -75,6 +83,10 @@ impl UnderlineTopLeft {
 }
 
 /// The top of a multi-line underline.
+///
+/// ```text
+///  ╭─────────────^
+/// ```
 pub struct UnderlineTop<'a> {
     mark_style: MarkStyle,
     source_prefix: &'a str,
@@ -125,6 +137,10 @@ impl UnderlineLeft {
 }
 
 /// The bottom of a multi-line underline.
+///
+/// ```text
+///  ╰──────────────^ `case` clauses have incompatible types
+/// ```
 pub struct UnderlineBottom<'a> {
     mark_style: MarkStyle,
     marked_source: &'a str,
