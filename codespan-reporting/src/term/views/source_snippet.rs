@@ -7,9 +7,26 @@ use crate::term::Config;
 
 use super::{Gutter, Locus, NewLine, Note};
 
+#[derive(Copy, Clone)]
 enum MarkStyle {
     Primary(Severity),
     Secondary,
+}
+
+impl MarkStyle {
+    fn label_style<'config>(self, config: &'config Config) -> &'config ColorSpec {
+        match self {
+            MarkStyle::Primary(severity) => config.styles.primary_label(severity),
+            MarkStyle::Secondary => &config.styles.secondary_label,
+        }
+    }
+
+    fn mark_char(self, config: &Config) -> char {
+        match self {
+            MarkStyle::Primary(_) => config.primary_mark_char,
+            MarkStyle::Secondary => config.secondary_mark_char,
+        }
+    }
 }
 
 /// A marked section of source code.
@@ -76,17 +93,7 @@ impl<'a> SourceSnippet<'a> {
     }
 
     fn label_style<'config>(&self, config: &'config Config) -> &'config ColorSpec {
-        match self.mark_style {
-            MarkStyle::Primary(severity) => config.styles.primary_label(severity),
-            MarkStyle::Secondary => &config.styles.secondary_label,
-        }
-    }
-
-    fn mark_char(&self, config: &Config) -> char {
-        match self.mark_style {
-            MarkStyle::Primary(_) => config.primary_mark_char,
-            MarkStyle::Secondary => config.secondary_mark_char,
-        }
+        self.mark_style.label_style(config)
     }
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
@@ -166,25 +173,16 @@ impl<'a> SourceSnippet<'a> {
             write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
             NewLine::new().emit(writer, config)?;
 
-            // Write underline border
+            // Write border, underline, and label
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
-
-            let prefix_len = config.width(&source_prefix);
-            write!(writer, " {space: >width$}", space = "", width = prefix_len)?;
-
-            // Write underline and label
-            writer.set_color(label_style)?;
-            // We use `usize::max` here to ensure that we print at least one
-            // underline character - even when we have a zero-length span.
-            let underline_len = usize::max(config.width(&marked_source), 1);
-            for _ in 0..underline_len {
-                write!(writer, "{}", self.mark_char(config))?;
-            }
-            if !self.message.is_empty() {
-                write!(writer, " {}", self.message)?;
-            }
-            writer.reset()?;
+            Underline::new(
+                self.mark_style,
+                &source_prefix,
+                &marked_source,
+                self.message,
+            )
+            .emit(writer, config)?;
             NewLine::new().emit(writer, config)?;
         } else {
             // Multiple lines
@@ -193,12 +191,10 @@ impl<'a> SourceSnippet<'a> {
             Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
 
-            write!(writer, "   ")?;
-
             // Write source prefix before marked section
             let prefix_span = start_line_span.with_end(self.span.start());
             let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
-            write!(writer, "{}", source_prefix)?;
+            write!(writer, "   {}", source_prefix)?;
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.span.start());
@@ -210,37 +206,19 @@ impl<'a> SourceSnippet<'a> {
             writer.reset()?;
             NewLine::new().emit(writer, config)?;
 
-            // Write underline border
+            // Write border and underline
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
-
-            write!(writer, " ")?;
-
-            // Write underline
-            writer.set_color(label_style)?;
-            write!(writer, "{}", config.underline_top_left_char)?;
-            let underline_len = config.width(&source_prefix) + 1;
-            for _ in 0..underline_len {
-                write!(writer, "{}", config.underline_top_char)?;
-            }
-            write!(writer, "{}", self.mark_char(config))?;
-            writer.reset()?;
+            UnderlineTop::new(self.mark_style, &source_prefix).emit(writer, config)?;
             NewLine::new().emit(writer, config)?;
 
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                 .map(|i| LineIndex::from(i as u32))
             {
-                // Write line number and border
+                // Write line number, border, and underline
                 Gutter::new(line_index.number(), gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-
-                write!(writer, " ")?;
-
-                // Write vertical underline
-                writer.set_color(label_style)?;
-                write!(writer, "{}", config.underline_left_char)?;
-                writer.reset()?;
-                write!(writer, " ")?;
+                UnderlineLeft::new(self.mark_style).emit(writer, config)?;
 
                 // Write marked source section
                 let marked_span = self.line_span(line_index).expect("marked_span");
@@ -248,21 +226,15 @@ impl<'a> SourceSnippet<'a> {
                     .source_slice(marked_span, &tab)
                     .expect("marked_source_2");
                 writer.set_color(label_style)?;
-                write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
+                write!(writer, " {}", marked_source.trim_end_matches(line_trimmer))?;
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
             }
 
-            // Write line number and border
+            // Write line number, border, and underline
             Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
-
-            // Write vertical underline
-            write!(writer, " ")?;
-            writer.set_color(label_style)?;
-            write!(writer, "{}", config.underline_left_char)?;
-            writer.reset()?;
-            write!(writer, " ")?;
+            UnderlineLeft::new(self.mark_style).emit(writer, config)?;
 
             // Write marked source section
             let marked_span = end_line_span.with_end(self.span.end());
@@ -270,7 +242,7 @@ impl<'a> SourceSnippet<'a> {
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_3");
             writer.set_color(label_style)?;
-            write!(writer, "{}", marked_source)?;
+            write!(writer, " {}", marked_source)?;
             writer.reset()?;
 
             // Write source suffix after marked section
@@ -279,24 +251,16 @@ impl<'a> SourceSnippet<'a> {
             write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
             NewLine::new().emit(writer, config)?;
 
-            // Write underline border
+            // Write border, underline, and label
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
-
-            write!(writer, " ")?;
-
-            // Write underline and label
-            writer.set_color(label_style)?;
-            write!(writer, "{}", config.underline_bottom_left_char)?;
-            let underline_len = config.width(&marked_source) + config.width(&source_suffix);
-            for _ in 0..underline_len {
-                write!(writer, "{}", config.underline_bottom_char)?;
-            }
-            write!(writer, "{}", self.mark_char(config))?;
-            if !self.message.is_empty() {
-                write!(writer, " {}", self.message)?;
-            }
-            writer.reset()?;
+            UnderlineBottom::new(
+                self.mark_style,
+                &marked_source,
+                &source_suffix,
+                self.message,
+            )
+            .emit(writer, config)?;
             NewLine::new().emit(writer, config)?;
         };
 
@@ -369,6 +333,141 @@ impl BorderLeft {
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.border)?;
         write!(writer, "{left}", left = config.border_left_char)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The underline of a single source line.
+struct Underline<'a> {
+    mark_style: MarkStyle,
+    source_prefix: &'a str,
+    marked_source: &'a str,
+    message: &'a str,
+}
+
+impl<'a> Underline<'a> {
+    fn new(
+        mark_style: MarkStyle,
+        source_prefix: &'a str,
+        marked_source: &'a str,
+        message: &'a str,
+    ) -> Underline<'a> {
+        Underline {
+            mark_style,
+            source_prefix,
+            marked_source,
+            message,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        let prefix_len = config.width(self.source_prefix);
+        write!(writer, " {space: >width$}", space = "", width = prefix_len)?;
+
+        writer.set_color(self.mark_style.label_style(config))?;
+        // We use `usize::max` here to ensure that we print at least one
+        // underline character - even when we have a zero-length span.
+        let underline_len = usize::max(config.width(self.marked_source), 1);
+        for _ in 0..underline_len {
+            write!(writer, "{}", self.mark_style.mark_char(config))?;
+        }
+        if !self.message.is_empty() {
+            write!(writer, " {}", self.message)?;
+        }
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The top of a multi-line underline.
+struct UnderlineTop<'a> {
+    mark_style: MarkStyle,
+    source_prefix: &'a str,
+}
+
+impl<'a> UnderlineTop<'a> {
+    fn new(mark_style: MarkStyle, source_prefix: &'a str) -> UnderlineTop<'a> {
+        UnderlineTop {
+            mark_style,
+            source_prefix,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
+
+        writer.set_color(self.mark_style.label_style(config))?;
+        write!(writer, "{}", config.underline_top_left_char)?;
+        let underline_len = config.width(self.source_prefix) + 1;
+        for _ in 0..underline_len {
+            write!(writer, "{}", config.underline_top_char)?;
+        }
+        write!(writer, "{}", self.mark_style.mark_char(config))?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The left of a multi-line underline.
+struct UnderlineLeft {
+    mark_style: MarkStyle,
+}
+
+impl UnderlineLeft {
+    fn new(mark_style: MarkStyle) -> UnderlineLeft {
+        UnderlineLeft { mark_style }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
+        writer.set_color(self.mark_style.label_style(config))?;
+        write!(writer, "{}", config.underline_left_char)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The bottom of a multi-line underline.
+struct UnderlineBottom<'a> {
+    mark_style: MarkStyle,
+    marked_source: &'a str,
+    source_suffix: &'a str,
+    message: &'a str,
+}
+
+impl<'a> UnderlineBottom<'a> {
+    fn new(
+        mark_style: MarkStyle,
+        marked_source: &'a str,
+        source_suffix: &'a str,
+        message: &'a str,
+    ) -> UnderlineBottom<'a> {
+        UnderlineBottom {
+            mark_style,
+            marked_source,
+            source_suffix,
+            message,
+        }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
+
+        writer.set_color(self.mark_style.label_style(config))?;
+        write!(writer, "{}", config.underline_bottom_left_char)?;
+        let width = config.width(self.marked_source) + config.width(self.source_suffix);
+        for _ in 0..width {
+            write!(writer, "{}", config.underline_bottom_char)?;
+        }
+        write!(writer, "{}", self.mark_style.mark_char(config))?;
+        if !self.message.is_empty() {
+            write!(writer, " {}", self.message)?;
+        }
         writer.reset()?;
 
         Ok(())
