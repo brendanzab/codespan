@@ -1,9 +1,9 @@
-use codespan::{ByteIndex, Files, LineIndex, Location, Span};
+use codespan::{ByteIndex, FileId, Files, LineIndex, Location, Span};
 use std::io;
 use termcolor::{ColorSpec, WriteColor};
 
-use crate::term::Config;
 use crate::diagnostic::{Diagnostic, Label, Severity};
+use crate::term::Config;
 
 use super::{Gutter, Locus, NewLine, Note};
 
@@ -25,7 +25,9 @@ enum MarkStyle {
 /// ```
 pub struct SourceSnippet<'a> {
     files: &'a Files,
-    label: &'a Label,
+    file_id: FileId,
+    span: Span,
+    message: &'a str,
     mark_style: MarkStyle,
     notes: &'a [String],
 }
@@ -34,7 +36,9 @@ impl<'a> SourceSnippet<'a> {
     pub fn new_primary(files: &'a Files, diagnostic: &'a Diagnostic) -> SourceSnippet<'a> {
         SourceSnippet {
             files,
-            label: &diagnostic.primary_label,
+            file_id: diagnostic.primary_label.file_id,
+            span: diagnostic.primary_label.span,
+            message: &diagnostic.primary_label.message,
             mark_style: MarkStyle::Primary(diagnostic.severity),
             notes: &diagnostic.notes,
         }
@@ -43,42 +47,32 @@ impl<'a> SourceSnippet<'a> {
     pub fn new_secondary(files: &'a Files, label: &'a Label) -> SourceSnippet<'a> {
         SourceSnippet {
             files,
-            label,
+            file_id: label.file_id,
+            span: label.span,
+            message: &label.message,
             mark_style: MarkStyle::Secondary,
             notes: &[],
         }
     }
 
-    fn span(&self) -> Span {
-        self.label.span
-    }
-
-    fn start(&self) -> ByteIndex {
-        self.span().start()
-    }
-
-    fn end(&self) -> ByteIndex {
-        self.span().end()
-    }
-
     fn file_name(&self) -> &'a str {
-        self.files.name(self.label.file_id)
+        self.files.name(self.file_id)
     }
 
     fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
-        self.files.location(self.label.file_id, byte_index)
+        self.files.location(self.file_id, byte_index)
     }
 
     fn source_slice(&self, span: Span, tab: &'a str) -> Result<String, impl std::error::Error> {
         // NOTE: Not sure if we can do this more efficiently? Perhaps a custom
         // writer might be better?
         self.files
-            .source_slice(self.label.file_id, span)
+            .source_slice(self.file_id, span)
             .map(|s| s.replace('\t', tab))
     }
 
     fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
-        self.files.line_span(self.label.file_id, line_index)
+        self.files.line_span(self.file_id, line_index)
     }
 
     fn label_style<'config>(&self, config: &'config Config) -> &'config ColorSpec {
@@ -96,8 +90,8 @@ impl<'a> SourceSnippet<'a> {
     }
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
-        let start = self.location(self.start()).expect("location_start");
-        let end = self.location(self.end()).expect("location_end");
+        let start = self.location(self.span.start()).expect("location_start");
+        let end = self.location(self.span.end()).expect("location_end");
         let start_line_span = self.line_span(start.line).expect("start_line_span");
         let end_line_span = self.line_span(end.line).expect("end_line_span");
 
@@ -145,7 +139,7 @@ impl<'a> SourceSnippet<'a> {
         let line_trimmer = |ch: char| ch == '\r' || ch == '\n';
 
         // Write source prefix before marked section
-        let prefix_span = start_line_span.with_end(self.start());
+        let prefix_span = start_line_span.with_end(self.span.start());
         let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
         write!(writer, "{}", source_prefix)?;
 
@@ -154,7 +148,7 @@ impl<'a> SourceSnippet<'a> {
             // Single line
 
             // Write marked source section
-            let marked_source = self.source_slice(self.span(), &tab).expect("marked_source");
+            let marked_source = self.source_slice(self.span, &tab).expect("marked_source");
             writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
@@ -163,7 +157,7 @@ impl<'a> SourceSnippet<'a> {
             // Multiple lines
 
             // Write marked source section
-            let marked_span = start_line_span.with_start(self.start());
+            let marked_span = start_line_span.with_start(self.span.start());
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_1");
@@ -195,7 +189,7 @@ impl<'a> SourceSnippet<'a> {
             BorderLeft::new().emit(writer, config)?;
 
             // Write marked source section
-            let marked_span = end_line_span.with_end(self.end());
+            let marked_span = end_line_span.with_end(self.span.end());
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_3");
@@ -206,7 +200,7 @@ impl<'a> SourceSnippet<'a> {
         };
 
         // Write source suffix after marked section
-        let suffix_span = end_line_span.with_start(self.end());
+        let suffix_span = end_line_span.with_start(self.span.end());
         let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
         write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
         NewLine::new().emit(writer, config)?;
@@ -228,8 +222,8 @@ impl<'a> SourceSnippet<'a> {
         for _ in 0..usize::max(mark_len, 1) {
             write!(writer, "{}", self.underline_char(config))?;
         }
-        if !self.label.message.is_empty() {
-            write!(writer, " {}", self.label.message)?;
+        if !self.message.is_empty() {
+            write!(writer, " {}", self.message)?;
         }
         writer.reset()?;
         NewLine::new().emit(writer, config)?;
