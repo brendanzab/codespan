@@ -94,6 +94,7 @@ impl<'a> SourceSnippet<'a> {
         let end = self.location(self.span.end()).expect("location_end");
         let start_line_span = self.line_span(start.line).expect("start_line_span");
         let end_line_span = self.line_span(end.line).expect("end_line_span");
+        let is_multiline = start.line != end.line;
 
         let label_style = self.label_style(config);
         // Use the length of the last line number as the gutter padding
@@ -118,7 +119,7 @@ impl<'a> SourceSnippet<'a> {
         BorderTop::new(3).emit(writer, config)?;
         NewLine::new().emit(writer, config)?;
 
-        // SourceSnippet code snippet
+        // Code snippet
         //
         // ```text
         //   │
@@ -132,29 +133,68 @@ impl<'a> SourceSnippet<'a> {
         BorderLeft::new().emit(writer, config)?;
         NewLine::new().emit(writer, config)?;
 
-        // Write line number and border
-        Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
-        BorderLeft::new().emit(writer, config)?;
-
         let line_trimmer = |ch: char| ch == '\r' || ch == '\n';
 
-        // Write source prefix before marked section
-        let prefix_span = start_line_span.with_end(self.span.start());
-        let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
-        write!(writer, "{}", source_prefix)?;
-
         // Write marked section
-        let mark_len = if start.line == end.line {
+        if !is_multiline {
             // Single line
+            //
+            // ```text
+            // 2 │ (+ test "")
+            //   │         ^^ expected `Int` but found `String`
+            // ```
+
+            // Write line number and border
+            Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+            BorderLeft::new().emit(writer, config)?;
+
+            // Write source prefix before marked section
+            let prefix_span = start_line_span.with_end(self.span.start());
+            let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
+            write!(writer, "{}", source_prefix)?;
 
             // Write marked source section
             let marked_source = self.source_slice(self.span, &tab).expect("marked_source");
             writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            config.width(&marked_source)
+
+            // Write source suffix after marked section
+            let suffix_span = end_line_span.with_start(self.span.end());
+            let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
+            write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
+            NewLine::new().emit(writer, config)?;
+
+            // Write underline border
+            Gutter::new(None, gutter_padding).emit(writer, config)?;
+            BorderLeft::new().emit(writer, config)?;
+
+            // Write underline and label
+            let prefix_len = config.width(&source_prefix);
+            write!(writer, "{space: >width$}", space = "", width = prefix_len)?;
+            writer.set_color(&label_style)?;
+            // We use `usize::max` here to ensure that we print at least one
+            // underline character - even when we have a zero-length span.
+            let underline_len = usize::max(config.width(&marked_source), 1);
+            for _ in 0..underline_len {
+                write!(writer, "{}", self.underline_char(config))?;
+            }
+            if !self.message.is_empty() {
+                write!(writer, " {}", self.message)?;
+            }
+            writer.reset()?;
+            NewLine::new().emit(writer, config)?;
         } else {
             // Multiple lines
+
+            // Write line number and border
+            Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+            BorderLeft::new().emit(writer, config)?;
+
+            // Write source prefix before marked section
+            let prefix_span = start_line_span.with_end(self.span.start());
+            let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
+            write!(writer, "{}", source_prefix)?;
 
             // Write marked source section
             let marked_span = start_line_span.with_start(self.span.start());
@@ -196,37 +236,32 @@ impl<'a> SourceSnippet<'a> {
             writer.set_color(&label_style)?;
             write!(writer, "{}", marked_source)?;
             writer.reset()?;
-            config.width(&marked_source)
+
+            // Write source suffix after marked section
+            let suffix_span = end_line_span.with_start(self.span.end());
+            let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
+            write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
+            NewLine::new().emit(writer, config)?;
+
+            // Write underline border
+            Gutter::new(None, gutter_padding).emit(writer, config)?;
+            BorderLeft::new().emit(writer, config)?;
+
+            // Write underline and label
+            writer.set_color(&label_style)?;
+            // We use `usize::max` here to ensure that we print at least one
+            // underline character - even when we have a zero-length span.
+            let underline_len = config.width(&marked_source) + config.width(&source_suffix);
+            let underline_len = usize::max(underline_len, 1);
+            for _ in 0..underline_len {
+                write!(writer, "{}", self.underline_char(config))?;
+            }
+            if !self.message.is_empty() {
+                write!(writer, " {}", self.message)?;
+            }
+            writer.reset()?;
+            NewLine::new().emit(writer, config)?;
         };
-
-        // Write source suffix after marked section
-        let suffix_span = end_line_span.with_start(self.span.end());
-        let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
-        write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
-        NewLine::new().emit(writer, config)?;
-
-        // Write underline border
-        Gutter::new(None, gutter_padding).emit(writer, config)?;
-        BorderLeft::new().emit(writer, config)?;
-
-        // Write underline and label
-        write!(
-            writer,
-            "{space: >width$}",
-            space = "",
-            width = config.width(&source_prefix),
-        )?;
-        writer.set_color(&label_style)?;
-        // We use `usize::max` here to ensure that we print at least one
-        // underline character - even when we have a zero-length span.
-        for _ in 0..usize::max(mark_len, 1) {
-            write!(writer, "{}", self.underline_char(config))?;
-        }
-        if !self.message.is_empty() {
-            write!(writer, " {}", self.message)?;
-        }
-        writer.reset()?;
-        NewLine::new().emit(writer, config)?;
 
         // Write final border
         Gutter::new(None, gutter_padding).emit(writer, config)?;
