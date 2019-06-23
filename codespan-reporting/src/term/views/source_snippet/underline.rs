@@ -144,7 +144,6 @@ impl UnderlineLeft {
 pub struct UnderlineBottom<'a> {
     mark_style: MarkStyle,
     marked_source: &'a str,
-    source_suffix: &'a str,
     message: &'a str,
 }
 
@@ -152,13 +151,11 @@ impl<'a> UnderlineBottom<'a> {
     pub fn new(
         mark_style: MarkStyle,
         marked_source: &'a str,
-        source_suffix: &'a str,
         message: &'a str,
     ) -> UnderlineBottom<'a> {
         UnderlineBottom {
             mark_style,
             marked_source,
-            source_suffix,
             message,
         }
     }
@@ -168,7 +165,7 @@ impl<'a> UnderlineBottom<'a> {
 
         writer.set_color(self.mark_style.label_style(config))?;
         write!(writer, "{}", config.multiline_bottom_left_char)?;
-        let width = config.width(self.marked_source) + config.width(self.source_suffix);
+        let width = config.width(self.marked_source);
         for _ in 0..width {
             write!(writer, "{}", config.multiline_bottom_char)?;
         }

@@ -321,13 +321,8 @@ impl<'a> SourceSnippet<'a> {
             // Write border, underline, and label
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
-            UnderlineBottom::new(
-                self.mark_style,
-                &marked_source,
-                &source_suffix,
-                self.message,
-            )
-            .emit(writer, config)?;
+            UnderlineBottom::new(self.mark_style, &marked_source, self.message)
+                .emit(writer, config)?;
             NewLine::new().emit(writer, config)?;
         };
 
