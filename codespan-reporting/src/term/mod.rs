@@ -48,25 +48,31 @@ pub struct Config {
     pub border_left_char: char,
     /// The character to use for marking a primary label.
     /// Defaults to: `'^'`.
-    pub primary_mark_char: char,
+    pub primary_caret_char: char,
     /// The character to use for marking a secondary label.
     /// Defaults to: `'-'`.
-    pub secondary_mark_char: char,
-    /// The character to use for the top-left corner of a multi-line span.
+    pub secondary_caret_char: char,
+    /// The character to use for marking the ends of a multi-line primary label.
+    /// Defaults to: `'^'`.
+    pub multiline_primary_caret_char: char,
+    /// The character to use for marking the ends of a multi-line secondary label.
+    /// Defaults to: `'\''`.
+    pub multiline_secondary_caret_char: char,
+    /// The character to use for the top-left corner of a multi-line label.
     /// Defaults to: `'╭'`.
-    pub underline_top_left_char: char,
-    /// The character to use for the top of a multi-line span.
+    pub multiline_top_left_char: char,
+    /// The character to use for the top of a multi-line label.
     /// Defaults to: `'─'`.
-    pub underline_top_char: char,
-    /// The character to use for the bottom-left corner of a multi-line span.
+    pub multiline_top_char: char,
+    /// The character to use for the bottom-left corner of a multi-line label.
     /// Defaults to: `'╰'`.
-    pub underline_bottom_left_char: char,
-    /// The character to use when marking the bottom of a multi-line span.
+    pub multiline_bottom_left_char: char,
+    /// The character to use when marking the bottom of a multi-line label.
     /// Defaults to: `'─'`.
-    pub underline_bottom_char: char,
-    /// The character to use for the left of a multi-line span.
+    pub multiline_bottom_char: char,
+    /// The character to use for the left of a multi-line label.
     /// Defaults to: `'│'`.
-    pub underline_left_char: char,
+    pub multiline_left_char: char,
     /// The character to use for the note bullet.
     /// Defaults to: `'='`.
     pub note_bullet_char: char,
@@ -81,13 +87,15 @@ impl Default for Config {
             border_top_left_char: '┌',
             border_top_char: '─',
             border_left_char: '│',
-            primary_mark_char: '^',
-            secondary_mark_char: '-',
-            underline_top_left_char: '╭',
-            underline_top_char: '─',
-            underline_bottom_left_char: '╰',
-            underline_bottom_char: '─',
-            underline_left_char: '│',
+            primary_caret_char: '^',
+            secondary_caret_char: '-',
+            multiline_primary_caret_char: '^',
+            multiline_secondary_caret_char: '\'',
+            multiline_top_left_char: '╭',
+            multiline_top_char: '─',
+            multiline_bottom_left_char: '╰',
+            multiline_bottom_char: '─',
+            multiline_left_char: '│',
             note_bullet_char: '=',
         }
     }

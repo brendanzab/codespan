@@ -46,7 +46,7 @@ impl<'a> Underline<'a> {
         // underline character - even when we have a zero-length span.
         let underline_len = usize::max(config.width(self.marked_source), 1);
         for _ in 0..underline_len {
-            write!(writer, "{}", self.mark_style.mark_char(config))?;
+            write!(writer, "{}", self.mark_style.caret_char(config))?;
         }
         if !self.message.is_empty() {
             write!(writer, " {}", self.message)?;
@@ -75,7 +75,7 @@ impl UnderlineTopLeft {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.underline_top_left_char)?;
+        write!(writer, "{}", config.multiline_top_left_char)?;
         writer.reset()?;
 
         Ok(())
@@ -104,12 +104,12 @@ impl<'a> UnderlineTop<'a> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.underline_top_left_char)?;
+        write!(writer, "{}", config.multiline_top_left_char)?;
         let underline_len = config.width(self.source_prefix) + 1;
         for _ in 0..underline_len {
-            write!(writer, "{}", config.underline_top_char)?;
+            write!(writer, "{}", config.multiline_top_char)?;
         }
-        write!(writer, "{}", self.mark_style.mark_char(config))?;
+        write!(writer, "{}", self.mark_style.multiline_caret_char(config))?;
         writer.reset()?;
 
         Ok(())
@@ -129,7 +129,7 @@ impl UnderlineLeft {
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.underline_left_char)?;
+        write!(writer, "{}", config.multiline_left_char)?;
         writer.reset()?;
 
         Ok(())
@@ -167,12 +167,12 @@ impl<'a> UnderlineBottom<'a> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.underline_bottom_left_char)?;
+        write!(writer, "{}", config.multiline_bottom_left_char)?;
         let width = config.width(self.marked_source) + config.width(self.source_suffix);
         for _ in 0..width {
-            write!(writer, "{}", config.underline_bottom_char)?;
+            write!(writer, "{}", config.multiline_bottom_char)?;
         }
-        write!(writer, "{}", self.mark_style.mark_char(config))?;
+        write!(writer, "{}", self.mark_style.multiline_caret_char(config))?;
         if !self.message.is_empty() {
             write!(writer, " {}", self.message)?;
         }

@@ -27,10 +27,17 @@ impl MarkStyle {
         }
     }
 
-    fn mark_char(self, config: &Config) -> char {
+    fn caret_char(self, config: &Config) -> char {
         match self {
-            MarkStyle::Primary(_) => config.primary_mark_char,
-            MarkStyle::Secondary => config.secondary_mark_char,
+            MarkStyle::Primary(_) => config.primary_caret_char,
+            MarkStyle::Secondary => config.secondary_caret_char,
+        }
+    }
+
+    fn multiline_caret_char(self, config: &Config) -> char {
+        match self {
+            MarkStyle::Primary(_) => config.multiline_primary_caret_char,
+            MarkStyle::Secondary => config.multiline_secondary_caret_char,
         }
     }
 }
