@@ -1,5 +1,5 @@
 ---
-created: "2019-06-23T07:18:02.237790Z"
+created: "2019-06-23T08:14:40.662424Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/term.rs
 expression: result
@@ -43,8 +43,7 @@ error[E0308]: `case` clauses have incompatible types
 
     ┌── FizzBuzz.fun:11:5 ───
     │
- 11 │       case (mod num 5) (mod num 3) of
-    │ ╭─────-
+ 11 │ ╭     case (mod num 5) (mod num 3) of
  12 │ │         0 0 => "FizzBuzz"
  13 │ │         0 _ => "Fizz"
  14 │ │         _ 0 => "Buzz"

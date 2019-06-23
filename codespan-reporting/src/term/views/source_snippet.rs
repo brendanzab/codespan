@@ -186,31 +186,71 @@ impl<'a> SourceSnippet<'a> {
             NewLine::new().emit(writer, config)?;
         } else {
             // Multiple lines
+            //
+            // ```text
+            // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
+            //   │ ╭─────────────^
+            // 5 │ │     0 0 => "FizzBuzz"
+            // 6 │ │     0 _ => "Fizz"
+            // 7 │ │     _ 0 => "Buzz"
+            // 8 │ │     _ _ => num
+            //   │ ╰──────────────^ `case` clauses have incompatible types
+            // ```
 
             // Write line number and border
             Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
 
-            // Write source prefix before marked section
             let prefix_span = start_line_span.with_end(self.span.start());
             let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
-            write!(writer, "   {}", source_prefix)?;
-
-            // Write marked source section
             let marked_span = start_line_span.with_start(self.span.start());
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_1");
-            writer.set_color(&label_style)?;
-            write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
-            writer.reset()?;
-            NewLine::new().emit(writer, config)?;
 
-            // Write border and underline
-            Gutter::new(None, gutter_padding).emit(writer, config)?;
-            BorderLeft::new().emit(writer, config)?;
-            UnderlineTop::new(self.mark_style, &source_prefix).emit(writer, config)?;
-            NewLine::new().emit(writer, config)?;
+            if source_prefix.trim().is_empty() {
+                // Section is prefixed by empty space, so we don't need to take
+                // up a new line.
+                //
+                // ```text
+                // 4 │ ╭     case (mod num 5) (mod num 3) of
+                // ```
+
+                // Write underline
+                UnderlineTopLeft::new(self.mark_style).emit(writer, config)?;
+
+                // Write source prefix before marked section
+                write!(writer, " {}", source_prefix)?;
+
+                // Write marked source section
+                writer.set_color(&label_style)?;
+                write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
+                writer.reset()?;
+                NewLine::new().emit(writer, config)?;
+            } else {
+                // There's source code in the prefix, so run an underline
+                // underneath it to get to the start of the span.
+                //
+                // ```text
+                // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
+                //   │ ╭─────────────^
+                // ```
+
+                // Write source prefix before marked section
+                write!(writer, "   {}", source_prefix)?;
+
+                // Write marked source section
+                writer.set_color(&label_style)?;
+                write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
+                writer.reset()?;
+                NewLine::new().emit(writer, config)?;
+
+                // Write border and underline
+                Gutter::new(None, gutter_padding).emit(writer, config)?;
+                BorderLeft::new().emit(writer, config)?;
+                UnderlineTop::new(self.mark_style, &source_prefix).emit(writer, config)?;
+                NewLine::new().emit(writer, config)?;
+            }
 
             for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                 .map(|i| LineIndex::from(i as u32))
@@ -376,6 +416,27 @@ impl<'a> Underline<'a> {
         if !self.message.is_empty() {
             write!(writer, " {}", self.message)?;
         }
+        writer.reset()?;
+
+        Ok(())
+    }
+}
+
+/// The top-left of a multi-line underline.
+struct UnderlineTopLeft {
+    mark_style: MarkStyle,
+}
+
+impl UnderlineTopLeft {
+    fn new(mark_style: MarkStyle) -> UnderlineTopLeft {
+        UnderlineTopLeft { mark_style }
+    }
+
+    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        write!(writer, " ")?;
+
+        writer.set_color(self.mark_style.label_style(config))?;
+        write!(writer, "{}", config.underline_top_left_char)?;
         writer.reset()?;
 
         Ok(())
