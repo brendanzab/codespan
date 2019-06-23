@@ -1,4 +1,4 @@
-//! Diagnostic reporting support for the codespan crate
+//! Diagnostic data structures.
 
 use codespan::{FileId, Span};
 #[cfg(feature = "serialization")]

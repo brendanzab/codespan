@@ -1,7 +1,7 @@
 ---
 created: "2019-06-09T12:57:51.853099Z"
 creator: insta@0.8.1
-source: codespan-reporting/src/emitter/mod.rs
+source: codespan-reporting/tests/emit.rs
 expression: result
 ---
 error[E0308]: `case` clauses have incompatible types

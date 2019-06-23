@@ -2,7 +2,7 @@ use codespan::{Files, Location};
 use std::io;
 use termcolor::WriteColor;
 
-use crate::emitter::Config;
+use crate::term::Config;
 use crate::diagnostic::Diagnostic;
 
 use super::{Header, Locus, NewLine, SourceSnippet};

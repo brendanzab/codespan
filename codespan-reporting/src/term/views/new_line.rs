@@ -1,7 +1,7 @@
 use std::io;
 use termcolor::WriteColor;
 
-use crate::emitter::Config;
+use crate::term::Config;
 
 /// A new line.
 pub struct NewLine {}

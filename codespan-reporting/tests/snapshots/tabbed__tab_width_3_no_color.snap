@@ -1,7 +1,7 @@
 ---
 created: "2019-06-09T13:17:52.640671Z"
 creator: insta@0.8.1
-source: codespan-reporting/src/emitter/mod.rs
+source: codespan-reporting/tests/emit.rs
 expression: result
 ---
 warning: unknown weapon `DogJaw`

@@ -2,7 +2,7 @@ use codespan::LineNumber;
 use std::io;
 use termcolor::WriteColor;
 
-use crate::emitter::Config;
+use crate::term::Config;
 
 /// The left-hand gutter of a source line.
 pub struct Gutter {

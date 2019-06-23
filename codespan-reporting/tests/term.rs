@@ -1,6 +1,6 @@
 use codespan::Files;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::emitter::{emit, Config, DisplayStyle};
+use codespan_reporting::term::{emit, Config, DisplayStyle};
 use termcolor::{Buffer, WriteColor};
 
 mod support;

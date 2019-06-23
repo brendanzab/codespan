@@ -2,7 +2,7 @@ use codespan::{ByteIndex, Files, LineIndex, Location, Span};
 use std::io;
 use termcolor::{ColorSpec, WriteColor};
 
-use crate::emitter::Config;
+use crate::term::Config;
 use crate::diagnostic::{Diagnostic, Label, Severity};
 
 use super::{Gutter, Locus, NewLine, Note};

@@ -1,4 +1,4 @@
 //! Diagnostic reporting support for the codespan crate.
 
 pub mod diagnostic;
-pub mod emitter;
+pub mod term;

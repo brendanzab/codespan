@@ -1,3 +1,5 @@
+//! Terminal back-end for emitting diagnostics.
+
 use codespan::Files;
 use std::io;
 use std::str::FromStr;
@@ -231,8 +233,8 @@ impl Default for Styles {
 ///
 /// ```rust
 /// use structopt::StructOpt;
-/// use codespan_reporting::emitter::termcolor::StandardStream;
-/// use codespan_reporting::emitter::ColorArg;
+/// use codespan_reporting::term::termcolor::StandardStream;
+/// use codespan_reporting::term::ColorArg;
 ///
 /// #[derive(Debug, StructOpt)]
 /// #[structopt(name = "groovey-app")]
