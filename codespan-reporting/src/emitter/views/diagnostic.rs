@@ -3,7 +3,7 @@ use std::io;
 use termcolor::WriteColor;
 
 use crate::emitter::Config;
-use crate::Diagnostic;
+use crate::diagnostic::Diagnostic;
 
 use super::{Header, Locus, NewLine, SourceSnippet};
 

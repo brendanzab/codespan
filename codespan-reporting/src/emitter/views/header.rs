@@ -2,7 +2,7 @@ use std::io;
 use termcolor::WriteColor;
 
 use crate::emitter::Config;
-use crate::{Diagnostic, Severity};
+use crate::diagnostic::{Diagnostic, Severity};
 
 use super::NewLine;
 

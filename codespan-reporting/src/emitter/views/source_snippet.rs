@@ -3,7 +3,7 @@ use std::io;
 use termcolor::{ColorSpec, WriteColor};
 
 use crate::emitter::Config;
-use crate::{Diagnostic, Label, Severity};
+use crate::diagnostic::{Diagnostic, Label, Severity};
 
 use super::{Gutter, Locus, NewLine, Note};
 

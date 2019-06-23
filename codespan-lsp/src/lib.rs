@@ -4,7 +4,7 @@ use codespan::{
     ByteIndex, ByteOffset, ColumnIndex, FileId, Files, LineIndex, LineIndexOutOfBoundsError,
     LocationError, RawIndex, RawOffset, Span, SpanOutOfBoundsError,
 };
-use codespan_reporting::{Diagnostic, Severity};
+use codespan_reporting::diagnostic::{Diagnostic, Severity};
 use lsp_types as lsp;
 use std::error;
 use url::Url;

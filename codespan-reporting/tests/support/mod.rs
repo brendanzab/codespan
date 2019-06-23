@@ -1,6 +1,6 @@
-use codespan_reporting::termcolor::{ColorSpec, WriteColor};
 use std::io;
 use std::io::prelude::*;
+use termcolor::{ColorSpec, WriteColor};
 
 // Color tester from:
 // https://github.com/wycats/language-reporting/blob/b021c87e0d4916b5f32756151bf215c220eee52d/crates/render-tree/src/stylesheet/accumulator.rs

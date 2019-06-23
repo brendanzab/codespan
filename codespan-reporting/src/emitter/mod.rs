@@ -3,7 +3,9 @@ use std::io;
 use std::str::FromStr;
 use termcolor::{Color, ColorSpec, ColorChoice, WriteColor};
 
-use crate::{Diagnostic, Severity};
+use crate::diagnostic::{Diagnostic, Severity};
+
+pub use termcolor;
 
 mod views;
 
@@ -228,8 +230,8 @@ pub fn emit(
 ///
 /// ```rust
 /// use structopt::StructOpt;
-/// use codespan_reporting::termcolor::StandardStream;
-/// use codespan_reporting::ColorArg;
+/// use codespan_reporting::emitter::termcolor::StandardStream;
+/// use codespan_reporting::emitter::ColorArg;
 ///
 /// #[derive(Debug, StructOpt)]
 /// #[structopt(name = "groovey-app")]

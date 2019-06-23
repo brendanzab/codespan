@@ -1,8 +1,9 @@
 use structopt::StructOpt;
 
 use codespan::Files;
-use codespan_reporting::termcolor::StandardStream;
-use codespan_reporting::{emit, ColorArg, Diagnostic, Label};
+use codespan_reporting::emitter::{emit, ColorArg};
+use codespan_reporting::emitter::termcolor::StandardStream;
+use codespan_reporting::diagnostic::{Diagnostic, Label};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "emit")]
@@ -145,7 +146,7 @@ fn main() {
     ];
 
     let writer = StandardStream::stderr(opts.color.into());
-    let config = codespan_reporting::Config::default();
+    let config = codespan_reporting::emitter::Config::default();
     for diagnostic in &diagnostics {
         emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
