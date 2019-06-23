@@ -89,7 +89,6 @@ impl<'a> SourceSnippet<'a> {
         let end_line_span = self.line_span(end.line).expect("end_line_span");
         let is_multiline = start.line != end.line;
 
-        let label_style = self.mark_style.label_style(config);
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
         // Cache the tabs we'll be using to pad the source strings.
@@ -142,21 +141,14 @@ impl<'a> SourceSnippet<'a> {
             BorderLeft::new().emit(writer, config)?;
             write!(writer, " ")?;
 
-            // Write source prefix before marked section
             let prefix_span = start_line_span.with_end(self.span.start());
             let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
-            write!(writer, "{}", source_prefix)?;
-
-            // Write marked source section
             let marked_source = self.source_slice(self.span, &tab).expect("marked_source");
-            writer.set_color(label_style)?;
-            write!(writer, "{}", marked_source)?;
-            writer.reset()?;
 
-            // Write source suffix after marked section
-            let suffix_span = end_line_span.with_start(self.span.end());
-            let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
-            write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
+            // Write source line
+            let line_span = start_line_span;
+            let line_source = self.source_slice(line_span, &tab).expect("line_source");
+            write!(writer, "{}", line_source.trim_end_matches(line_trimmer))?;
             NewLine::new().emit(writer, config)?;
 
             // Write border, underline, and label
@@ -189,10 +181,8 @@ impl<'a> SourceSnippet<'a> {
 
             let prefix_span = start_line_span.with_end(self.span.start());
             let source_prefix = self.source_slice(prefix_span, &tab).expect("source_prefix");
-            let marked_span = start_line_span.with_start(self.span.start());
-            let marked_source = self
-                .source_slice(marked_span, &tab)
-                .expect("marked_source_1");
+            let line_span = start_line_span;
+            let line_source = self.source_slice(line_span, &tab).expect("line_source");
 
             if source_prefix.trim().is_empty() {
                 // Section is prefixed by empty space, so we don't need to take
@@ -205,13 +195,8 @@ impl<'a> SourceSnippet<'a> {
                 // Write underline
                 UnderlineTopLeft::new(self.mark_style).emit(writer, config)?;
 
-                // Write source prefix before marked section
-                write!(writer, " {}", source_prefix)?;
-
                 // Write marked source section
-                writer.set_color(&label_style)?;
-                write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
-                writer.reset()?;
+                write!(writer, " {}", line_source.trim_end_matches(line_trimmer))?;
                 NewLine::new().emit(writer, config)?;
             } else {
                 // There's source code in the prefix, so run an underline
@@ -222,13 +207,8 @@ impl<'a> SourceSnippet<'a> {
                 //   │ ╭─────────────^
                 // ```
 
-                // Write source prefix before marked section
-                write!(writer, "   {}", source_prefix)?;
-
-                // Write marked source section
-                writer.set_color(&label_style)?;
-                write!(writer, "{}", marked_source.trim_end_matches(line_trimmer))?;
-                writer.reset()?;
+                // Write source line
+                write!(writer, "   {}", line_source.trim_end_matches(line_trimmer))?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border and underline
@@ -253,14 +233,10 @@ impl<'a> SourceSnippet<'a> {
                 BorderLeft::new().emit(writer, config)?;
                 UnderlineLeft::new(self.mark_style).emit(writer, config)?;
 
-                // Write marked source section
-                let marked_span = self.line_span(line_index).expect("marked_span");
-                let marked_source = self
-                    .source_slice(marked_span, &tab)
-                    .expect("marked_source_2");
-                writer.set_color(label_style)?;
-                write!(writer, " {}", marked_source.trim_end_matches(line_trimmer))?;
-                writer.reset()?;
+                // Write source line
+                let line_span = self.line_span(line_index).expect("line_span");
+                let line_source = self.source_slice(line_span, &tab).expect("line_source_2");
+                write!(writer, " {}", line_source.trim_end_matches(line_trimmer))?;
                 NewLine::new().emit(writer, config)?;
             }
 
@@ -281,14 +257,11 @@ impl<'a> SourceSnippet<'a> {
             let marked_source = self
                 .source_slice(marked_span, &tab)
                 .expect("marked_source_3");
-            writer.set_color(label_style)?;
-            write!(writer, " {}", marked_source)?;
-            writer.reset()?;
 
-            // Write source suffix after marked section
-            let suffix_span = end_line_span.with_start(self.span.end());
-            let source_suffix = self.source_slice(suffix_span, &tab).expect("source_suffix");
-            write!(writer, "{}", source_suffix.trim_end_matches(line_trimmer))?;
+            // Write source line
+            let line_span = end_line_span;
+            let line_source = self.source_slice(line_span, &tab).expect("line_source");
+            write!(writer, " {}", line_source.trim_end_matches(line_trimmer))?;
             NewLine::new().emit(writer, config)?;
 
             // Write border, underline, and label

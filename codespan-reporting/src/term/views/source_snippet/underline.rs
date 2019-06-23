@@ -188,8 +188,7 @@ impl<'a> UnderlineBottom<'a> {
 
         writer.set_color(self.mark_style.label_style(config))?;
         write!(writer, "{}", config.multiline_bottom_left_char)?;
-        let width = config.width(self.marked_source);
-        for _ in 0..width {
+        for _ in 0..config.width(self.marked_source) {
             write!(writer, "{}", config.multiline_bottom_char)?;
         }
         write!(writer, "{}", self.mark_style.multiline_caret_char(config))?;

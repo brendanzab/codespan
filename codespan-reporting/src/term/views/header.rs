@@ -1,8 +1,8 @@
 use std::io;
 use termcolor::WriteColor;
 
-use crate::term::Config;
 use crate::diagnostic::{Diagnostic, Severity};
+use crate::term::Config;
 
 use super::NewLine;
 
