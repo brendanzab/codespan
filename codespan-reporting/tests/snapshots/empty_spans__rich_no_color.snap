@@ -1,31 +1,31 @@
 ---
-created: "2019-06-13T09:59:02.388803Z"
+created: "2019-06-23T06:38:18.077231Z"
 creator: insta@0.8.1
-source: codespan-reporting/tests/emit.rs
+source: codespan-reporting/tests/term.rs
 expression: result
 ---
 note: middle
 
    ┌── hello:1:7 ───
-   │ 
+   │
  1 │ Hello world!
    │       ^ middle
-   │ 
+   │
 
 note: end of line
 
    ┌── hello:1:13 ───
-   │ 
+   │
  1 │ Hello world!
    │             ^ end of line
-   │ 
+   │
 
 note: end of file
 
    ┌── hello:2:11 ───
-   │ 
+   │
  2 │ Bye world!
    │           ^ end of file
-   │ 
+   │
 
 

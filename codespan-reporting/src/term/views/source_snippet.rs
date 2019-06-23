@@ -147,6 +147,7 @@ impl<'a> SourceSnippet<'a> {
             // Write line number and border
             Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
+            write!(writer, " ")?;
 
             // Write source prefix before marked section
             let prefix_span = start_line_span.with_end(self.span.start());
@@ -168,6 +169,7 @@ impl<'a> SourceSnippet<'a> {
             // Write underline border
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
+            write!(writer, " ")?;
 
             // Write underline and label
             let prefix_len = config.width(&source_prefix);
@@ -190,6 +192,7 @@ impl<'a> SourceSnippet<'a> {
             // Write line number and border
             Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
+            write!(writer, " ")?;
 
             // Write source prefix before marked section
             let prefix_span = start_line_span.with_end(self.span.start());
@@ -212,6 +215,7 @@ impl<'a> SourceSnippet<'a> {
                 // Write line number and border
                 Gutter::new(line_index.number(), gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
+                write!(writer, " ")?;
 
                 // Write marked source section
                 let marked_span = self.line_span(line_index).expect("marked_span");
@@ -227,6 +231,7 @@ impl<'a> SourceSnippet<'a> {
             // Write line number and border
             Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
+            write!(writer, " ")?;
 
             // Write marked source section
             let marked_span = end_line_span.with_end(self.span.end());
@@ -246,6 +251,7 @@ impl<'a> SourceSnippet<'a> {
             // Write underline border
             Gutter::new(None, gutter_padding).emit(writer, config)?;
             BorderLeft::new().emit(writer, config)?;
+            write!(writer, " ")?;
 
             // Write underline and label
             writer.set_color(&label_style)?;
@@ -331,7 +337,7 @@ impl BorderLeft {
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.border)?;
-        write!(writer, "{left} ", left = config.border_left_char)?;
+        write!(writer, "{left}", left = config.border_left_char)?;
         writer.reset()?;
 
         Ok(())

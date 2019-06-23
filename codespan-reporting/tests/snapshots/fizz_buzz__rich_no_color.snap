@@ -1,5 +1,5 @@
 ---
-created: "2019-06-23T06:27:25.898533Z"
+created: "2019-06-23T06:38:18.076910Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/term.rs
 expression: result
@@ -7,65 +7,65 @@ expression: result
 error[E0308]: `case` clauses have incompatible types
 
    ┌── FizzBuzz.fun:8:12 ───
-   │ 
+   │
  8 │     _ _ => num
    │            ^^^ expected `String`, found `Nat`
-   │ 
+   │
    = expected type `String`
         found type `Nat`
 
    ┌── FizzBuzz.fun:4:13 ───
-   │ 
+   │
  4 │ fizz₁ num = case (mod num 5) (mod num 3) of
  5 │     0 0 => "FizzBuzz"
  6 │     0 _ => "Fizz"
  7 │     _ 0 => "Buzz"
  8 │     _ _ => num
    │ -------------- `case` clauses have incompatible types
-   │ 
+   │
 
    ┌── FizzBuzz.fun:3:15 ───
-   │ 
+   │
  3 │ fizz₁ : Nat → String
    │               ------ expected type `String` found here
-   │ 
+   │
 
 error[E0308]: `case` clauses have incompatible types
 
     ┌── FizzBuzz.fun:15:16 ───
-    │ 
+    │
  15 │         _ _ => num
     │                ^^^ expected `String`, found `Nat`
-    │ 
+    │
     = expected type `String`
          found type `Nat`
 
     ┌── FizzBuzz.fun:11:5 ───
-    │ 
+    │
  11 │     case (mod num 5) (mod num 3) of
  12 │         0 0 => "FizzBuzz"
  13 │         0 _ => "Fizz"
  14 │         _ 0 => "Buzz"
  15 │         _ _ => num
     │ ------------------ `case` clauses have incompatible types
-    │ 
+    │
 
     ┌── FizzBuzz.fun:12:16 ───
-    │ 
+    │
  12 │         0 0 => "FizzBuzz"
     │                ---------- this is found to be of type `String`
-    │ 
+    │
 
     ┌── FizzBuzz.fun:13:16 ───
-    │ 
+    │
  13 │         0 _ => "Fizz"
     │                ------ this is found to be of type `String`
-    │ 
+    │
 
     ┌── FizzBuzz.fun:14:16 ───
-    │ 
+    │
  14 │         _ 0 => "Buzz"
     │                ------ this is found to be of type `String`
-    │ 
+    │
 
 
