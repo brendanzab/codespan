@@ -1,7 +1,7 @@
 use codespan::Files;
 use std::io;
 use std::str::FromStr;
-use termcolor::{Color, ColorSpec, ColorChoice, WriteColor};
+use termcolor::{Color, ColorChoice, ColorSpec, WriteColor};
 
 use crate::diagnostic::{Diagnostic, Severity};
 
@@ -9,29 +9,19 @@ pub use termcolor;
 
 mod views;
 
-/// The display style to use when rendering diagnostics.
-#[derive(Clone, Debug)]
-pub enum DisplayStyle {
-    /// Output a richly formatted diagnostic, with source code previews.
-    ///
-    /// ```text
-    /// error[E0001]: unexpected type in `+` application
-    ///
-    ///    ┌── test:2:9 ───
-    ///    │
-    ///  2 │ (+ test "")
-    ///    │         ^^ expected `Int` but found `String`
-    ///    │
-    ///    = expected type `Int`
-    ///         found type `String`
-    /// ```
-    Rich,
-    /// Output a short diagnostic, with a line number, severity, and message.
-    ///
-    /// ```text
-    /// test:2:9: error[E0001]: unexpected type in `+` application
-    /// ```
-    Short,
+/// Emit a diagnostic using the given writer, context, config, and files.
+pub fn emit(
+    writer: &mut impl WriteColor,
+    config: &Config,
+    files: &Files,
+    diagnostic: &Diagnostic,
+) -> io::Result<()> {
+    use self::views::{RichDiagnostic, ShortDiagnostic};
+
+    match config.display_style {
+        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
+        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
+    }
 }
 
 /// Configures how a diagnostic is rendered.
@@ -98,6 +88,31 @@ impl Config {
     pub fn tab_padding(&self) -> String {
         (0..self.tab_width).map(|_| ' ').collect()
     }
+}
+
+/// The display style to use when rendering diagnostics.
+#[derive(Clone, Debug)]
+pub enum DisplayStyle {
+    /// Output a richly formatted diagnostic, with source code previews.
+    ///
+    /// ```text
+    /// error[E0001]: unexpected type in `+` application
+    ///
+    ///    ┌── test:2:9 ───
+    ///    │
+    ///  2 │ (+ test "")
+    ///    │         ^^ expected `Int` but found `String`
+    ///    │
+    ///    = expected type `Int`
+    ///         found type `String`
+    /// ```
+    Rich,
+    /// Output a short diagnostic, with a line number, severity, and message.
+    ///
+    /// ```text
+    /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// ```
+    Short,
 }
 
 /// Styles to use when rendering the diagnostic.
@@ -205,20 +220,6 @@ impl Default for Styles {
             border: ColorSpec::new().set_fg(Some(BLUE)).clone(),
             note_bullet: ColorSpec::new().set_fg(Some(BLUE)).clone(),
         }
-    }
-}
-
-pub fn emit(
-    writer: &mut impl WriteColor,
-    config: &Config,
-    files: &Files,
-    diagnostic: &Diagnostic,
-) -> io::Result<()> {
-    use self::views::{RichDiagnostic, ShortDiagnostic};
-
-    match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
-        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
     }
 }
 
