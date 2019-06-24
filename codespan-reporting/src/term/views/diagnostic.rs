@@ -2,8 +2,8 @@ use codespan::{Files, Location};
 use std::io;
 use termcolor::WriteColor;
 
-use crate::term::Config;
 use crate::diagnostic::Diagnostic;
+use crate::term::Config;
 
 use super::{Header, Locus, NewLine, SourceSnippet};
 

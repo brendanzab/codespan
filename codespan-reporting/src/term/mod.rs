@@ -12,7 +12,7 @@ mod views;
 
 pub use termcolor;
 
-pub use self::config::{Config, DisplayStyle, Styles};
+pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
 pub fn emit(

@@ -13,7 +13,7 @@ impl BorderTopLeft {
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
-        write!(writer, "{top_left}", top_left = config.source_border_top_left_char)?;
+        write!(writer, "{}", config.chars.source_border_top_left)?;
         writer.reset()?;
 
         Ok(())
@@ -33,7 +33,7 @@ impl BorderTop {
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
         for _ in 0..self.width {
-            write!(writer, "{top}", top = config.source_border_top_char)?
+            write!(writer, "{}", config.chars.source_border_top)?
         }
         writer.reset()?;
 
@@ -51,7 +51,7 @@ impl BorderLeft {
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
-        write!(writer, "{left}", left = config.source_border_left_char)?;
+        write!(writer, "{}", config.chars.source_border_left)?;
         writer.reset()?;
 
         Ok(())

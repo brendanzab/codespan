@@ -20,15 +20,15 @@ impl MarkStyle {
 
     pub fn caret_char(self, config: &Config) -> char {
         match self {
-            MarkStyle::Primary(_) => config.primary_caret_char,
-            MarkStyle::Secondary => config.secondary_caret_char,
+            MarkStyle::Primary(_) => config.chars.primary_caret,
+            MarkStyle::Secondary => config.chars.secondary_caret,
         }
     }
 
     pub fn multiline_caret_char(self, config: &Config) -> char {
         match self {
-            MarkStyle::Primary(_) => config.multiline_primary_caret_char,
-            MarkStyle::Secondary => config.multiline_secondary_caret_char,
+            MarkStyle::Primary(_) => config.chars.multiline_primary_caret,
+            MarkStyle::Secondary => config.chars.multiline_secondary_caret,
         }
     }
 }
@@ -98,7 +98,7 @@ impl UnderlineTopLeft {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.multiline_top_left_char)?;
+        write!(writer, "{}", config.chars.multiline_top_left)?;
         writer.reset()?;
 
         Ok(())
@@ -127,10 +127,10 @@ impl<'a> UnderlineTop<'a> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.multiline_top_left_char)?;
+        write!(writer, "{}", config.chars.multiline_top_left)?;
         let underline_len = config.width(self.source_prefix) + 1;
         for _ in 0..underline_len {
-            write!(writer, "{}", config.multiline_top_char)?;
+            write!(writer, "{}", config.chars.multiline_top)?;
         }
         write!(writer, "{}", self.mark_style.multiline_caret_char(config))?;
         writer.reset()?;
@@ -152,7 +152,7 @@ impl UnderlineLeft {
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.multiline_left_char)?;
+        write!(writer, "{}", config.chars.multiline_left)?;
         writer.reset()?;
 
         Ok(())
@@ -187,10 +187,10 @@ impl<'a> UnderlineBottom<'a> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
-        write!(writer, "{}", config.multiline_bottom_left_char)?;
+        write!(writer, "{}", config.chars.multiline_bottom_left)?;
         let width = config.width(self.marked_source);
         for _ in 0..width {
-            write!(writer, "{}", config.multiline_bottom_char)?;
+            write!(writer, "{}", config.chars.multiline_bottom)?;
         }
         write!(writer, "{}", self.mark_style.multiline_caret_char(config))?;
         if !self.message.is_empty() {
