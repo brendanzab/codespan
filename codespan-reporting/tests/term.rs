@@ -1,6 +1,6 @@
 use codespan::Files;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::term::{Config, DisplayStyle};
+use codespan_reporting::term::{Chars, Config, DisplayStyle};
 
 mod support;
 
@@ -155,6 +155,17 @@ mod multifile {
     }
 
     #[test]
+    fn rich_no_color_ascii() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            chars: Chars::ascii(),
+            ..Config::default()
+        };
+
+        insta::assert_snapshot_matches!("rich_no_color_ascii", TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
     fn short_no_color() {
         let config = Config {
             display_style: DisplayStyle::Short,
@@ -264,6 +275,17 @@ mod fizz_buzz {
         };
 
         insta::assert_snapshot_matches!("rich_no_color", TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn rich_no_color_ascii() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            chars: Chars::ascii(),
+            ..Config::default()
+        };
+
+        insta::assert_snapshot_matches!("rich_no_color_ascii", TEST_DATA.emit_no_color(&config));
     }
 
     #[test]

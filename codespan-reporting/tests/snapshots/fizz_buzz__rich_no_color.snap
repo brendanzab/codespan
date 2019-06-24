@@ -1,8 +1,8 @@
 ---
-created: "2019-06-23T12:32:12.586445Z"
+created: "2019-06-24T14:34:48.426758Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/term.rs
-expression: result
+expression: TEST_DATA.emit_no_color(&config)
 ---
 error[E0308]: `case` clauses have incompatible types
 
@@ -43,7 +43,7 @@ error[E0308]: `case` clauses have incompatible types
 
     ┌── FizzBuzz.fun:11:5 ───
     │
- 11 │ ╭     case (mod num 5) (mod num 3) of
+ 11 │ ╭──── case (mod num 5) (mod num 3) of
  12 │ │         0 0 => "FizzBuzz"
  13 │ │         0 _ => "Fizz"
  14 │ │         _ 0 => "Buzz"

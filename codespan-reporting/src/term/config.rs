@@ -249,3 +249,32 @@ impl Default for Chars {
         }
     }
 }
+
+impl Chars {
+    /// A character set that only uses ASCII characters.
+    ///
+    /// This is useful if your terminal's font does not support box drawing
+    /// characters well and results in output that looks similar to rustc's
+    /// diagnostic output.
+    pub fn ascii() -> Chars {
+        Chars {
+            // FIXME: this should really be something like `-->`.
+            source_border_top_left: '-',
+            source_border_top: '-',
+            source_border_left: '|',
+
+            note_bullet: '=',
+
+            primary_caret: '^',
+            secondary_caret: '-',
+
+            multiline_primary_caret: '^',
+            multiline_secondary_caret: '-',
+            multiline_top_left: ' ',
+            multiline_top: '_',
+            multiline_bottom_left: '|',
+            multiline_bottom: '_',
+            multiline_left: '|',
+        }
+    }
+}

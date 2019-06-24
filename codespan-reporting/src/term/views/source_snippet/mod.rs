@@ -201,16 +201,16 @@ impl<'a> SourceSnippet<'a> {
                 // up a new line.
                 //
                 // ```text
-                // 4 │ ╭     case (mod num 5) (mod num 3) of
+                // 4 │ ╭──── case (mod num 5) (mod num 3) of
                 // ```
 
                 // Write line number, border, and underline
                 Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-                UnderlineTopLeft::new(self.mark_style).emit(writer, config)?;
+                UnderlineTopLeft::new(self.mark_style, &prefix_source).emit(writer, config)?;
+                write!(writer, " ")?;
 
                 // Write source line
-                write!(writer, " {}", prefix_source)?;
                 writer.set_color(&label_style)?;
                 write!(writer, "{}", trim_breaks(&highlighted_source))?;
                 writer.reset()?;

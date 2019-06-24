@@ -1,8 +1,8 @@
 ---
-created: "2019-06-23T12:32:12.586540Z"
+created: "2019-06-24T14:34:07.309658Z"
 creator: insta@0.8.1
 source: codespan-reporting/tests/term.rs
-expression: result
+expression: TEST_DATA.emit_color(&config)
 ---
 {fg:Red bold bright}error[E0308]{bold bright}: `case` clauses have incompatible types{/}
 
@@ -43,7 +43,7 @@ expression: result
 
     {fg:Blue}┌{/}{fg:Blue}──{/} FizzBuzz.fun:11:5 {fg:Blue}───{/}
     {fg:Blue}│{/}
- {fg:Blue}11{/} {fg:Blue}│{/} {fg:Blue}╭{/}     {fg:Blue}case (mod num 5) (mod num 3) of{/}
+ {fg:Blue}11{/} {fg:Blue}│{/} {fg:Blue}╭────{/} {fg:Blue}case (mod num 5) (mod num 3) of{/}
  {fg:Blue}12{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         0 0 => "FizzBuzz"{/}
  {fg:Blue}13{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         0 _ => "Fizz"{/}
  {fg:Blue}14{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         _ 0 => "Buzz"{/}

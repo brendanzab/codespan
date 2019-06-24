@@ -83,15 +83,19 @@ impl<'a> Underline<'a> {
 /// The top-left of a multi-line underline.
 ///
 /// ```text
-///  ╭
+///  ╭─────────────
 /// ```
-pub struct UnderlineTopLeft {
+pub struct UnderlineTopLeft<'a> {
     mark_style: MarkStyle,
+    source_prefix: &'a str,
 }
 
-impl UnderlineTopLeft {
-    pub fn new(mark_style: MarkStyle) -> UnderlineTopLeft {
-        UnderlineTopLeft { mark_style }
+impl<'a> UnderlineTopLeft<'a> {
+    pub fn new(mark_style: MarkStyle, source_prefix: &'a str) -> UnderlineTopLeft<'a> {
+        UnderlineTopLeft {
+            mark_style,
+            source_prefix,
+        }
     }
 
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
@@ -99,6 +103,9 @@ impl UnderlineTopLeft {
 
         writer.set_color(self.mark_style.label_style(config))?;
         write!(writer, "{}", config.chars.multiline_top_left)?;
+        for _ in 0..config.width(self.source_prefix) {
+            write!(writer, "{}", config.chars.multiline_top)?;
+        }
         writer.reset()?;
 
         Ok(())
