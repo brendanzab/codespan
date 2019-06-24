@@ -1,6 +1,6 @@
 use codespan::{ByteIndex, FileId, Files, LineIndex, Location, Span};
 use std::io;
-use termcolor::{ColorSpec, WriteColor};
+use termcolor::WriteColor;
 
 use crate::diagnostic::{Diagnostic, Label};
 use crate::term::Config;
@@ -18,29 +18,6 @@ use self::note::Note;
 use self::underline::{
     MarkStyle, Underline, UnderlineBottom, UnderlineLeft, UnderlineTop, UnderlineTopLeft,
 };
-
-impl MarkStyle {
-    fn label_style<'config>(self, config: &'config Config) -> &'config ColorSpec {
-        match self {
-            MarkStyle::Primary(severity) => config.styles.primary_label(severity),
-            MarkStyle::Secondary => &config.styles.secondary_label,
-        }
-    }
-
-    fn caret_char(self, config: &Config) -> char {
-        match self {
-            MarkStyle::Primary(_) => config.primary_caret_char,
-            MarkStyle::Secondary => config.secondary_caret_char,
-        }
-    }
-
-    fn multiline_caret_char(self, config: &Config) -> char {
-        match self {
-            MarkStyle::Primary(_) => config.multiline_primary_caret_char,
-            MarkStyle::Secondary => config.multiline_secondary_caret_char,
-        }
-    }
-}
 
 /// A marked section of source code.
 ///
@@ -105,10 +82,6 @@ impl<'a> SourceSnippet<'a> {
         self.files.line_span(self.file_id, line_index)
     }
 
-    fn label_style<'config>(&self, config: &'config Config) -> &'config ColorSpec {
-        self.mark_style.label_style(config)
-    }
-
     pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         let start = self.location(self.span.start()).expect("location_start");
         let end = self.location(self.span.end()).expect("location_end");
@@ -116,7 +89,7 @@ impl<'a> SourceSnippet<'a> {
         let end_line_span = self.line_span(end.line).expect("end_line_span");
         let is_multiline = start.line != end.line;
 
-        let label_style = self.label_style(config);
+        let label_style = self.mark_style.label_style(config);
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", end.line.number()).len();
         // Cache the tabs we'll be using to pad the source strings.
