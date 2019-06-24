@@ -41,7 +41,7 @@ impl MarkStyle {
 pub struct Underline<'a> {
     mark_style: MarkStyle,
     prefix_source: &'a str,
-    marked_source: &'a str,
+    highlighted_source: &'a str,
     message: &'a str,
 }
 
@@ -49,13 +49,13 @@ impl<'a> Underline<'a> {
     pub fn new(
         mark_style: MarkStyle,
         prefix_source: &'a str,
-        marked_source: &'a str,
+        highlighted_source: &'a str,
         message: &'a str,
     ) -> Underline<'a> {
         Underline {
             mark_style,
             prefix_source,
-            marked_source,
+            highlighted_source,
             message,
         }
     }
@@ -67,7 +67,7 @@ impl<'a> Underline<'a> {
         writer.set_color(self.mark_style.label_style(config))?;
         // We use `usize::max` here to ensure that we print at least one
         // underline character - even when we have a zero-length span.
-        let underline_len = usize::max(config.width(self.marked_source), 1);
+        let underline_len = usize::max(config.width(self.highlighted_source), 1);
         for _ in 0..underline_len {
             write!(writer, "{}", self.mark_style.caret_char(config))?;
         }
@@ -166,19 +166,19 @@ impl UnderlineLeft {
 /// ```
 pub struct UnderlineBottom<'a> {
     mark_style: MarkStyle,
-    marked_source: &'a str,
+    highlighted_source: &'a str,
     message: &'a str,
 }
 
 impl<'a> UnderlineBottom<'a> {
     pub fn new(
         mark_style: MarkStyle,
-        marked_source: &'a str,
+        highlighted_source: &'a str,
         message: &'a str,
     ) -> UnderlineBottom<'a> {
         UnderlineBottom {
             mark_style,
-            marked_source,
+            highlighted_source,
             message,
         }
     }
@@ -188,7 +188,7 @@ impl<'a> UnderlineBottom<'a> {
 
         writer.set_color(self.mark_style.label_style(config))?;
         write!(writer, "{}", config.chars.multiline_bottom_left)?;
-        let width = config.width(self.marked_source);
+        let width = config.width(self.highlighted_source);
         for _ in 0..width {
             write!(writer, "{}", config.chars.multiline_bottom)?;
         }
