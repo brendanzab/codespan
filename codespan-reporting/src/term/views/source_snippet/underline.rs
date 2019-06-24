@@ -1,5 +1,5 @@
 use std::io;
-use termcolor::WriteColor;
+use termcolor::{ColorSpec, WriteColor};
 
 use crate::diagnostic::Severity;
 use crate::term::Config;
@@ -8,6 +8,29 @@ use crate::term::Config;
 pub enum MarkStyle {
     Primary(Severity),
     Secondary,
+}
+
+impl MarkStyle {
+    pub fn label_style<'config>(self, config: &'config Config) -> &'config ColorSpec {
+        match self {
+            MarkStyle::Primary(severity) => config.styles.primary_label(severity),
+            MarkStyle::Secondary => &config.styles.secondary_label,
+        }
+    }
+
+    pub fn caret_char(self, config: &Config) -> char {
+        match self {
+            MarkStyle::Primary(_) => config.primary_caret_char,
+            MarkStyle::Secondary => config.secondary_caret_char,
+        }
+    }
+
+    pub fn multiline_caret_char(self, config: &Config) -> char {
+        match self {
+            MarkStyle::Primary(_) => config.multiline_primary_caret_char,
+            MarkStyle::Secondary => config.multiline_secondary_caret_char,
+        }
+    }
 }
 
 /// The underline of a single source line.
