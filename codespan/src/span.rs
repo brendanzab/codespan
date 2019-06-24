@@ -57,32 +57,6 @@ impl Span {
         Span::new(self.start(), other.end())
     }
 
-    /// Return a new span with the start set to the given byte index.
-    ///
-    /// ```rust
-    /// use codespan::{ByteIndex, Span};
-    ///
-    /// let span = Span::new(5, 10);
-    ///
-    /// assert_eq!(span.with_start(0), Span::new(0, 10));
-    /// ```
-    pub fn with_start(&self, start: impl Into<ByteIndex>) -> Span {
-        Span::new(start, self.end())
-    }
-
-    /// Return a new span with the end set to the given byte index.
-    ///
-    /// ```rust
-    /// use codespan::{ByteIndex, Span};
-    ///
-    /// let span = Span::new(0, 5);
-    ///
-    /// assert_eq!(span.with_end(10), Span::new(0, 10));
-    /// ```
-    pub fn with_end(&self, end: impl Into<ByteIndex>) -> Span {
-        Span::new(self.start(), end)
-    }
-
     /// Get the starting byte index.
     ///
     /// ```rust
