@@ -54,7 +54,7 @@ impl Bullet {
 
     fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.note_bullet)?;
-        write!(writer, "{}", config.note_bullet_char)?;
+        write!(writer, "{}", config.chars.note_bullet)?;
         writer.reset()?;
 
         Ok(())
