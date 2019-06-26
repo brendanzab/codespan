@@ -139,14 +139,15 @@ impl<'a> SourceSnippet<'a> {
             // ```
 
             let prefix_source = {
-                let span = start_line_span.with_end(self.span.start());
+                let span = Span::new(start_line_span.start(), self.span.start());
                 self.source_slice(span, &tab).expect("prefix_source")
             };
-            let highlighted_source = self
-                .source_slice(self.span, &tab)
-                .expect("highlighted_source");
+            let highlighted_source = {
+                let span = self.span;
+                self.source_slice(span, &tab).expect("highlighted_source")
+            };
             let suffix_source = {
-                let span = end_line_span.with_start(self.span.end());
+                let span = Span::new(self.span.end(), end_line_span.end());
                 self.source_slice(span, &tab).expect("suffix_source")
             };
 
@@ -188,11 +189,11 @@ impl<'a> SourceSnippet<'a> {
             // ```
 
             let prefix_source = {
-                let span = start_line_span.with_end(self.span.start());
+                let span = Span::new(start_line_span.start(), self.span.start());
                 self.source_slice(span, &tab).expect("prefix_source")
             };
             let highlighted_source = {
-                let span = start_line_span.with_start(self.span.start());
+                let span = Span::new(self.span.start(), start_line_span.end());
                 self.source_slice(span, &tab).expect("highlighted_source_1")
             };
 
@@ -277,11 +278,11 @@ impl<'a> SourceSnippet<'a> {
             // ```
 
             let highlighted_source = {
-                let span = end_line_span.with_end(self.span.end());
+                let span = Span::new(end_line_span.start(), self.span.end());
                 self.source_slice(span, &tab).expect("highlighted_source_3")
             };
             let suffix_source = {
-                let span = end_line_span.with_start(self.span.end());
+                let span = Span::new(self.span.end(), end_line_span.end());
                 self.source_slice(span, &tab).expect("suffix_source")
             };
 
