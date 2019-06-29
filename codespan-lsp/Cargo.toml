@@ -13,5 +13,5 @@ edition = "2018"
 codespan = { version = "0.3.0", path = "../codespan" } # CODESPAN
 codespan-reporting = { version = "0.3.0", path = "../codespan-reporting/" } # CODESPAN
 derive_more = "0.15"
-lsp-types = "0.57"
+lsp-types = "0.58"
 url = "1"
