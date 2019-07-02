@@ -6,14 +6,12 @@ use codespan::{
 };
 use codespan_reporting::diagnostic::{Diagnostic, Severity};
 use lsp_types as lsp;
-use std::error;
+use std::{error, fmt};
 use url::Url;
 
-#[derive(derive_more::Display, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
-    #[display(fmt = "Unable to correlate filename `{}` to url", _0)]
     UnableToCorrelateFilename(String),
-    #[display(fmt = "Column out of bounds - given: {}, max: {}", given, max)]
     ColumnOutOfBounds {
         given: ColumnIndex,
         max: ColumnIndex,
@@ -21,6 +19,22 @@ pub enum Error {
     Location(LocationError),
     LineIndexOutOfBounds(LineIndexOutOfBoundsError),
     SpanOutOfBounds(SpanOutOfBoundsError),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::UnableToCorrelateFilename(s) => {
+                write!(f, "Unable to correlate filename `{}` to url", s)
+            },
+            Error::ColumnOutOfBounds { given, max } => {
+                write!(f, "Column out of bounds - given: {}, max: {}", given, max)
+            },
+            Error::Location(e) => e.fmt(f),
+            Error::LineIndexOutOfBounds(e) => e.fmt(f),
+            Error::SpanOutOfBounds(e) => e.fmt(f),
+        }
+    }
 }
 
 impl From<LocationError> for Error {
