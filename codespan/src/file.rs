@@ -1,11 +1,10 @@
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::error;
+use std::{error, fmt};
 
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
 
-#[derive(derive_more::Display, Debug, PartialEq)]
-#[display(fmt = "Line index out of bounds - given: {}, max: {}", given, max)]
+#[derive(Debug, PartialEq)]
 pub struct LineIndexOutOfBoundsError {
     pub given: LineIndex,
     pub max: LineIndex,
@@ -13,24 +12,56 @@ pub struct LineIndexOutOfBoundsError {
 
 impl error::Error for LineIndexOutOfBoundsError {}
 
-#[derive(derive_more::Display, Debug, PartialEq)]
+impl fmt::Display for LineIndexOutOfBoundsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Line index out of bounds - given: {}, max: {}",
+            self.given, self.max
+        )
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum LocationError {
-    #[display(fmt = "Byte index out of bounds - given: {}, span: {}", given, span)]
     OutOfBounds { given: ByteIndex, span: Span },
-    #[display(fmt = "Byte index within character boundary - given: {}", given)]
     InvalidCharBoundary { given: ByteIndex },
 }
 
 impl error::Error for LocationError {}
 
-#[derive(derive_more::Display, Debug, PartialEq)]
-#[display(fmt = "Span out of bounds - given: {}, span: {}", given, span)]
+impl fmt::Display for LocationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LocationError::OutOfBounds { given, span } => write!(
+                f,
+                "Byte index out of bounds - given: {}, span: {}",
+                given, span
+            ),
+            LocationError::InvalidCharBoundary { given } => {
+                write!(f, "Byte index within character boundary - given: {}", given)
+            },
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct SpanOutOfBoundsError {
     pub given: Span,
     pub span: Span,
 }
 
 impl error::Error for SpanOutOfBoundsError {}
+
+impl fmt::Display for SpanOutOfBoundsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Span out of bounds - given: {}, span: {}",
+            self.given, self.span
+        )
+    }
+}
 
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

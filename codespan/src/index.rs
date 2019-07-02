@@ -13,7 +13,7 @@ pub type RawIndex = u32;
 pub type RawOffset = i64;
 
 /// A zero-indexed line offset into a source file
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineIndex(pub RawIndex);
@@ -51,8 +51,14 @@ impl fmt::Debug for LineIndex {
     }
 }
 
+impl fmt::Display for LineIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// A 1-indexed line number. Useful for pretty printing source locations.
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineNumber(RawIndex);
@@ -65,8 +71,14 @@ impl fmt::Debug for LineNumber {
     }
 }
 
+impl fmt::Display for LineNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// A line offset in a source file
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct LineOffset(pub RawOffset);
@@ -85,8 +97,14 @@ impl fmt::Debug for LineOffset {
     }
 }
 
+impl fmt::Display for LineOffset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// A zero-indexed column offset into a source file
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ColumnIndex(pub RawIndex);
@@ -124,8 +142,14 @@ impl fmt::Debug for ColumnIndex {
     }
 }
 
+impl fmt::Display for ColumnIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// A 1-indexed column number. Useful for pretty printing source locations.
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ColumnNumber(RawIndex);
@@ -135,6 +159,12 @@ impl fmt::Debug for ColumnNumber {
         write!(f, "ColumnNumber(")?;
         self.0.fmt(f)?;
         write!(f, ")")
+    }
+}
+
+impl fmt::Display for ColumnNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -165,7 +195,7 @@ impl fmt::Display for ColumnOffset {
 }
 
 /// A byte position in a source file.
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ByteIndex(pub RawIndex);
@@ -191,8 +221,14 @@ impl fmt::Debug for ByteIndex {
     }
 }
 
+impl fmt::Display for ByteIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// A byte offset in a source file
-#[derive(derive_more::Display, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct ByteOffset(pub RawOffset);
@@ -244,6 +280,12 @@ impl fmt::Debug for ByteOffset {
         write!(f, "ByteOffset(")?;
         self.0.fmt(f)?;
         write!(f, ")")
+    }
+}
+
+impl fmt::Display for ByteOffset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
