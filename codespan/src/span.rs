@@ -84,6 +84,12 @@ impl Span {
     }
 }
 
+impl Default for Span {
+    fn default() -> Span {
+        Span::initial()
+    }
+}
+
 impl fmt::Display for Span {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
