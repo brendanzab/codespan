@@ -125,10 +125,6 @@ impl<'a> SourceSnippet<'a> {
         BorderLeft::new().emit(writer, config)?;
         NewLine::new().emit(writer, config)?;
 
-        fn trim_breaks(s: &str) -> &str {
-            s.trim_end_matches(|ch| ch == '\r' || ch == '\n')
-        }
-
         // Write underlined source section
         if start.line == end.line {
             // Single line
@@ -160,7 +156,7 @@ impl<'a> SourceSnippet<'a> {
             writer.set_color(label_style)?;
             write!(writer, "{}", highlighted_source)?;
             writer.reset()?;
-            write!(writer, "{}", trim_breaks(&suffix_source))?;
+            write!(writer, "{}", suffix_source.trim_end())?;
 
             NewLine::new().emit(writer, config)?;
 
@@ -213,7 +209,7 @@ impl<'a> SourceSnippet<'a> {
                 // Write source line
                 write!(writer, " {}", prefix_source)?;
                 writer.set_color(&label_style)?;
-                write!(writer, "{}", trim_breaks(&highlighted_source))?;
+                write!(writer, "{}", highlighted_source.trim_end())?;
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
             } else {
@@ -232,7 +228,7 @@ impl<'a> SourceSnippet<'a> {
                 // Write source line
                 write!(writer, "   {}", prefix_source)?;
                 writer.set_color(&label_style)?;
-                write!(writer, "{}", trim_breaks(&highlighted_source))?;
+                write!(writer, "{}", highlighted_source.trim_end())?;
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
 
@@ -265,7 +261,7 @@ impl<'a> SourceSnippet<'a> {
 
                 // Write highlighted source
                 writer.set_color(label_style)?;
-                write!(writer, " {}", trim_breaks(&highlighted_source))?;
+                write!(writer, " {}", highlighted_source.trim_end())?;
                 writer.reset()?;
                 NewLine::new().emit(writer, config)?;
             }
@@ -295,7 +291,7 @@ impl<'a> SourceSnippet<'a> {
             writer.set_color(label_style)?;
             write!(writer, " {}", highlighted_source)?;
             writer.reset()?;
-            write!(writer, "{}", trim_breaks(&suffix_source))?;
+            write!(writer, "{}", suffix_source.trim_end())?;
             NewLine::new().emit(writer, config)?;
 
             // Write border, underline, and label
