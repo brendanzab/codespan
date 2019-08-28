@@ -1,5 +1,5 @@
 ---
-created: "2019-08-25T12:17:21.888514Z"
+created: "2019-08-28T14:48:32.919737Z"
 creator: insta@0.10.1
 source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
@@ -10,7 +10,7 @@ error[E0308]: `case` clauses have incompatible types
    │
  8 │     _ _ => num
    │            ^^^ expected `String`, found `Nat`
-   │
+   ·
  4 │   fizz₁ num = case (mod num 5) (mod num 3) of
    │ ╭─────────────'
  5 │ │     0 0 => "FizzBuzz"
@@ -18,7 +18,7 @@ error[E0308]: `case` clauses have incompatible types
  7 │ │     _ 0 => "Buzz"
  8 │ │     _ _ => num
    │ ╰──────────────' `case` clauses have incompatible types
-   │
+   ·
  3 │ fizz₁ : Nat → String
    │               ------ expected type `String` found here
    │
@@ -31,20 +31,20 @@ error[E0308]: `case` clauses have incompatible types
     │
  15 │         _ _ => num
     │                ^^^ expected `String`, found `Nat`
-    │
+    ·
  11 │ ╭     case (mod num 5) (mod num 3) of
  12 │ │         0 0 => "FizzBuzz"
  13 │ │         0 _ => "Fizz"
  14 │ │         _ 0 => "Buzz"
  15 │ │         _ _ => num
     │ ╰──────────────────' `case` clauses have incompatible types
-    │
+    ·
  12 │         0 0 => "FizzBuzz"
     │                ---------- this is found to be of type `String`
-    │
+    ·
  13 │         0 _ => "Fizz"
     │                ------ this is found to be of type `String`
-    │
+    ·
  14 │         _ 0 => "Buzz"
     │                ------ this is found to be of type `String`
     │

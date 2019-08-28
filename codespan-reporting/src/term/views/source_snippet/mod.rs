@@ -12,7 +12,7 @@ mod gutter;
 mod note;
 mod underline;
 
-use self::border::{BorderLeft, BorderTop, BorderTopLeft};
+use self::border::{BorderLeft, BorderLeftBreak, BorderTop, BorderTopLeft};
 use self::gutter::Gutter;
 use self::note::Note;
 use self::underline::{Underline, UnderlineBottom, UnderlineLeft, UnderlineTop, UnderlineTopLeft};
@@ -111,7 +111,7 @@ impl<'a> SourceSnippet<'a> {
         NewLine::new().emit(writer, config)?;
 
         // TODO: Better grouping
-        for (label, mark_style) in &self.spans {
+        for (i, (label, mark_style)) in self.spans.iter().enumerate() {
             let start = self.location(label.span.start()).expect("location_start");
             let end = self.location(label.span.end()).expect("location_end");
             let start_line_span = self.line_span(start.line).expect("start_line_span");
@@ -130,7 +130,10 @@ impl<'a> SourceSnippet<'a> {
 
             // Write initial border
             Gutter::new(None, gutter_padding).emit(writer, config)?;
-            BorderLeft::new().emit(writer, config)?;
+            match i {
+                0 => BorderLeft::new().emit(writer, config)?,
+                _ => BorderLeftBreak::new().emit(writer, config)?,
+            }
             NewLine::new().emit(writer, config)?;
 
             // Write underlined source section
@@ -306,7 +309,7 @@ impl<'a> SourceSnippet<'a> {
                 UnderlineBottom::new(*mark_style, &highlighted_source, &label.message)
                     .emit(writer, config)?;
                 NewLine::new().emit(writer, config)?;
-            };
+            }
         }
 
         // Write final border

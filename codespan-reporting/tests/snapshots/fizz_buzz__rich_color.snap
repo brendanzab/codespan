@@ -1,5 +1,5 @@
 ---
-created: "2019-08-25T12:17:21.888579Z"
+created: "2019-08-28T14:48:32.919789Z"
 creator: insta@0.10.1
 source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_color(&config)
@@ -10,7 +10,7 @@ expression: TEST_DATA.emit_color(&config)
    {fg:Blue}│{/}
  {fg:Blue}8{/} {fg:Blue}│{/}     _ _ => {fg:Red}num{/}
    {fg:Blue}│{/}            {fg:Red}^^^ expected `String`, found `Nat`{/}
-   {fg:Blue}│{/}
+   {fg:Blue}·{/}
  {fg:Blue}4{/} {fg:Blue}│{/}   fizz₁ num = {fg:Blue}case (mod num 5) (mod num 3) of{/}
    {fg:Blue}│{/} {fg:Blue}╭─────────────'{/}
  {fg:Blue}5{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}     0 0 => "FizzBuzz"{/}
@@ -18,7 +18,7 @@ expression: TEST_DATA.emit_color(&config)
  {fg:Blue}7{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}     _ 0 => "Buzz"{/}
  {fg:Blue}8{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}     _ _ => num{/}
    {fg:Blue}│{/} {fg:Blue}╰──────────────' `case` clauses have incompatible types{/}
-   {fg:Blue}│{/}
+   {fg:Blue}·{/}
  {fg:Blue}3{/} {fg:Blue}│{/} fizz₁ : Nat → {fg:Blue}String{/}
    {fg:Blue}│{/}               {fg:Blue}------ expected type `String` found here{/}
    {fg:Blue}│{/}
@@ -31,20 +31,20 @@ expression: TEST_DATA.emit_color(&config)
     {fg:Blue}│{/}
  {fg:Blue}15{/} {fg:Blue}│{/}         _ _ => {fg:Red}num{/}
     {fg:Blue}│{/}                {fg:Red}^^^ expected `String`, found `Nat`{/}
-    {fg:Blue}│{/}
+    {fg:Blue}·{/}
  {fg:Blue}11{/} {fg:Blue}│{/} {fg:Blue}╭{/}     {fg:Blue}case (mod num 5) (mod num 3) of{/}
  {fg:Blue}12{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         0 0 => "FizzBuzz"{/}
  {fg:Blue}13{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         0 _ => "Fizz"{/}
  {fg:Blue}14{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         _ 0 => "Buzz"{/}
  {fg:Blue}15{/} {fg:Blue}│{/} {fg:Blue}│{/}{fg:Blue}         _ _ => num{/}
     {fg:Blue}│{/} {fg:Blue}╰──────────────────' `case` clauses have incompatible types{/}
-    {fg:Blue}│{/}
+    {fg:Blue}·{/}
  {fg:Blue}12{/} {fg:Blue}│{/}         0 0 => {fg:Blue}"FizzBuzz"{/}
     {fg:Blue}│{/}                {fg:Blue}---------- this is found to be of type `String`{/}
-    {fg:Blue}│{/}
+    {fg:Blue}·{/}
  {fg:Blue}13{/} {fg:Blue}│{/}         0 _ => {fg:Blue}"Fizz"{/}
     {fg:Blue}│{/}                {fg:Blue}------ this is found to be of type `String`{/}
-    {fg:Blue}│{/}
+    {fg:Blue}·{/}
  {fg:Blue}14{/} {fg:Blue}│{/}         _ 0 => {fg:Blue}"Buzz"{/}
     {fg:Blue}│{/}                {fg:Blue}------ this is found to be of type `String`{/}
     {fg:Blue}│{/}
