@@ -57,3 +57,20 @@ impl BorderLeft {
         Ok(())
     }
 }
+
+/// The left-hand border of a source line.
+pub struct BorderLeftBreak {}
+
+impl BorderLeftBreak {
+    pub fn new() -> BorderLeftBreak {
+        BorderLeftBreak {}
+    }
+
+    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+        writer.set_color(&config.styles.source_border)?;
+        write!(writer, "{}", config.chars.source_border_left_break)?;
+        writer.reset()?;
+
+        Ok(())
+    }
+}

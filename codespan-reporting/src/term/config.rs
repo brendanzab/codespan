@@ -192,6 +192,9 @@ pub struct Chars {
     /// The character to use for the left border of the source.
     /// Defaults to: `'│'`.
     pub source_border_left: char,
+    /// The character to use for the left border break of the source.
+    /// Defaults to: `'·'`.
+    pub source_border_left_break: char,
 
     /// The character to use for the note bullet.
     /// Defaults to: `'='`.
@@ -233,6 +236,7 @@ impl Default for Chars {
             source_border_top_left: '┌',
             source_border_top: '─',
             source_border_left: '│',
+            source_border_left_break: '·',
 
             note_bullet: '=',
 

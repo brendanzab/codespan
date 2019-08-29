@@ -1,8 +1,8 @@
 ---
-created: "2019-06-23T06:38:18.077448Z"
-creator: insta@0.8.1
+created: "2019-08-28T14:41:01.270642Z"
+creator: insta@0.10.1
 source: codespan-reporting/tests/term.rs
-expression: result
+expression: TEST_DATA.emit_color(&config)
 ---
 {fg:Red bold bright}error{bold bright}: unknown builtin: `NATRAL`{/}
 
