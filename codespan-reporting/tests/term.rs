@@ -33,7 +33,7 @@ mod empty_spans {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_color", TEST_DATA.emit_color(&config));
+        insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
     }
 
     #[test]
@@ -43,7 +43,7 @@ mod empty_spans {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("rich_no_color", TEST_DATA.emit_no_color(&config));
     }
 }
 
@@ -131,7 +131,7 @@ mod multifile {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_color", TEST_DATA.emit_color(&config));
+        insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
     }
 
     #[test]
@@ -141,7 +141,7 @@ mod multifile {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("short_color", TEST_DATA.emit_color(&config));
+        insta::assert_snapshot!("short_color", TEST_DATA.emit_color(&config));
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod multifile {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("rich_no_color", TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod multifile {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("short_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("short_no_color", TEST_DATA.emit_no_color(&config));
     }
 }
 
@@ -243,7 +243,7 @@ mod fizz_buzz {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_color", TEST_DATA.emit_color(&config));
+        insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod fizz_buzz {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("short_color", TEST_DATA.emit_color(&config));
+        insta::assert_snapshot!("short_color", TEST_DATA.emit_color(&config));
     }
 
     #[test]
@@ -263,7 +263,7 @@ mod fizz_buzz {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("rich_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("rich_no_color", TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod fizz_buzz {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("short_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("short_no_color", TEST_DATA.emit_no_color(&config));
     }
 }
 
@@ -319,7 +319,7 @@ mod tabbed {
     fn tab_width_default_no_color() {
         let config = Config::default();
 
-        insta::assert_snapshot_matches!(
+        insta::assert_snapshot!(
             "tab_width_default_no_color",
             TEST_DATA.emit_no_color(&config)
         );
@@ -332,7 +332,7 @@ mod tabbed {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("tab_width_3_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("tab_width_3_no_color", TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -342,6 +342,6 @@ mod tabbed {
             ..Config::default()
         };
 
-        insta::assert_snapshot_matches!("tab_width_6_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!("tab_width_6_no_color", TEST_DATA.emit_no_color(&config));
     }
 }
