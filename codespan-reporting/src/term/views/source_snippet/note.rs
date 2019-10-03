@@ -24,7 +24,7 @@ impl<'a> Note<'a> {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         for (i, line) in self.message.lines().enumerate() {
             Gutter::new(None, self.gutter_padding).emit(writer, config)?;
             match i {
@@ -52,7 +52,7 @@ impl Bullet {
         Bullet {}
     }
 
-    fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.note_bullet)?;
         write!(writer, "{}", config.chars.note_bullet)?;
         writer.reset()?;

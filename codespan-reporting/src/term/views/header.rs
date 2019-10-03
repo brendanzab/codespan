@@ -37,7 +37,7 @@ impl<'a> Header<'a> {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         // Write severity name
         //
         // ```text

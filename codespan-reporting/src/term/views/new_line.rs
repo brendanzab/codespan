@@ -11,7 +11,7 @@ impl NewLine {
         NewLine {}
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, _config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), _config: &Config) -> io::Result<()> {
         write!(writer, "\n")
     }
 }

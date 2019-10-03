@@ -16,7 +16,7 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
 pub fn emit(
-    writer: &mut impl WriteColor,
+    writer: &mut (impl WriteColor + ?Sized),
     config: &Config,
     files: &Files,
     diagnostic: &Diagnostic,
@@ -86,5 +86,24 @@ impl FromStr for ColorArg {
 impl Into<ColorChoice> for ColorArg {
     fn into(self) -> ColorChoice {
         self.0
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::diagnostic::Label;
+
+    #[test]
+    fn unsized_emit() {
+        let mut files = Files::new();
+        let id = files.add("test", "");
+        emit(
+            &mut termcolor::NoColor::new(Vec::<u8>::new()) as &mut dyn WriteColor,
+            &Config::default(),
+            &files,
+            &Diagnostic::new_bug("", Label::new(id, codespan::Span::default(), "")),
+        )
+        .unwrap();
     }
 }

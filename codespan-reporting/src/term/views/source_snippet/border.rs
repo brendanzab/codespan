@@ -11,7 +11,7 @@ impl BorderTopLeft {
         BorderTopLeft {}
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
         write!(writer, "{}", config.chars.source_border_top_left)?;
         writer.reset()?;
@@ -30,7 +30,7 @@ impl BorderTop {
         BorderTop { width }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
         for _ in 0..self.width {
             write!(writer, "{}", config.chars.source_border_top)?
@@ -49,7 +49,7 @@ impl BorderLeft {
         BorderLeft {}
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
         write!(writer, "{}", config.chars.source_border_left)?;
         writer.reset()?;
@@ -66,7 +66,7 @@ impl BorderLeftBreak {
         BorderLeftBreak {}
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         writer.set_color(&config.styles.source_border)?;
         write!(writer, "{}", config.chars.source_border_left_break)?;
         writer.reset()?;

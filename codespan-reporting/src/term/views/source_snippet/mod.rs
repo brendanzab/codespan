@@ -83,7 +83,7 @@ impl<'a> SourceSnippet<'a> {
         self.files.line_span(self.file_id, line_index)
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         let span = self.span();
         let start = self.location(span.start()).expect("location_start");
         let end = self.location(span.end()).expect("location_end");

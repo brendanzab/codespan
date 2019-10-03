@@ -18,7 +18,7 @@ impl Gutter {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
         match self.line_number {
             None => {
