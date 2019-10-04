@@ -70,7 +70,7 @@ impl fmt::Display for SpanOutOfBoundsError {
 pub struct FileId(u32);
 
 /// A database of source files.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct Files {
     files: Vec<File>,
 }
@@ -78,7 +78,7 @@ pub struct Files {
 impl Files {
     /// Create a new, empty database of files.
     pub fn new() -> Files {
-        Files { files: Vec::new() }
+        Files::default()
     }
 
     /// Add a file to the database, returning the handle that can be used to
