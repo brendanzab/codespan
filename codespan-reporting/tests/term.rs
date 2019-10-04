@@ -1,10 +1,18 @@
 use codespan::Files;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::term::{Config, DisplayStyle};
+use codespan_reporting::term::{termcolor::Color, Config, DisplayStyle, Styles};
 
 mod support;
 
 use self::support::TestData;
+
+fn test_config() -> Config {
+    Config {
+        // Always use blue so tests are consistent across platforms
+        styles: Styles::with_blue(Color::Blue),
+        ..Config::default()
+    }
+}
 
 mod empty_spans {
     use super::*;
@@ -30,7 +38,7 @@ mod empty_spans {
     fn rich_color() {
         let config = Config {
             display_style: DisplayStyle::Rich,
-            ..Config::default()
+            ..test_config()
         };
 
         insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
@@ -128,7 +136,7 @@ mod multifile {
     fn rich_color() {
         let config = Config {
             display_style: DisplayStyle::Rich,
-            ..Config::default()
+            ..test_config()
         };
 
         insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
@@ -240,7 +248,7 @@ mod fizz_buzz {
     fn rich_color() {
         let config = Config {
             display_style: DisplayStyle::Rich,
-            ..Config::default()
+            ..test_config()
         };
 
         insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));

@@ -60,7 +60,7 @@ impl<'a> Underline<'a> {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         let prefix_len = config.width(self.prefix_source);
         write!(writer, " {space: >width$}", space = "", width = prefix_len)?;
 
@@ -94,7 +94,7 @@ impl UnderlineTopLeft {
         UnderlineTopLeft { mark_style }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
@@ -123,7 +123,7 @@ impl<'a> UnderlineTop<'a> {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;
@@ -149,7 +149,7 @@ impl UnderlineLeft {
         UnderlineLeft { mark_style }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
         writer.set_color(self.mark_style.label_style(config))?;
         write!(writer, "{}", config.chars.multiline_left)?;
@@ -183,7 +183,7 @@ impl<'a> UnderlineBottom<'a> {
         }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
 
         writer.set_color(self.mark_style.label_style(config))?;

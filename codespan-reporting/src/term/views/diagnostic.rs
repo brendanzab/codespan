@@ -18,7 +18,7 @@ impl<'a> RichDiagnostic<'a> {
         RichDiagnostic { files, diagnostic }
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         use std::collections::BTreeMap;
 
         use super::MarkStyle;
@@ -82,7 +82,7 @@ impl<'a> ShortDiagnostic<'a> {
         self.files.location(label.file_id, label.span.start())
     }
 
-    pub fn emit(&self, writer: &mut impl WriteColor, config: &Config) -> io::Result<()> {
+    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         let location = self.primary_location().expect("location");
         Locus::new(self.file_name(), location).emit(writer, config)?;
         write!(writer, ": ")?;

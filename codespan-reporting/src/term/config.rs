@@ -146,16 +146,9 @@ impl Styles {
             Severity::Help => &self.primary_label_help,
         }
     }
-}
 
-impl Default for Styles {
-    fn default() -> Styles {
-        // Blue is really difficult to see on the standard windows command line
-        #[cfg(windows)]
-        const BLUE: Color = Color::Cyan;
-        #[cfg(not(windows))]
-        const BLUE: Color = Color::Blue;
-
+    #[doc(hidden)]
+    pub fn with_blue(blue: Color) -> Styles {
         let header = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
         Styles {
@@ -171,12 +164,24 @@ impl Default for Styles {
             primary_label_warning: ColorSpec::new().set_fg(Some(Color::Yellow)).clone(),
             primary_label_note: ColorSpec::new().set_fg(Some(Color::Green)).clone(),
             primary_label_help: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
-            secondary_label: ColorSpec::new().set_fg(Some(BLUE)).clone(),
+            secondary_label: ColorSpec::new().set_fg(Some(blue)).clone(),
 
-            line_number: ColorSpec::new().set_fg(Some(BLUE)).clone(),
-            source_border: ColorSpec::new().set_fg(Some(BLUE)).clone(),
-            note_bullet: ColorSpec::new().set_fg(Some(BLUE)).clone(),
+            line_number: ColorSpec::new().set_fg(Some(blue)).clone(),
+            source_border: ColorSpec::new().set_fg(Some(blue)).clone(),
+            note_bullet: ColorSpec::new().set_fg(Some(blue)).clone(),
         }
+    }
+}
+
+impl Default for Styles {
+    fn default() -> Styles {
+        // Blue is really difficult to see on the standard windows command line
+        #[cfg(windows)]
+        const BLUE: Color = Color::Cyan;
+        #[cfg(not(windows))]
+        const BLUE: Color = Color::Blue;
+
+        Self::with_blue(BLUE)
     }
 }
 
