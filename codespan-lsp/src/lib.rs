@@ -239,6 +239,7 @@ pub fn make_lsp_diagnostic(
         } else {
             Some(related_information)
         },
+        tags: None,
     })
 }
 
