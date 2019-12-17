@@ -48,7 +48,8 @@ pub fn emit(
 ///         long = "color",
 ///         parse(try_from_str),
 ///         default_value = "auto",
-///         raw(possible_values = "ColorArg::VARIANTS", case_insensitive = "true")
+///         possible_values = ColorArg::VARIANTS,
+///         case_insensitive = true
 ///     )]
 ///     pub color: ColorArg,
 /// }
