@@ -1,12 +1,10 @@
 ---
-created: "2019-08-28T14:48:32.919737Z"
-creator: insta@0.10.1
 source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
 ---
 error[E0308]: `case` clauses have incompatible types
 
-   ┌── FizzBuzz.fun:3:15 ───
+   ┌── FizzBuzz.fun:8:12 ───
    │
  8 │     _ _ => num
    │            ^^^ expected `String`, found `Nat`
@@ -27,7 +25,7 @@ error[E0308]: `case` clauses have incompatible types
 
 error[E0308]: `case` clauses have incompatible types
 
-    ┌── FizzBuzz.fun:11:5 ───
+    ┌── FizzBuzz.fun:15:16 ───
     │
  15 │         _ _ => num
     │                ^^^ expected `String`, found `Nat`
