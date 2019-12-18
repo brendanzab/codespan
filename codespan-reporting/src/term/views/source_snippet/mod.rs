@@ -56,15 +56,27 @@ impl<'a> SourceSnippet<'a> {
         self.files.name(self.file_id)
     }
 
-    fn span(&self) -> Span {
-        let span = self.spans.iter().fold(None::<Span>, |acc, (label, _)| {
-            Some(acc.map_or(label.span, |acc| {
-                let start = std::cmp::min(acc.start(), label.span.start());
-                let end = std::cmp::max(acc.end(), label.span.end());
-                Span::new(start, end)
-            }))
-        });
-        span.unwrap_or(Span::initial())
+    fn source_locus_spans(&self) -> (Span, Span) {
+        fn merge(span0: Span, span1: Span) -> Span {
+            let start = std::cmp::min(span0.start(), span1.start());
+            let end = std::cmp::max(span0.end(), span1.end());
+            Span::new(start, end)
+        }
+
+        let mut source_span = None;
+        let mut locus_span = None;
+
+        for (label, mark_style) in &self.spans {
+            source_span = Some(source_span.map_or(label.span, |span| merge(span, label.span)));
+            if let MarkStyle::Primary(_) = mark_style {
+                locus_span = Some(locus_span.map_or(label.span, |span| merge(span, label.span)));
+            }
+        }
+
+        let source_span = source_span.unwrap_or(Span::initial());
+        let locus_span = locus_span.unwrap_or(source_span);
+
+        (source_span, locus_span)
     }
 
     fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
@@ -84,12 +96,12 @@ impl<'a> SourceSnippet<'a> {
     }
 
     pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
-        let span = self.span();
-        let start = self.location(span.start()).expect("location_start");
-        let end = self.location(span.end()).expect("location_end");
+        let (source_span, locus_span) = self.source_locus_spans();
+        let locus_start = self.location(locus_span.start()).expect("locus_span_start");
+        let source_end = self.location(source_span.end()).expect("source_span_end");
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = format!("{}", end.line.number()).len();
+        let gutter_padding = format!("{}", source_end.line.number()).len();
         // Cache the tabs we'll be using to pad the source strings.
         let tab = config.tab_padding();
 
@@ -104,7 +116,7 @@ impl<'a> SourceSnippet<'a> {
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        Locus::new(self.file_name(), start).emit(writer, config)?;
+        Locus::new(self.file_name(), locus_start).emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;
