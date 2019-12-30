@@ -53,7 +53,7 @@ impl fmt::Debug for LineIndex {
 
 impl fmt::Display for LineIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -73,7 +73,7 @@ impl fmt::Debug for LineNumber {
 
 impl fmt::Display for LineNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -99,7 +99,7 @@ impl fmt::Debug for LineOffset {
 
 impl fmt::Display for LineOffset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -144,7 +144,7 @@ impl fmt::Debug for ColumnIndex {
 
 impl fmt::Display for ColumnIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -164,7 +164,7 @@ impl fmt::Debug for ColumnNumber {
 
 impl fmt::Display for ColumnNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -223,7 +223,7 @@ impl fmt::Debug for ByteIndex {
 
 impl fmt::Display for ByteIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -285,7 +285,7 @@ impl fmt::Debug for ByteOffset {
 
 impl fmt::Display for ByteOffset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
