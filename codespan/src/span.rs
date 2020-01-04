@@ -66,7 +66,7 @@ impl Span {
     ///
     /// assert_eq!(span.start(), ByteIndex::from(0));
     /// ```
-    pub fn start(&self) -> ByteIndex {
+    pub fn start(self) -> ByteIndex {
         self.start
     }
 
@@ -79,7 +79,7 @@ impl Span {
     ///
     /// assert_eq!(span.end(), ByteIndex::from(4));
     /// ```
-    pub fn end(&self) -> ByteIndex {
+    pub fn end(self) -> ByteIndex {
         self.end
     }
 }
