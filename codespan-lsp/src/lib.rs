@@ -260,7 +260,7 @@ let test = 2
 let test1 = ""
 test
 "#;
-        let mut files = Files::<&'static str>::new();
+        let mut files = Files::new();
         let file_id = files.add("test", text);
         let pos = position_to_byte_index(
             &files,
@@ -280,7 +280,7 @@ test
 
     #[test]
     fn unicode_get_byte_index() {
-        let mut files = Files::<&'static str>::new();
+        let mut files = Files::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = position_to_byte_index(
@@ -306,7 +306,7 @@ test
 
     #[test]
     fn unicode_get_position() {
-        let mut files = Files::<&'static str>::new();
+        let mut files = Files::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = byte_index_to_position(&files, file_id, ByteIndex::from(5));

@@ -41,7 +41,7 @@ impl fmt::Display for LocationError {
             ),
             LocationError::InvalidCharBoundary { given } => {
                 write!(f, "Byte index within character boundary - given: {}", given)
-            }
+            },
         }
     }
 }
@@ -130,7 +130,7 @@ where
 
     /// Add a file to the database, returning the handle that can be used to
     /// refer to it again.
-    pub fn add(&mut self, name: impl Into<String>, source: impl Into<Source>) -> FileId {
+    pub fn add(&mut self, name: impl Into<String>, source: Source) -> FileId {
         let file_id = FileId::new(self.files.len());
         self.files.push(File::new(name.into(), source.into()));
         file_id
@@ -140,7 +140,7 @@ where
     ///
     /// This will mean that any outstanding byte indexes will now point to
     /// invalid locations.
-    pub fn update(&mut self, file_id: FileId, source: impl Into<Source>) {
+    pub fn update(&mut self, file_id: FileId, source: Source) {
         self.get_mut(file_id).update(source.into())
     }
 
@@ -163,7 +163,7 @@ where
     ///
     /// let name = "test";
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add(name, "hello world!");
     ///
     /// assert_eq!(files.name(file_id), name);
@@ -177,7 +177,7 @@ where
     /// ```rust
     /// use codespan::{Files, LineIndex, LineIndexOutOfBoundsError, Span};
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
     ///
     /// let line_sources = (0..5)
@@ -211,7 +211,7 @@ where
     /// ```rust
     /// use codespan::{ByteIndex, Files, Location, LocationError, Span};
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
     ///
     /// assert_eq!(files.location(file_id, 0), Ok(Location::new(0, 0)));
@@ -241,10 +241,10 @@ where
     ///
     /// let source = "hello world!";
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add("test", source);
     ///
-    /// assert_eq!(files.source(file_id), source);
+    /// assert_eq!(*files.source(file_id), source);
     /// ```
     pub fn source(&self, file_id: FileId) -> &Source {
         self.get(file_id).source()
@@ -257,7 +257,7 @@ where
     ///
     /// let source = "hello world!";
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add("test", source);
     ///
     /// assert_eq!(files.source_span(file_id), Span::from_str(source));
@@ -271,7 +271,7 @@ where
     /// ```rust
     /// use codespan::{Files, Span};
     ///
-    /// let mut files = Files::<String>::new();
+    /// let mut files = Files::new();
     /// let file_id = files.add("test",  "hello world!");
     ///
     /// assert_eq!(files.source_slice(file_id, Span::new(0, 5)), Ok("hello"));
@@ -391,7 +391,7 @@ where
                     line: line_index,
                     column: ColumnIndex::from(line_src.graphemes(true).count() as u32),
                 })
-            }
+            },
         }
     }
 
@@ -425,7 +425,7 @@ mod test {
     #[test]
     fn line_starts() {
         let mut files = Files::<String>::new();
-        let file_id = files.add("test", TEST_SOURCE);
+        let file_id = files.add("test", TEST_SOURCE.to_owned());
 
         assert_eq!(
             files.get(file_id).line_starts,
@@ -444,7 +444,7 @@ mod test {
         use std::sync::Arc;
 
         let mut files = Files::<Arc<str>>::new();
-        let file_id = files.add("test", TEST_SOURCE);
+        let file_id = files.add("test", TEST_SOURCE.into());
 
         let line_sources = (0..4)
             .map(|line| {

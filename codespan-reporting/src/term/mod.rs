@@ -89,6 +89,7 @@ impl Into<ColorChoice> for ColorArg {
         self.0
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,7 +98,7 @@ mod tests {
 
     #[test]
     fn unsized_emit() {
-        let mut files = Files::<&'static str>::new();
+        let mut files = Files::new();
 
         let id = files.add("test", "");
         emit(
