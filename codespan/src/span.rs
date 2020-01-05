@@ -25,8 +25,11 @@ impl Span {
     }
 
     /// Gives an empty span at the start of a source.
-    pub fn initial() -> Span {
-        Span::new(0, 0)
+    pub const fn initial() -> Span {
+        Span {
+            start: ByteIndex(0),
+            end: ByteIndex(0),
+        }
     }
 
     /// Measure the span of a string.
@@ -66,7 +69,7 @@ impl Span {
     ///
     /// assert_eq!(span.start(), ByteIndex::from(0));
     /// ```
-    pub fn start(&self) -> ByteIndex {
+    pub fn start(self) -> ByteIndex {
         self.start
     }
 
@@ -79,7 +82,7 @@ impl Span {
     ///
     /// assert_eq!(span.end(), ByteIndex::from(4));
     /// ```
-    pub fn end(&self) -> ByteIndex {
+    pub fn end(self) -> ByteIndex {
         self.end
     }
 }

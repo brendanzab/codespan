@@ -1,5 +1,6 @@
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
 use std::{error, fmt};
 
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
@@ -66,8 +67,32 @@ impl fmt::Display for SpanOutOfBoundsError {
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
-pub struct FileId(u32);
+pub struct FileId(NonZeroU32);
+
+// `HeapSizeOf` isn't implemented for `NonZeroU32` and we can't add it due to trait orphan rules
+#[cfg(feature = "memory_usage")]
+impl heapsize::HeapSizeOf for FileId {
+    fn heap_size_of_children(&self) -> usize {
+        0
+    }
+}
+
+impl FileId {
+    /// Offset of our `FileId`'s numeric value to an index on `Files::files`.
+    ///
+    /// This is to ensure the first `FileId` is non-zero for memory layout optimisations (e.g.
+    /// `Option<FileId>` is 4 bytes)
+    const OFFSET: u32 = 1;
+
+    fn new(index: usize) -> FileId {
+        FileId(NonZeroU32::new(index as u32 + Self::OFFSET).unwrap())
+    }
+
+    fn get(self) -> usize {
+        (self.0.get() - Self::OFFSET) as usize
+    }
+}
+
 /// A database of source files.
 ///
 /// The `Source` generic parameter determines how source text is stored. Using [`String`] will have
@@ -106,7 +131,7 @@ where
     /// Add a file to the database, returning the handle that can be used to
     /// refer to it again.
     pub fn add(&mut self, name: impl Into<String>, source: impl Into<Source>) -> FileId {
-        let file_id = FileId(self.files.len() as u32);
+        let file_id = FileId::new(self.files.len());
         self.files.push(File::new(name.into(), source.into()));
         file_id
     }
@@ -122,13 +147,13 @@ where
     /// Get a the source file using the file id.
     // FIXME: return an option or result?
     fn get(&self, file_id: FileId) -> &File<Source> {
-        &self.files[file_id.0 as usize]
+        &self.files[file_id.get()]
     }
 
     /// Get a the source file using the file id.
     // FIXME: return an option or result?
     fn get_mut(&mut self, file_id: FileId) -> &mut File<Source> {
-        &mut self.files[file_id.0 as usize]
+        &mut self.files[file_id.get()]
     }
 
     /// Get the name of the source file.
