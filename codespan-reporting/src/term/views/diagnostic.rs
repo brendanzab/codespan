@@ -8,13 +8,19 @@ use crate::term::Config;
 use super::{Header, Locus, NewLine, SourceSnippet};
 
 /// Output a richly formatted diagnostic, with source code previews.
-pub struct RichDiagnostic<'a> {
-    files: &'a Files,
+pub struct RichDiagnostic<'a, Source>
+where
+    Source: AsRef<str>,
+{
+    files: &'a Files<Source>,
     diagnostic: &'a Diagnostic,
 }
 
-impl<'a> RichDiagnostic<'a> {
-    pub fn new(files: &'a Files, diagnostic: &'a Diagnostic) -> RichDiagnostic<'a> {
+impl<'a, Source> RichDiagnostic<'a, Source>
+where
+    Source: AsRef<str>,
+{
+    pub fn new(files: &'a Files<Source>, diagnostic: &'a Diagnostic) -> Self {
         RichDiagnostic { files, diagnostic }
     }
 
@@ -63,13 +69,22 @@ impl<'a> RichDiagnostic<'a> {
 }
 
 /// Output a short diagnostic, with a line number, severity, and message.
-pub struct ShortDiagnostic<'a> {
-    files: &'a Files,
+pub struct ShortDiagnostic<'a, Source>
+where
+    Source: AsRef<str>,
+{
+    files: &'a Files<Source>,
     diagnostic: &'a Diagnostic,
 }
 
-impl<'a> ShortDiagnostic<'a> {
-    pub fn new(files: &'a Files, diagnostic: &'a Diagnostic) -> ShortDiagnostic<'a> {
+impl<'a, Source> ShortDiagnostic<'a, Source>
+where
+    Source: AsRef<str>,
+{
+    pub fn new(
+        files: &'a Files<Source>,
+        diagnostic: &'a Diagnostic,
+    ) -> ShortDiagnostic<'a, Source> {
         ShortDiagnostic { files, diagnostic }
     }
 
