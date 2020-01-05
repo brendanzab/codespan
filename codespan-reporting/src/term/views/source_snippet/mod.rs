@@ -30,20 +30,26 @@ pub use self::underline::MarkStyle;
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a> {
-    files: &'a Files,
+pub struct SourceSnippet<'a, Source>
+where
+    Source: AsRef<str>,
+{
+    files: &'a Files<Source>,
     file_id: FileId,
     spans: Vec<(&'a Label, MarkStyle)>,
     notes: &'a [String],
 }
 
-impl<'a> SourceSnippet<'a> {
+impl<'a, Source> SourceSnippet<'a, Source>
+where
+    Source: AsRef<str>,
+{
     pub fn new(
-        files: &'a Files,
+        files: &'a Files<Source>,
         file_id: FileId,
         spans: Vec<(&'a Label, MarkStyle)>,
         notes: &'a [String],
-    ) -> SourceSnippet<'a> {
+    ) -> Self {
         SourceSnippet {
             files,
             file_id,

@@ -15,12 +15,15 @@ pub use termcolor;
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit(
+pub fn emit<Source>(
     writer: &mut (impl WriteColor + ?Sized),
     config: &Config,
-    files: &Files,
+    files: &Files<Source>,
     diagnostic: &Diagnostic,
-) -> io::Result<()> {
+) -> io::Result<()>
+where
+    Source: AsRef<str>,
+{
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
     match config.display_style {
@@ -97,7 +100,8 @@ mod tests {
 
     #[test]
     fn unsized_emit() {
-        let mut files = Files::new();
+        let mut files = Files::<&'static str>::new();
+
         let id = files.add("test", "");
         emit(
             &mut termcolor::NoColor::new(Vec::<u8>::new()) as &mut dyn WriteColor,
