@@ -90,8 +90,8 @@ fn location_to_position(
     }
 }
 
-pub fn byte_index_to_position(
-    files: &Files,
+pub fn byte_index_to_position<Source: AsRef<str>>(
+    files: &Files<Source>,
     file_id: FileId,
     byte_index: ByteIndex,
 ) -> Result<lsp::Position, Error> {
@@ -103,7 +103,11 @@ pub fn byte_index_to_position(
     location_to_position(line_str, location.line, column, byte_index)
 }
 
-pub fn byte_span_to_range(files: &Files, file_id: FileId, span: Span) -> Result<lsp::Range, Error> {
+pub fn byte_span_to_range<Source: AsRef<str>>(
+    files: &Files<Source>,
+    file_id: FileId,
+    span: Span,
+) -> Result<lsp::Range, Error> {
     Ok(lsp::Range {
         start: byte_index_to_position(files, file_id, span.start())?,
         end: byte_index_to_position(files, file_id, span.end())?,
@@ -137,8 +141,8 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
     }
 }
 
-pub fn position_to_byte_index(
-    files: &Files,
+pub fn position_to_byte_index<Source: AsRef<str>>(
+    files: &Files<Source>,
     file_id: FileId,
     position: &lsp::Position,
 ) -> Result<ByteIndex, Error> {
@@ -149,8 +153,8 @@ pub fn position_to_byte_index(
     Ok(line_span.start() + byte_offset)
 }
 
-pub fn range_to_byte_span(
-    files: &Files,
+pub fn range_to_byte_span<Source: AsRef<str>>(
+    files: &Files<Source>,
     file_id: FileId,
     range: &lsp::Range,
 ) -> Result<Span, Error> {
@@ -176,8 +180,8 @@ pub fn make_lsp_severity(severity: Severity) -> lsp::DiagnosticSeverity {
 /// `correlate_file_url` is necessary to resolve codespan `FileName`s
 ///
 /// `code` and `file` are left empty by this function
-pub fn make_lsp_diagnostic(
-    files: &Files,
+pub fn make_lsp_diagnostic<Source: AsRef<str>>(
+    files: &Files<Source>,
     source: impl Into<Option<String>>,
     diagnostic: Diagnostic,
     mut correlate_file_url: impl FnMut(FileId) -> Result<Url, ()>,
@@ -256,7 +260,7 @@ let test = 2
 let test1 = ""
 test
 "#;
-        let mut files = Files::new();
+        let mut files = Files::<&'static str>::new();
         let file_id = files.add("test", text);
         let pos = position_to_byte_index(
             &files,
@@ -276,7 +280,7 @@ test
 
     #[test]
     fn unicode_get_byte_index() {
-        let mut files = Files::new();
+        let mut files = Files::<&'static str>::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = position_to_byte_index(
@@ -302,7 +306,7 @@ test
 
     #[test]
     fn unicode_get_position() {
-        let mut files = Files::new();
+        let mut files = Files::<&'static str>::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = byte_index_to_position(&files, file_id, ByteIndex::from(5));

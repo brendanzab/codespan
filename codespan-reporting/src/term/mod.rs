@@ -15,15 +15,12 @@ pub use termcolor;
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit<Source>(
+pub fn emit<Source: AsRef<str>>(
     writer: &mut (impl WriteColor + ?Sized),
     config: &Config,
     files: &Files<Source>,
     diagnostic: &Diagnostic,
-) -> io::Result<()>
-where
-    Source: AsRef<str>,
-{
+) -> io::Result<()> {
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
     match config.display_style {

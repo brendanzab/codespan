@@ -8,7 +8,7 @@ mod color_buffer;
 use self::color_buffer::ColorBuffer;
 
 pub struct TestData {
-    pub files: Files,
+    pub files: Files<String>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
