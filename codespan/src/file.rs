@@ -67,8 +67,15 @@ impl fmt::Display for SpanOutOfBoundsError {
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct FileId(NonZeroU32);
+
+// `HeapSizeOf` isn't implemented for `NonZeroU32` and we can't add it due to trait orphan rules
+#[cfg(feature = "memory_usage")]
+impl heapsize::HeapSizeOf for FileId {
+    fn heap_size_of_children(&self) -> usize {
+        0
+    }
+}
 
 impl FileId {
     /// Offset of our `FileId`'s numeric value to an index on `Files::files`.
