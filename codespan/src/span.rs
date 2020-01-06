@@ -7,7 +7,6 @@ use crate::ByteIndex;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct Span {
     start: ByteIndex,
     end: ByteIndex,

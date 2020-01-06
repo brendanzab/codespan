@@ -6,7 +6,6 @@ use crate::{ColumnIndex, LineIndex};
 /// A location in a source file.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 pub struct Location {
     /// The line index in the source file.
     pub line: LineIndex,
