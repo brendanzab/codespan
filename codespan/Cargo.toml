@@ -1,6 +1,6 @@
 [package]
 name = "codespan"
-version = "0.6.0" # CODESPAN
+version = "0.7.0" # CODESPAN
 readme = "../README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
@@ -11,8 +11,6 @@ documentation = "https://docs.rs/codespan"
 edition = "2018"
 
 [dependencies]
-heapsize = { version = "0.4", optional = true }
-heapsize_derive = { version = "0.1", optional = true }
 serde = { version = "1", optional = true, features = ["derive"]}
 unicode-segmentation = "1.6"
 
@@ -21,4 +19,3 @@ pretty_assertions = "0.6"
 
 [features]
 serialization = ["serde"]
-memory_usage = ["heapsize_derive", "heapsize"]

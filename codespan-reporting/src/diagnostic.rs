@@ -18,7 +18,6 @@ use std::cmp::Ordering;
 /// assert!(Severity::Note > Severity::Help);
 /// ```
 #[derive(Copy, Clone, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -54,7 +53,6 @@ impl PartialOrd for Severity {
 
 /// A label describing an underlined region of code associated with a diagnostic.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
     /// The file that we are labelling.
@@ -80,7 +78,6 @@ impl Label {
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "memory_usage", derive(heapsize_derive::HeapSizeOf))]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic {
     /// The overall severity of the diagnostic

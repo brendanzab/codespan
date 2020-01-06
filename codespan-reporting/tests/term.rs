@@ -21,7 +21,7 @@ mod empty_spans {
         static ref TEST_DATA: TestData = {
             let mut files = Files::new();
 
-            let file_id = files.add("hello", "Hello world!\nBye world!");
+            let file_id = files.add("hello", "Hello world!\nBye world!".to_owned());
             let eof = files.source_span(file_id).end();
 
             let diagnostics = vec![

@@ -21,7 +21,7 @@ pub struct Opts {
 
 fn main() {
     let opts = Opts::from_args();
-    let mut files = Files::<String>::new();
+    let mut files = Files::new();
 
     let file_id1 = files.add(
         "Data/Nat.fun",
