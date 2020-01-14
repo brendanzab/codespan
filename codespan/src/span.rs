@@ -162,6 +162,7 @@ mod test {
         // identity
         assert_eq!(a.merge(a), a);
     }
+
     #[test]
     fn test_disjoint() {
         use super::Span;
