@@ -83,6 +83,7 @@ impl Span {
         };
         first.end <= last.start
     }
+
     /// Get the starting byte index.
     ///
     /// ```rust
