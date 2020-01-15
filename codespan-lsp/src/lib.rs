@@ -7,11 +7,13 @@ use codespan::{
 use codespan_reporting::diagnostic::{Diagnostic, Severity};
 use lsp_types as lsp;
 use std::{error, fmt};
+use std::ffi::OsString;
+use std::path::PathBuf;
 use url::Url;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    UnableToCorrelateFilename(String),
+    UnableToCorrelateFilename(OsString),
     ColumnOutOfBounds {
         given: ColumnIndex,
         max: ColumnIndex,
@@ -25,7 +27,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::UnableToCorrelateFilename(s) => {
-                write!(f, "Unable to correlate filename `{}` to url", s)
+                let p = PathBuf::from(s);
+                write!(f, "Unable to correlate filename `{}` to url", p.display())
             },
             Error::ColumnOutOfBounds { given, max } => {
                 write!(f, "Column out of bounds - given: {}, max: {}", given, max)
