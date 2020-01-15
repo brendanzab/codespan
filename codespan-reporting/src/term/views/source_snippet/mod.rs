@@ -1,4 +1,5 @@
 use codespan::{ByteIndex, FileId, Files, LineIndex, Location, Span};
+use std::ffi::OsStr;
 use std::io;
 use termcolor::WriteColor;
 
@@ -58,7 +59,7 @@ where
         }
     }
 
-    fn file_name(&self) -> &'a str {
+    fn file_name(&self) -> &'a OsStr {
         self.files.name(self.file_id)
     }
 

@@ -1,4 +1,5 @@
 use codespan::{Files, Location};
+use std::ffi::OsStr;
 use std::io;
 use termcolor::WriteColor;
 
@@ -88,7 +89,7 @@ where
         ShortDiagnostic { files, diagnostic }
     }
 
-    fn file_name(&self) -> &'a str {
+    fn file_name(&self) -> &'a OsStr {
         self.files.name(self.diagnostic.primary_label.file_id)
     }
 
