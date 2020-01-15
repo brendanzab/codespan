@@ -1,5 +1,6 @@
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
+use std::ffi::{OsStr, OsString};
 use std::num::NonZeroU32;
 use std::{error, fmt};
 
@@ -122,7 +123,7 @@ where
 
     /// Add a file to the database, returning the handle that can be used to
     /// refer to it again.
-    pub fn add(&mut self, name: impl Into<String>, source: Source) -> FileId {
+    pub fn add(&mut self, name: impl Into<OsString>, source: Source) -> FileId {
         let file_id = FileId::new(self.files.len());
         self.files.push(File::new(name.into(), source.into()));
         file_id
@@ -160,7 +161,7 @@ where
     ///
     /// assert_eq!(files.name(file_id), name);
     /// ```
-    pub fn name(&self, file_id: FileId) -> &str {
+    pub fn name(&self, file_id: FileId) -> &OsStr {
         self.get(file_id).name()
     }
 
@@ -286,7 +287,7 @@ where
     Source: AsRef<str>,
 {
     /// The name of the file.
-    name: String,
+    name: OsString,
     /// The source code of the file.
     source: Source,
     /// The starting byte indices in the source code.
@@ -305,7 +306,7 @@ impl<Source> File<Source>
 where
     Source: AsRef<str>,
 {
-    fn new(name: String, source: Source) -> Self {
+    fn new(name: OsString, source: Source) -> Self {
         let line_starts = compute_line_starts(source.as_ref());
 
         File {
@@ -321,7 +322,7 @@ where
         self.line_starts = line_starts;
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &OsStr {
         &self.name
     }
 
