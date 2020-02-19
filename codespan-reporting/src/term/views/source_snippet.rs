@@ -31,10 +31,7 @@ pub use self::underline::MarkStyle;
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a, Source>
-where
-    Source: AsRef<str>,
-{
+pub struct SourceSnippet<'a, Source> {
     files: &'a Files<Source>,
     file_id: FileId,
     spans: Vec<(&'a Label, MarkStyle)>,

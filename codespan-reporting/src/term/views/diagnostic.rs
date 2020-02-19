@@ -9,10 +9,7 @@ use crate::term::Config;
 use super::{Header, Locus, NewLine, SourceSnippet};
 
 /// Output a richly formatted diagnostic, with source code previews.
-pub struct RichDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
+pub struct RichDiagnostic<'a, Source> {
     files: &'a Files<Source>,
     diagnostic: &'a Diagnostic,
 }
@@ -70,10 +67,7 @@ where
 }
 
 /// Output a short diagnostic, with a line number, severity, and message.
-pub struct ShortDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
+pub struct ShortDiagnostic<'a, Source> {
     files: &'a Files<Source>,
     diagnostic: &'a Diagnostic,
 }
