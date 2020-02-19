@@ -1,5 +1,4 @@
-use codespan::{ByteIndex, FileId, Files, LineIndex, Location, Span};
-use std::ffi::OsStr;
+use codespan::{FileId, Files, LineIndex, Span};
 use std::io;
 use termcolor::WriteColor;
 
@@ -31,33 +30,19 @@ pub use self::underline::MarkStyle;
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a, Source> {
-    files: &'a Files<Source>,
+pub struct SourceSnippet<'a> {
     file_id: FileId,
     spans: Vec<(&'a Label, MarkStyle)>,
     notes: &'a [String],
 }
 
-impl<'a, Source> SourceSnippet<'a, Source>
-where
-    Source: AsRef<str>,
-{
-    pub fn new(
-        files: &'a Files<Source>,
-        file_id: FileId,
-        spans: Vec<(&'a Label, MarkStyle)>,
-        notes: &'a [String],
-    ) -> Self {
+impl<'a> SourceSnippet<'a> {
+    pub fn new(file_id: FileId, spans: Vec<(&'a Label, MarkStyle)>, notes: &'a [String]) -> Self {
         SourceSnippet {
-            files,
             file_id,
             spans,
             notes,
         }
-    }
-
-    fn file_name(&self) -> &'a OsStr {
-        self.files.name(self.file_id)
     }
 
     fn source_locus_spans(&self) -> (Span, Span) {
@@ -79,26 +64,28 @@ where
         (source_span, locus_span)
     }
 
-    fn location(&self, byte_index: ByteIndex) -> Result<Location, impl std::error::Error> {
-        self.files.location(self.file_id, byte_index)
-    }
+    pub fn emit(
+        &self,
+        files: &'a Files<impl AsRef<str>>,
+        writer: &mut (impl WriteColor + ?Sized),
+        config: &Config,
+    ) -> io::Result<()> {
+        // Note: All of the things we need with `files` is done here. Could this
+        // help us decide on a decent trait for the file provider?
+        let file_name = files.name(self.file_id);
+        let location = |byte_index| files.location(self.file_id, byte_index);
+        let line_span = |line_index| files.line_span(self.file_id, line_index);
+        let source_slice = |span, tab| {
+            // NOTE: Not sure if we can do this more efficiently? Perhaps a custom
+            // writer might be better?
+            files
+                .source_slice(self.file_id, span)
+                .map(|s| s.replace('\t', tab))
+        };
 
-    fn source_slice(&self, span: Span, tab: &'a str) -> Result<String, impl std::error::Error> {
-        // NOTE: Not sure if we can do this more efficiently? Perhaps a custom
-        // writer might be better?
-        self.files
-            .source_slice(self.file_id, span)
-            .map(|s| s.replace('\t', tab))
-    }
-
-    fn line_span(&self, line_index: LineIndex) -> Result<Span, impl std::error::Error> {
-        self.files.line_span(self.file_id, line_index)
-    }
-
-    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         let (source_span, locus_span) = self.source_locus_spans();
-        let locus_start = self.location(locus_span.start()).expect("locus_span_start");
-        let source_end = self.location(source_span.end()).expect("source_span_end");
+        let locus_start = location(locus_span.start()).expect("locus_span_start");
+        let source_end = location(source_span.end()).expect("source_span_end");
 
         // Use the length of the last line number as the gutter padding
         let gutter_padding = format!("{}", source_end.line.number()).len();
@@ -116,7 +103,7 @@ where
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        Locus::new(self.file_name(), locus_start).emit(writer, config)?;
+        Locus::new(file_name, locus_start).emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;
@@ -124,10 +111,10 @@ where
 
         // TODO: Better grouping
         for (i, (label, mark_style)) in self.spans.iter().enumerate() {
-            let start = self.location(label.span.start()).expect("location_start");
-            let end = self.location(label.span.end()).expect("location_end");
-            let start_line_span = self.line_span(start.line).expect("start_line_span");
-            let end_line_span = self.line_span(end.line).expect("end_line_span");
+            let start = location(label.span.start()).expect("location_start");
+            let end = location(label.span.end()).expect("location_end");
+            let start_line_span = line_span(start.line).expect("start_line_span");
+            let end_line_span = line_span(end.line).expect("end_line_span");
 
             let label_style = mark_style.label_style(config);
 
@@ -159,15 +146,15 @@ where
 
                 let prefix_source = {
                     let span = Span::new(start_line_span.start(), label.span.start());
-                    self.source_slice(span, &tab).expect("prefix_source")
+                    source_slice(span, &tab).expect("prefix_source")
                 };
                 let highlighted_source = {
                     let span = label.span;
-                    self.source_slice(span, &tab).expect("highlighted_source")
+                    source_slice(span, &tab).expect("highlighted_source")
                 };
                 let suffix_source = {
                     let span = Span::new(label.span.end(), end_line_span.end());
-                    self.source_slice(span, &tab).expect("suffix_source")
+                    source_slice(span, &tab).expect("suffix_source")
                 };
 
                 // Write line number and border
@@ -208,11 +195,11 @@ where
 
                 let prefix_source = {
                     let span = Span::new(start_line_span.start(), label.span.start());
-                    self.source_slice(span, &tab).expect("prefix_source")
+                    source_slice(span, &tab).expect("prefix_source")
                 };
                 let highlighted_source = {
                     let span = Span::new(label.span.start(), start_line_span.end());
-                    self.source_slice(span, &tab).expect("highlighted_source_1")
+                    source_slice(span, &tab).expect("highlighted_source_1")
                 };
 
                 if prefix_source.trim().is_empty() {
@@ -272,8 +259,8 @@ where
                     .map(|i| LineIndex::from(i as u32))
                 {
                     let highlighted_source = {
-                        let span = self.line_span(line_index).expect("highlighted_span");
-                        self.source_slice(span, &tab).expect("highlighted_source_2")
+                        let span = line_span(line_index).expect("highlighted_span");
+                        source_slice(span, &tab).expect("highlighted_source_2")
                     };
 
                     // Write line number, border, and underline
@@ -296,11 +283,11 @@ where
                 // ```
                 let highlighted_source = {
                     let span = Span::new(end_line_span.start(), label.span.end());
-                    self.source_slice(span, &tab).expect("highlighted_source_3")
+                    source_slice(span, &tab).expect("highlighted_source_3")
                 };
                 let suffix_source = {
                     let span = Span::new(label.span.end(), end_line_span.end());
-                    self.source_slice(span, &tab).expect("suffix_source")
+                    source_slice(span, &tab).expect("suffix_source")
                 };
 
                 // Write line number, border, and underline
