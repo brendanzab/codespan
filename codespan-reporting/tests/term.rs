@@ -22,7 +22,7 @@ mod empty_spans {
             let mut files = Files::new();
 
             let file_id = files.add("hello", "Hello world!\nBye world!".to_owned());
-            let eof = files.source_span(file_id).end();
+            let eof = files.source_span(file_id).end().to_usize();
 
             let diagnostics = vec![
                 Diagnostic::new_note("middle", Label::new(file_id, 6..6, "middle")),

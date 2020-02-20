@@ -1,11 +1,10 @@
 //! Terminal back-end for emitting diagnostics.
 
-use codespan::Files;
 use std::io;
 use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, Files};
 
 mod config;
 mod views;
@@ -15,11 +14,11 @@ pub use termcolor;
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit<Source: AsRef<str>>(
+pub fn emit<F: Files>(
     writer: &mut (impl WriteColor + ?Sized),
     config: &Config,
-    files: &Files<Source>,
-    diagnostic: &Diagnostic,
+    files: &F,
+    diagnostic: &Diagnostic<F::FileId>,
 ) -> io::Result<()> {
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
@@ -98,14 +97,14 @@ mod tests {
 
     #[test]
     fn unsized_emit() {
-        let mut files = Files::new();
+        let mut files = codespan::Files::new();
 
         let id = files.add("test", "");
         emit(
             &mut termcolor::NoColor::new(Vec::<u8>::new()) as &mut dyn WriteColor,
             &Config::default(),
             &files,
-            &Diagnostic::new_bug("", Label::new(id, codespan::Span::default(), "")),
+            &Diagnostic::new_bug("", Label::new(id, 0..0, "")),
         )
         .unwrap();
     }
