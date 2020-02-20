@@ -1,8 +1,6 @@
 ---
-created: "2019-06-11T09:53:33.497565Z"
-creator: insta@0.8.1
-source: codespan-reporting/tests/emit.rs
-expression: result
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_no_color(&config)
 ---
 Data/Nat.fun:7:13: error: unknown builtin: `NATRAL`
 Data/Nat.fun:17:16: warning: unused parameter pattern: `n₂`

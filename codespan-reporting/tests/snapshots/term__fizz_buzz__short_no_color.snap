@@ -1,8 +1,6 @@
 ---
-created: "2019-06-10T05:32:36.759819Z"
-creator: insta@0.8.1
-source: codespan-reporting/src/term/mod.rs
-expression: result
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_no_color(&config)
 ---
 FizzBuzz.fun:8:12: error[E0308]: `case` clauses have incompatible types
 FizzBuzz.fun:15:16: error[E0308]: `case` clauses have incompatible types

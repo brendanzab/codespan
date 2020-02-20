@@ -1,6 +1,4 @@
 ---
-created: "2019-08-28T14:41:01.271832Z"
-creator: insta@0.10.1
 source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
 ---
