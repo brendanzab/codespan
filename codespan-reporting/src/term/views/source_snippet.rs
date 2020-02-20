@@ -64,19 +64,15 @@ where
     }
 
     fn source_locus_spans(&self) -> (Span, Span) {
-        fn merge(span0: Span, span1: Span) -> Span {
-            let start = std::cmp::min(span0.start(), span1.start());
-            let end = std::cmp::max(span0.end(), span1.end());
-            Span::new(start, end)
-        }
-
         let mut source_span = None;
         let mut locus_span = None;
 
         for (label, mark_style) in &self.spans {
-            source_span = Some(source_span.map_or(label.span, |span| merge(span, label.span)));
+            source_span =
+                Some(source_span.map_or(label.span, |span| Span::merge(span, label.span)));
             if let MarkStyle::Primary(_) = mark_style {
-                locus_span = Some(locus_span.map_or(label.span, |span| merge(span, label.span)));
+                locus_span =
+                    Some(locus_span.map_or(label.span, |span| Span::merge(span, label.span)));
             }
         }
 
