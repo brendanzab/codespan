@@ -70,17 +70,15 @@ impl<'a> SourceSnippet<'a> {
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
     ) -> io::Result<()> {
-        // Note: All of the things we need with `files` is done here. Could this
+        // NOTE: All of the things we need with `files` is done here. Could this
         // help us decide on a decent trait for the file provider?
         let file_name = files.name(self.file_id);
         let location = |byte_index| files.location(self.file_id, byte_index);
-        let line_span = |line_index| files.line_span(self.file_id, line_index);
-        let source_slice = |span, tab| {
-            // NOTE: Not sure if we can do this more efficiently? Perhaps a custom
-            // writer might be better?
-            files
-                .source_slice(self.file_id, span)
-                .map(|s| s.replace('\t', tab))
+        let get_line = |line_index| {
+            // NOTE: We could simplify this into a single `get_line` method
+            let span = files.line_span(self.file_id, line_index).ok()?;
+            let source = files.source_slice(self.file_id, span).ok()?;
+            Some((span, source))
         };
 
         let (source_span, locus_span) = self.source_locus_spans();
@@ -91,6 +89,11 @@ impl<'a> SourceSnippet<'a> {
         let gutter_padding = format!("{}", source_end.line.number()).len();
         // Cache the tabs we'll be using to pad the source strings.
         let tab = config.tab_padding();
+        let replace_tabs = |source: &str| {
+            // NOTE: Not sure if we can do this more efficiently?
+            // Perhaps a custom writer might be better?
+            source.replace('\t', &tab)
+        };
 
         // Top left border and locus.
         //
@@ -113,8 +116,8 @@ impl<'a> SourceSnippet<'a> {
         for (i, (label, mark_style)) in self.spans.iter().enumerate() {
             let start = location(label.span.start()).expect("location_start");
             let end = location(label.span.end()).expect("location_end");
-            let start_line_span = line_span(start.line).expect("start_line_span");
-            let end_line_span = line_span(end.line).expect("end_line_span");
+            let (start_line_span, start_line) = get_line(start.line).expect("start_line_span");
+            let (end_line_span, end_line) = get_line(end.line).expect("end_line_span");
 
             let label_style = mark_style.label_style(config);
 
@@ -144,18 +147,11 @@ impl<'a> SourceSnippet<'a> {
                 //   │         ^^ expected `Int` but found `String`
                 // ```
 
-                let prefix_source = {
-                    let span = Span::new(start_line_span.start(), label.span.start());
-                    source_slice(span, &tab).expect("prefix_source")
-                };
-                let highlighted_source = {
-                    let span = label.span;
-                    source_slice(span, &tab).expect("highlighted_source")
-                };
-                let suffix_source = {
-                    let span = Span::new(label.span.end(), end_line_span.end());
-                    source_slice(span, &tab).expect("suffix_source")
-                };
+                let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
+                let highlight_end = (label.span.end() - start_line_span.start()).to_usize();
+                let prefix_source = replace_tabs(&start_line[..highlight_start]);
+                let highlighted_source = replace_tabs(&start_line[highlight_start..highlight_end]);
+                let suffix_source = replace_tabs(&start_line[highlight_end..]);
 
                 // Write line number and border
                 Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
@@ -193,14 +189,9 @@ impl<'a> SourceSnippet<'a> {
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let prefix_source = {
-                    let span = Span::new(start_line_span.start(), label.span.start());
-                    source_slice(span, &tab).expect("prefix_source")
-                };
-                let highlighted_source = {
-                    let span = Span::new(label.span.start(), start_line_span.end());
-                    source_slice(span, &tab).expect("highlighted_source_1")
-                };
+                let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
+                let prefix_source = replace_tabs(&start_line[..highlight_start]);
+                let highlighted_source = replace_tabs(&start_line[highlight_start..]);
 
                 if prefix_source.trim().is_empty() {
                     // Section is prefixed by empty space, so we don't need to take
@@ -255,13 +246,12 @@ impl<'a> SourceSnippet<'a> {
                 // 6 │ │     0 _ => "Fizz"
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
+
                 for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
                     .map(|i| LineIndex::from(i as u32))
                 {
-                    let highlighted_source = {
-                        let span = line_span(line_index).expect("highlighted_span");
-                        source_slice(span, &tab).expect("highlighted_source_2")
-                    };
+                    let (_, highlighted_source) =
+                        get_line(line_index).expect("highlighted_source_2");
 
                     // Write line number, border, and underline
                     Gutter::new(line_index.number(), gutter_padding).emit(writer, config)?;
@@ -281,14 +271,10 @@ impl<'a> SourceSnippet<'a> {
                 // 8 │ │     _ _ => num
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
-                let highlighted_source = {
-                    let span = Span::new(end_line_span.start(), label.span.end());
-                    source_slice(span, &tab).expect("highlighted_source_3")
-                };
-                let suffix_source = {
-                    let span = Span::new(label.span.end(), end_line_span.end());
-                    source_slice(span, &tab).expect("suffix_source")
-                };
+
+                let highlight_end = (label.span.end() - end_line_span.start()).to_usize();
+                let highlighted_source = replace_tabs(&end_line[..highlight_end]);
+                let suffix_source = replace_tabs(&end_line[highlight_end..]);
 
                 // Write line number, border, and underline
                 Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
