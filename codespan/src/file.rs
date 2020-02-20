@@ -96,10 +96,7 @@ impl FileId {
 /// [`Rc<str>`]: std::rc::Rc
 /// [`Arc<str>`]: std::sync::Arc
 #[derive(Clone, Debug)]
-pub struct Files<Source>
-where
-    Source: AsRef<str>,
-{
+pub struct Files<Source> {
     files: Vec<File<Source>>,
 }
 
@@ -282,10 +279,7 @@ where
 /// A file that is stored in the database.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
-struct File<Source>
-where
-    Source: AsRef<str>,
-{
+struct File<Source> {
     /// The name of the file.
     name: OsString,
     /// The source code of the file.

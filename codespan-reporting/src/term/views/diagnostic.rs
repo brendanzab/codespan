@@ -1,5 +1,4 @@
-use codespan::{Files, Location};
-use std::ffi::OsStr;
+use codespan::Files;
 use std::io;
 use termcolor::WriteColor;
 
@@ -9,23 +8,21 @@ use crate::term::Config;
 use super::{Header, Locus, NewLine, SourceSnippet};
 
 /// Output a richly formatted diagnostic, with source code previews.
-pub struct RichDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
-    files: &'a Files<Source>,
+pub struct RichDiagnostic<'a> {
     diagnostic: &'a Diagnostic,
 }
 
-impl<'a, Source> RichDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
-    pub fn new(files: &'a Files<Source>, diagnostic: &'a Diagnostic) -> Self {
-        RichDiagnostic { files, diagnostic }
+impl<'a> RichDiagnostic<'a> {
+    pub fn new(diagnostic: &'a Diagnostic) -> Self {
+        RichDiagnostic { diagnostic }
     }
 
-    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
+    pub fn emit(
+        &self,
+        files: &'a Files<impl AsRef<str>>,
+        writer: &mut (impl WriteColor + ?Sized),
+        config: &Config,
+    ) -> io::Result<()> {
         use std::collections::BTreeMap;
 
         use super::MarkStyle;
@@ -57,11 +54,11 @@ where
         // Emit the snippets, starting with the one that contains the primary label
 
         let labels = label_groups.remove(&primary_file_id).unwrap_or(vec![]);
-        SourceSnippet::new(self.files, primary_file_id, labels, notes).emit(writer, config)?;
+        SourceSnippet::new(primary_file_id, labels, notes).emit(files, writer, config)?;
         NewLine::new().emit(writer, config)?;
 
         for (file_id, labels) in label_groups {
-            SourceSnippet::new(self.files, file_id, labels, &[]).emit(writer, config)?;
+            SourceSnippet::new(file_id, labels, &[]).emit(files, writer, config)?;
             NewLine::new().emit(writer, config)?;
         }
 
@@ -70,37 +67,27 @@ where
 }
 
 /// Output a short diagnostic, with a line number, severity, and message.
-pub struct ShortDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
-    files: &'a Files<Source>,
+pub struct ShortDiagnostic<'a> {
     diagnostic: &'a Diagnostic,
 }
 
-impl<'a, Source> ShortDiagnostic<'a, Source>
-where
-    Source: AsRef<str>,
-{
-    pub fn new(
-        files: &'a Files<Source>,
-        diagnostic: &'a Diagnostic,
-    ) -> ShortDiagnostic<'a, Source> {
-        ShortDiagnostic { files, diagnostic }
+impl<'a> ShortDiagnostic<'a> {
+    pub fn new(diagnostic: &'a Diagnostic) -> ShortDiagnostic<'a> {
+        ShortDiagnostic { diagnostic }
     }
 
-    fn file_name(&self) -> &'a OsStr {
-        self.files.name(self.diagnostic.primary_label.file_id)
-    }
-
-    fn primary_location(&self) -> Result<Location, impl std::error::Error> {
+    pub fn emit(
+        &self,
+        files: &'a Files<impl AsRef<str>>,
+        writer: &mut (impl WriteColor + ?Sized),
+        config: &Config,
+    ) -> io::Result<()> {
         let label = &self.diagnostic.primary_label;
-        self.files.location(label.file_id, label.span.start())
-    }
-
-    pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
-        let location = self.primary_location().expect("location");
-        Locus::new(self.file_name(), location).emit(writer, config)?;
+        let location = files
+            .location(label.file_id, label.span.start())
+            .expect("location");
+        Locus::new(files.name(self.diagnostic.primary_label.file_id), location)
+            .emit(writer, config)?;
         write!(writer, ": ")?;
         Header::new(self.diagnostic).emit(writer, config)?;
 

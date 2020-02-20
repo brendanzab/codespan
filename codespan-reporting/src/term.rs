@@ -24,8 +24,8 @@ pub fn emit<Source: AsRef<str>>(
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
     match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(files, diagnostic).emit(writer, config),
-        DisplayStyle::Short => ShortDiagnostic::new(files, diagnostic).emit(writer, config),
+        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).emit(files, writer, config),
+        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).emit(files, writer, config),
     }
 }
 
