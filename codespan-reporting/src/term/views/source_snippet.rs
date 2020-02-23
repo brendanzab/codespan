@@ -19,6 +19,16 @@ use self::underline::{Underline, UnderlineBottom, UnderlineLeft, UnderlineTop, U
 
 pub use self::underline::MarkStyle;
 
+/// Count the number of digits in `n`.
+fn count_digits(mut n: usize) -> usize {
+    let mut count = 0;
+    while n != 0 {
+        count += 1;
+        n /= 10; // remove last digit
+    }
+    count
+}
+
 /// An underlined snippet of source code.
 ///
 /// ```text
@@ -86,7 +96,7 @@ impl<'a> SourceSnippet<'a> {
         let source_end = location(source_span.end()).expect("source_span_end");
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = format!("{}", source_end.line.number()).len();
+        let gutter_padding = count_digits(source_end.line.number().to_usize());
         // Cache the tabs we'll be using to pad the source strings.
         let tab = config.tab_padding();
         let replace_tabs = |source: &str| {
