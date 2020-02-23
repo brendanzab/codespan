@@ -95,7 +95,7 @@ impl FileId {
 /// [`Cow<'_, str>`]: std::borrow::Cow
 /// [`Rc<str>`]: std::rc::Rc
 /// [`Arc<str>`]: std::sync::Arc
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub struct Files<Source> {
     files: Vec<File<Source>>,
 }
@@ -277,7 +277,7 @@ where
 }
 
 /// A file that is stored in the database.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 struct File<Source> {
     /// The name of the file.

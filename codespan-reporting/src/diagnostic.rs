@@ -52,7 +52,7 @@ impl PartialOrd for Severity {
 }
 
 /// A label describing an underlined region of code associated with a diagnostic.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label {
     /// The file that we are labelling.
@@ -77,7 +77,7 @@ impl Label {
 
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic {
     /// The overall severity of the diagnostic
