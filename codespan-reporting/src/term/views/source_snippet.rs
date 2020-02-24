@@ -19,6 +19,16 @@ use self::underline::{Underline, UnderlineBottom, UnderlineLeft, UnderlineTop, U
 
 pub use self::underline::MarkStyle;
 
+/// Count the number of digits in `n`.
+fn count_digits(mut n: usize) -> usize {
+    let mut count = 0;
+    while n != 0 {
+        count += 1;
+        n /= 10; // remove last digit
+    }
+    count
+}
+
 /// An underlined snippet of source code.
 ///
 /// ```text
@@ -70,6 +80,8 @@ impl<'a> SourceSnippet<'a> {
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
     ) -> io::Result<()> {
+        use std::io::Write;
+
         // NOTE: All of the things we need with `files` is done here. Could this
         // help us decide on a decent trait for the file provider?
         let file_name = files.name(self.file_id);
@@ -86,14 +98,7 @@ impl<'a> SourceSnippet<'a> {
         let source_end = location(source_span.end()).expect("source_span_end");
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = format!("{}", source_end.line.number()).len();
-        // Cache the tabs we'll be using to pad the source strings.
-        let tab = config.tab_padding();
-        let replace_tabs = |source: &str| {
-            // NOTE: Not sure if we can do this more efficiently?
-            // Perhaps a custom writer might be better?
-            source.replace('\t', &tab)
-        };
+        let gutter_padding = count_digits(source_end.line.number().to_usize());
 
         // Top left border and locus.
         //
@@ -149,20 +154,20 @@ impl<'a> SourceSnippet<'a> {
 
                 let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
                 let highlight_end = (label.span.end() - start_line_span.start()).to_usize();
-                let prefix_source = replace_tabs(&start_line[..highlight_start]);
-                let highlighted_source = replace_tabs(&start_line[highlight_start..highlight_end]);
-                let suffix_source = replace_tabs(&start_line[highlight_end..]);
+                let prefix_source = &start_line[..highlight_start];
+                let highlighted_source = &start_line[highlight_start..highlight_end];
+                let suffix_source = &start_line[highlight_end..];
 
                 // Write line number and border
                 Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
 
                 // Write line source
-                write!(writer, " {}", prefix_source)?;
+                write!(config.source(writer), " {}", prefix_source)?;
                 writer.set_color(label_style)?;
-                write!(writer, "{}", highlighted_source)?;
+                write!(config.source(writer), "{}", highlighted_source)?;
                 writer.reset()?;
-                write!(writer, "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), "{}", suffix_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label
@@ -190,8 +195,8 @@ impl<'a> SourceSnippet<'a> {
                 // ```
 
                 let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
-                let prefix_source = replace_tabs(&start_line[..highlight_start]);
-                let highlighted_source = replace_tabs(&start_line[highlight_start..]);
+                let prefix_source = &start_line[..highlight_start];
+                let highlighted_source = &start_line[highlight_start..];
 
                 if prefix_source.trim().is_empty() {
                     // Section is prefixed by empty space, so we don't need to take
@@ -207,9 +212,9 @@ impl<'a> SourceSnippet<'a> {
                     UnderlineTopLeft::new(*mark_style).emit(writer, config)?;
 
                     // Write source line
-                    write!(writer, " {}", prefix_source)?;
+                    write!(config.source(writer), " {}", prefix_source)?;
                     writer.set_color(&label_style)?;
-                    write!(writer, "{}", highlighted_source.trim_end())?;
+                    write!(config.source(writer), "{}", highlighted_source.trim_end())?;
                     writer.reset()?;
                     NewLine::new().emit(writer, config)?;
                 } else {
@@ -226,9 +231,9 @@ impl<'a> SourceSnippet<'a> {
                     BorderLeft::new().emit(writer, config)?;
 
                     // Write source line
-                    write!(writer, "   {}", prefix_source)?;
+                    write!(config.source(writer), "   {}", prefix_source)?;
                     writer.set_color(&label_style)?;
-                    write!(writer, "{}", highlighted_source.trim_end())?;
+                    write!(config.source(writer), "{}", highlighted_source.trim_end())?;
                     writer.reset()?;
                     NewLine::new().emit(writer, config)?;
 
@@ -273,8 +278,8 @@ impl<'a> SourceSnippet<'a> {
                 // ```
 
                 let highlight_end = (label.span.end() - end_line_span.start()).to_usize();
-                let highlighted_source = replace_tabs(&end_line[..highlight_end]);
-                let suffix_source = replace_tabs(&end_line[highlight_end..]);
+                let highlighted_source = &end_line[..highlight_end];
+                let suffix_source = &end_line[highlight_end..];
 
                 // Write line number, border, and underline
                 Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
@@ -283,9 +288,9 @@ impl<'a> SourceSnippet<'a> {
 
                 // Write line source
                 writer.set_color(label_style)?;
-                write!(writer, " {}", highlighted_source)?;
+                write!(config.source(writer), " {}", highlighted_source)?;
                 writer.reset()?;
-                write!(writer, "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), "{}", suffix_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label

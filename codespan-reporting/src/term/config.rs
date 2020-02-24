@@ -1,3 +1,4 @@
+use std::io;
 use termcolor::{Color, ColorSpec};
 
 use crate::diagnostic::Severity;
@@ -41,9 +42,45 @@ impl Config {
             .sum()
     }
 
-    /// Get the amount of spaces we should use for printing tabs.
-    pub fn tab_padding(&self) -> String {
-        (0..self.tab_width).map(|_| ' ').collect()
+    /// Construct a source writer using the current config.
+    pub fn source<'a, W: ?Sized>(&self, writer: &'a mut W) -> SourceWriter<&'a mut W> {
+        SourceWriter {
+            writer,
+            tab_width: self.tab_width,
+        }
+    }
+}
+
+/// Writer that replaces tab characters with the configured number of spaces.
+pub struct SourceWriter<W> {
+    writer: W,
+    tab_width: usize,
+}
+
+impl<W: io::Write> io::Write for SourceWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let mut last_term = 0usize;
+        for (i, ch) in buf.iter().enumerate() {
+            match ch {
+                b'\t' => {
+                    self.writer.write(&buf[last_term..i])?;
+                    last_term = i + 1;
+                    write!(
+                        self.writer,
+                        "{space: >width$}",
+                        space = "",
+                        width = self.tab_width,
+                    )?
+                },
+                _ => {},
+            }
+        }
+        self.writer.write(&buf[last_term..])?;
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
     }
 }
 

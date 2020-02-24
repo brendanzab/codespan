@@ -61,6 +61,13 @@ impl fmt::Display for LineIndex {
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct LineNumber(RawIndex);
 
+impl LineNumber {
+    /// Convert the number into a `usize`
+    pub const fn to_usize(self) -> usize {
+        self.0 as usize
+    }
+}
+
 impl fmt::Debug for LineNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "LineNumber(")?;
