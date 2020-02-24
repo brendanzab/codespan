@@ -1,6 +1,6 @@
 [package]
 name = "codespan-lsp"
-version = "0.7.0" # CODESPAN
+version = "0.8.0" # CODESPAN
 license = "Apache-2.0"
 authors = ["Markus Westerlind <marwes91@gmail.com>"]
 description = "Conversions between codespan types and Language Server Protocol types"
@@ -10,7 +10,7 @@ documentation = "https://docs.rs/codespan-lsp"
 edition = "2018"
 
 [dependencies]
-codespan = { version = "0.7.0", path = "../codespan" } # CODESPAN
-codespan-reporting = { version = "0.7.0", path = "../codespan-reporting/" } # CODESPAN
+codespan = { version = "0.8.0", path = "../codespan" } # CODESPAN
+codespan-reporting = { version = "0.8.0", path = "../codespan-reporting/" } # CODESPAN
 lsp-types = "0.70"
 url = "2"
