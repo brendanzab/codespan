@@ -4,12 +4,10 @@ use codespan::{
     ByteIndex, ByteOffset, ColumnIndex, FileId, Files, LineIndex, LineIndexOutOfBoundsError,
     LocationError, RawIndex, RawOffset, Span, SpanOutOfBoundsError,
 };
-use codespan_reporting::diagnostic::{Diagnostic, Severity};
 use lsp_types as lsp;
-use std::{error, fmt};
 use std::ffi::OsString;
 use std::path::PathBuf;
-use url::Url;
+use std::{error, fmt};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -165,89 +163,6 @@ pub fn range_to_byte_span<Source: AsRef<str>>(
         position_to_byte_index(files, file_id, &range.start)?,
         position_to_byte_index(files, file_id, &range.end)?,
     ))
-}
-
-pub fn make_lsp_severity(severity: Severity) -> lsp::DiagnosticSeverity {
-    match severity {
-        Severity::Error | Severity::Bug => lsp::DiagnosticSeverity::Error,
-        Severity::Warning => lsp::DiagnosticSeverity::Warning,
-        Severity::Note => lsp::DiagnosticSeverity::Information,
-        Severity::Help => lsp::DiagnosticSeverity::Hint,
-    }
-}
-
-/// Translates a `codespan_reporting::Diagnostic` to a
-/// `languageserver_types::Diagnostic`.
-///
-/// Since the language client requires `Url`s to locate the diagnostics,
-/// `correlate_file_url` is necessary to resolve codespan `FileName`s
-///
-/// `code` and `file` are left empty by this function
-pub fn make_lsp_diagnostic<Source: AsRef<str>>(
-    files: &Files<Source>,
-    source: impl Into<Option<String>>,
-    diagnostic: Diagnostic,
-    mut correlate_file_url: impl FnMut(FileId) -> Result<Url, ()>,
-) -> Result<lsp::Diagnostic, Error> {
-    // We need a position for the primary error so take the span from the first primary label
-    let primary_file_id = diagnostic.primary_label.file_id;
-    let primary_span = diagnostic.primary_label.span;
-    let primary_label_range = byte_span_to_range(files, primary_file_id, primary_span)?;
-
-    // Collect additional context for primary message
-    let primary_message = {
-        let mut message = diagnostic.message;
-
-        if !diagnostic.notes.is_empty() {
-            // Spacer between message and notes
-            message.push_str("\n\n");
-            // Insert notes as a bulleted list
-            for note in diagnostic.notes {
-                for (i, line) in note.lines().enumerate() {
-                    message.push_str("  ");
-                    match i {
-                        0 => message.push_str("•"),
-                        _ => message.push_str(" "),
-                    }
-                    message.push_str(" ");
-                    message.push_str(line.trim_end());
-                    message.push_str("\n");
-                }
-            }
-        }
-
-        message
-    };
-
-    let related_information = diagnostic
-        .secondary_labels
-        .into_iter()
-        .map(|label| {
-            let file_id = label.file_id;
-            let range = byte_span_to_range(files, file_id, label.span)?;
-            let uri = correlate_file_url(file_id)
-                .map_err(|()| Error::UnableToCorrelateFilename(files.name(file_id).to_owned()))?;
-
-            Ok(lsp::DiagnosticRelatedInformation {
-                location: lsp::Location { uri, range },
-                message: label.message,
-            })
-        })
-        .collect::<Result<Vec<_>, Error>>()?;
-
-    Ok(lsp::Diagnostic {
-        range: primary_label_range,
-        code: diagnostic.code.map(lsp::NumberOrString::String),
-        source: source.into(),
-        severity: Some(make_lsp_severity(diagnostic.severity)),
-        message: primary_message,
-        related_information: if related_information.is_empty() {
-            None
-        } else {
-            Some(related_information)
-        },
-        tags: None,
-    })
 }
 
 #[cfg(test)]

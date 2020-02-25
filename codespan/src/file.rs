@@ -196,6 +196,24 @@ where
         self.get(file_id).line_span(line_index.into())
     }
 
+    /// Get the line index at the given byte in the source file.
+    ///
+    /// ```rust
+    /// use codespan::{Files, LineIndex};
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
+    ///
+    /// assert_eq!(files.line_index(file_id, 0), LineIndex::from(0));
+    /// assert_eq!(files.line_index(file_id, 7), LineIndex::from(1));
+    /// assert_eq!(files.line_index(file_id, 8), LineIndex::from(1));
+    /// assert_eq!(files.line_index(file_id, 9), LineIndex::from(2));
+    /// assert_eq!(files.line_index(file_id, 100), LineIndex::from(3));
+    /// ```
+    pub fn line_index(&self, file_id: FileId, byte_index: impl Into<ByteIndex>) -> LineIndex {
+        self.get(file_id).line_index(byte_index.into())
+    }
+
     /// Get the location at the given byte index in the source file.
     ///
     /// ```rust
@@ -344,41 +362,40 @@ where
         Ok(Span::new(line_start, next_line_start))
     }
 
-    fn location(&self, byte_index: ByteIndex) -> Result<Location, LocationError> {
-        use unicode_segmentation::UnicodeSegmentation;
-
+    fn line_index(&self, byte_index: ByteIndex) -> LineIndex {
         match self.line_starts.binary_search(&byte_index) {
             // Found the start of a line
-            Ok(line) => Ok(Location::new(line as u32, 0)),
-            // Found something in the middle of a line
-            Err(next_line) => {
-                let line_index = LineIndex::from(next_line as u32 - 1);
-                let line_start_index =
-                    self.line_start(line_index)
-                        .map_err(|_| LocationError::OutOfBounds {
-                            given: byte_index,
-                            span: self.source_span(),
-                        })?;
-                let line_src = self
-                    .source
-                    .as_ref()
-                    .get(line_start_index.to_usize()..byte_index.to_usize())
-                    .ok_or_else(|| {
-                        let given = byte_index;
-                        if given >= self.source_span().end() {
-                            let span = self.source_span();
-                            LocationError::OutOfBounds { given, span }
-                        } else {
-                            LocationError::InvalidCharBoundary { given }
-                        }
-                    })?;
-
-                Ok(Location {
-                    line: line_index,
-                    column: ColumnIndex::from(line_src.graphemes(true).count() as u32),
-                })
-            },
+            Ok(line) => LineIndex::from(line as u32),
+            Err(next_line) => LineIndex::from(next_line as u32 - 1),
         }
+    }
+
+    fn location(&self, byte_index: ByteIndex) -> Result<Location, LocationError> {
+        let line_index = self.line_index(byte_index);
+        let line_start_index =
+            self.line_start(line_index)
+                .map_err(|_| LocationError::OutOfBounds {
+                    given: byte_index,
+                    span: self.source_span(),
+                })?;
+        let line_src = self
+            .source
+            .as_ref()
+            .get(line_start_index.to_usize()..byte_index.to_usize())
+            .ok_or_else(|| {
+                let given = byte_index;
+                if given >= self.source_span().end() {
+                    let span = self.source_span();
+                    LocationError::OutOfBounds { given, span }
+                } else {
+                    LocationError::InvalidCharBoundary { given }
+                }
+            })?;
+
+        Ok(Location {
+            line: line_index,
+            column: ColumnIndex::from(line_src.chars().count() as u32),
+        })
     }
 
     fn source(&self) -> &Source {

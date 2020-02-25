@@ -9,7 +9,7 @@ use self::color_buffer::ColorBuffer;
 
 pub struct TestData {
     pub files: Files<String>,
-    pub diagnostics: Vec<Diagnostic>,
+    pub diagnostics: Vec<Diagnostic<codespan::FileId>>,
 }
 
 impl TestData {

@@ -1,8 +1,7 @@
-use codespan::Location;
-use std::ffi::OsStr;
 use std::io;
 use termcolor::WriteColor;
 
+use crate::diagnostic::Location;
 use crate::term::Config;
 
 /// The 'location focus' of a source code snippet.
@@ -13,17 +12,17 @@ use crate::term::Config;
 /// ```text
 /// test:2:9
 /// ```
-pub struct Locus<'a> {
-    file_name: &'a OsStr,
+pub struct Locus<Origin> {
+    origin: Origin,
     location: Location,
 }
 
-impl<'a> Locus<'a> {
-    pub fn new(file_name: &'a OsStr, location: Location) -> Locus<'a> {
-        Locus {
-            file_name,
-            location,
-        }
+impl<Origin> Locus<Origin>
+where
+    Origin: std::fmt::Display,
+{
+    pub fn new(origin: Origin, location: Location) -> Locus<Origin> {
+        Locus { origin, location }
     }
 
     pub fn emit(
@@ -31,13 +30,12 @@ impl<'a> Locus<'a> {
         writer: &mut (impl WriteColor + ?Sized),
         _config: &Config,
     ) -> io::Result<()> {
-        use std::path::PathBuf;
         write!(
             writer,
-            "{file}:{line}:{column}",
-            file = PathBuf::from(self.file_name).display(),
-            line = self.location.line.number(),
-            column = self.location.column.number(),
+            "{origin}:{line}:{column}",
+            origin = self.origin,
+            line = self.location.line + 1,
+            column = self.location.column + 1,
         )
     }
 }
