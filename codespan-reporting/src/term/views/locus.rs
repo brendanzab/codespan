@@ -32,10 +32,10 @@ where
     ) -> io::Result<()> {
         write!(
             writer,
-            "{origin}:{line}:{column}",
+            "{origin}:{line_number}:{column_number}",
             origin = self.origin,
-            line = self.location.line + 1,
-            column = self.location.column + 1,
+            line_number = self.location.line_number,
+            column_number = self.location.column_number,
         )
     }
 }

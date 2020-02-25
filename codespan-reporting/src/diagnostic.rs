@@ -182,16 +182,18 @@ impl<FileId> Diagnostic<FileId> {
 /// A location in a source file.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Location {
-    /// The line index in the source file.
-    pub line: usize,
-    /// The column index in the source file.
-    pub column: usize,
+    /// The line number in the source file.
+    pub line_number: usize,
+    /// The column number in the source file.
+    pub column_number: usize,
 }
 
 /// A line within a source file.
 pub struct Line<Source> {
     /// The starting byte index of the line.
     pub start: usize,
+    /// The line number.
+    pub number: usize,
     /// The source of the line.
     pub source: Source,
 }
@@ -208,6 +210,10 @@ where
                 Some(source.chars().count())
             },
         }
+    }
+
+    pub fn column_number(&self, byte_index: usize) -> Option<usize> {
+        Some(self.column_index(byte_index)? + 1)
     }
 }
 
@@ -229,11 +235,11 @@ pub trait Files {
     /// The location of the given byte index.
     fn location(&self, id: Self::FileId, byte_index: usize) -> Option<Location> {
         let line_index = self.line_index(id, byte_index)?;
-        let column_index = self.line(id, line_index)?.column_index(byte_index)?;
+        let line = self.line(id, line_index)?;
 
         Some(Location {
-            line: line_index,
-            column: column_index,
+            line_number: line.number,
+            column_number: line.column_number(byte_index)?,
         })
     }
 }
@@ -252,7 +258,7 @@ where
         Some(PathBuf::from(self.name(id)).display().to_string())
     }
 
-    fn line_index(&self, id: Self::FileId, byte_index: usize) -> Option<usize> {
+    fn line_index(&self, id: codespan::FileId, byte_index: usize) -> Option<usize> {
         Some(self.line_index(id, byte_index as u32).to_usize())
     }
 
@@ -262,6 +268,7 @@ where
 
         Some(Line {
             start: span.start().to_usize(),
+            number: line_index + 1,
             source: source.to_owned(),
         })
     }
