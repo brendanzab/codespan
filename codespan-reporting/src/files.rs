@@ -92,7 +92,7 @@ where
 /// This is to workaround the lack of higher kinded lifetime parameters.
 /// This can be ignored if this is not needed, however.
 pub trait Files<'a> {
-    type FileId: 'a + Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash;
+    type FileId: 'a + Copy + Ord;
     type Origin: 'a + std::fmt::Display;
     type LineSource: 'a + AsRef<str>;
 

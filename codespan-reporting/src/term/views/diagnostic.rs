@@ -14,7 +14,7 @@ pub struct RichDiagnostic<'a, FileId> {
 
 impl<'a, FileId> RichDiagnostic<'a, FileId>
 where
-    FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash,
+    FileId: Copy + Ord,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> RichDiagnostic<'a, FileId> {
         RichDiagnostic { diagnostic }
@@ -79,7 +79,7 @@ pub struct ShortDiagnostic<'a, FileId> {
 
 impl<'a, FileId> ShortDiagnostic<'a, FileId>
 where
-    FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash,
+    FileId: Copy + Ord,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> ShortDiagnostic<'a, FileId> {
         ShortDiagnostic { diagnostic }
