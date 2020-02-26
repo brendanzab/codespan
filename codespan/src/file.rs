@@ -294,6 +294,7 @@ where
     }
 }
 
+#[cfg(feature = "reporting")]
 impl<Source> codespan_reporting::Files for Files<Source>
 where
     Source: AsRef<str>,
