@@ -1,8 +1,8 @@
 use std::io;
 use termcolor::WriteColor;
 
-use crate::diagnostic::Location;
 use crate::term::Config;
+use crate::Location;
 
 /// The 'location focus' of a source code snippet.
 ///

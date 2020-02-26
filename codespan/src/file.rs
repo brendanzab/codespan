@@ -294,6 +294,36 @@ where
     }
 }
 
+impl<Source> codespan_reporting::Files for Files<Source>
+where
+    Source: AsRef<str>,
+{
+    type FileId = FileId;
+    type Origin = String;
+    type LineSource = String;
+
+    fn origin(&self, id: FileId) -> Option<String> {
+        use std::path::PathBuf;
+
+        Some(PathBuf::from(self.name(id)).display().to_string())
+    }
+
+    fn line_index(&self, id: FileId, byte_index: usize) -> Option<usize> {
+        Some(self.line_index(id, byte_index as u32).to_usize())
+    }
+
+    fn line(&self, id: FileId, line_index: usize) -> Option<codespan_reporting::Line<String>> {
+        let span = self.line_span(id, line_index as u32).ok()?;
+        let source = self.source_slice(id, span).ok()?;
+
+        Some(codespan_reporting::Line {
+            start: span.start().to_usize(),
+            number: line_index + 1,
+            source: source.to_owned(),
+        })
+    }
+}
+
 /// A file that is stored in the database.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]

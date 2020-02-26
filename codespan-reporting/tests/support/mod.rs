@@ -1,18 +1,18 @@
-use codespan::Files;
 use codespan_reporting::diagnostic::Diagnostic;
 use codespan_reporting::term::{emit, Config};
+use codespan_reporting::Files;
 use termcolor::{Buffer, WriteColor};
 
 mod color_buffer;
 
 use self::color_buffer::ColorBuffer;
 
-pub struct TestData {
-    pub files: Files<String>,
-    pub diagnostics: Vec<Diagnostic<codespan::FileId>>,
+pub struct TestData<F: Files> {
+    pub files: F,
+    pub diagnostics: Vec<Diagnostic<F::FileId>>,
 }
 
-impl TestData {
+impl<F: Files> TestData<F> {
     fn emit<W: WriteColor>(&self, mut writer: W, config: &Config) -> W {
         for diagnostic in &self.diagnostics {
             emit(&mut writer, config, &self.files, &diagnostic).unwrap();

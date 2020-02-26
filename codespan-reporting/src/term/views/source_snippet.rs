@@ -2,8 +2,9 @@ use std::io;
 use std::ops::Range;
 use termcolor::WriteColor;
 
-use crate::diagnostic::{Files, Label};
+use crate::diagnostic::Label;
 use crate::term::Config;
+use crate::Files;
 
 use super::{Locus, NewLine};
 

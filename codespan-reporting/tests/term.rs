@@ -1,6 +1,6 @@
-use codespan::Files;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::term::{termcolor::Color, Config, DisplayStyle, Styles};
+use codespan_reporting::{SimpleFile, SimpleFiles};
 
 mod support;
 
@@ -18,16 +18,15 @@ mod empty_spans {
     use super::*;
 
     lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData = {
-            let mut files = Files::new();
-
-            let file_id = files.add("hello", "Hello world!\nBye world!".to_owned());
-            let eof = files.source_span(file_id).end().to_usize();
+        static ref TEST_DATA: TestData<SimpleFile<&'static str, &'static str>> = {
+            let source = "Hello world!\nBye world!";
+            let files = SimpleFile::new("hello", source);
+            let eof = source.len();
 
             let diagnostics = vec![
-                Diagnostic::new_note("middle", Label::new(file_id, 6..6, "middle")),
-                Diagnostic::new_note("end of line", Label::new(file_id, 12..12, "end of line")),
-                Diagnostic::new_note("end of file", Label::new(file_id, eof..eof, "end of file")),
+                Diagnostic::new_note("middle", Label::new((), 6..6, "middle")),
+                Diagnostic::new_note("end of line", Label::new((), 12..12, "end of line")),
+                Diagnostic::new_note("end of file", Label::new((), eof..eof, "end of file")),
             ];
 
             TestData { files, diagnostics }
@@ -59,8 +58,8 @@ mod multifile {
     use super::*;
 
     lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData = {
-            let mut files = Files::new();
+        static ref TEST_DATA: TestData<SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
 
             let file_id1 = files.add(
                 "Data/Nat.fun",
@@ -177,8 +176,8 @@ mod fizz_buzz {
     use super::*;
 
     lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData = {
-            let mut files = Files::new();
+        static ref TEST_DATA: TestData<SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
 
             let file_id = files.add(
                 "FizzBuzz.fun",
@@ -289,8 +288,8 @@ mod tabbed {
     use super::*;
 
     lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData = {
-            let mut files = Files::new();
+        static ref TEST_DATA: TestData<SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
 
             let file_id = files.add(
                 "tabbed",

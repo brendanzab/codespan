@@ -2,7 +2,6 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::ops::Range;
 
 /// A severity level for diagnostic messages.
@@ -46,7 +45,7 @@ impl Severity {
 }
 
 impl PartialOrd for Severity {
-    fn partial_cmp(&self, other: &Severity) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Severity) -> Option<std::cmp::Ordering> {
         u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
     }
 }
@@ -176,100 +175,5 @@ impl<FileId> Diagnostic<FileId> {
     ) -> Diagnostic<FileId> {
         self.secondary_labels.extend(labels);
         self
-    }
-}
-
-/// A location in a source file.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Location {
-    /// The line number in the source file.
-    pub line_number: usize,
-    /// The column number in the source file.
-    pub column_number: usize,
-}
-
-/// A line within a source file.
-pub struct Line<Source> {
-    /// The starting byte index of the line.
-    pub start: usize,
-    /// The line number.
-    pub number: usize,
-    /// The source of the line.
-    pub source: Source,
-}
-
-impl<Source> Line<Source>
-where
-    Source: AsRef<str>,
-{
-    pub fn column_index(&self, byte_index: usize) -> Option<usize> {
-        match byte_index.checked_sub(self.start) {
-            None => Some(0),
-            Some(relative_index) => {
-                let source = self.source.as_ref().get(..relative_index)?;
-                Some(source.chars().count())
-            },
-        }
-    }
-
-    pub fn column_number(&self, byte_index: usize) -> Option<usize> {
-        Some(self.column_index(byte_index)? + 1)
-    }
-}
-
-/// Files that can be used for pretty printing.
-pub trait Files {
-    type FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash;
-    type Origin: std::fmt::Display;
-    type LineSource: AsRef<str>;
-
-    /// The origin of a file.
-    fn origin(&self, id: Self::FileId) -> Option<Self::Origin>;
-
-    /// The line at the given index.
-    fn line(&self, id: Self::FileId, line_index: usize) -> Option<Line<Self::LineSource>>;
-
-    /// The index of the line at the given byte index.
-    fn line_index(&self, id: Self::FileId, byte_index: usize) -> Option<usize>;
-
-    /// The location of the given byte index.
-    fn location(&self, id: Self::FileId, byte_index: usize) -> Option<Location> {
-        let line_index = self.line_index(id, byte_index)?;
-        let line = self.line(id, line_index)?;
-
-        Some(Location {
-            line_number: line.number,
-            column_number: line.column_number(byte_index)?,
-        })
-    }
-}
-
-impl<Source> Files for codespan::Files<Source>
-where
-    Source: AsRef<str>,
-{
-    type FileId = codespan::FileId;
-    type Origin = String;
-    type LineSource = String;
-
-    fn origin(&self, id: codespan::FileId) -> Option<String> {
-        use std::path::PathBuf;
-
-        Some(PathBuf::from(self.name(id)).display().to_string())
-    }
-
-    fn line_index(&self, id: codespan::FileId, byte_index: usize) -> Option<usize> {
-        Some(self.line_index(id, byte_index as u32).to_usize())
-    }
-
-    fn line(&self, id: codespan::FileId, line_index: usize) -> Option<Line<String>> {
-        let span = self.line_span(id, line_index as u32).ok()?;
-        let source = self.source_slice(id, span).ok()?;
-
-        Some(Line {
-            start: span.start().to_usize(),
-            number: line_index + 1,
-            source: source.to_owned(),
-        })
     }
 }

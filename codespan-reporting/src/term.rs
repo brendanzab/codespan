@@ -4,7 +4,8 @@ use std::io;
 use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
-use crate::diagnostic::{Diagnostic, Files};
+use crate::diagnostic::Diagnostic;
+use crate::Files;
 
 mod config;
 mod views;
@@ -94,10 +95,11 @@ mod tests {
     use super::*;
 
     use crate::diagnostic::Label;
+    use crate::SimpleFiles;
 
     #[test]
     fn unsized_emit() {
-        let mut files = codespan::Files::new();
+        let mut files = SimpleFiles::new();
 
         let id = files.add("test", "");
         emit(
