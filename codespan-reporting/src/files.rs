@@ -64,6 +64,25 @@ where
     }
 
     /// The 1-indexed column number at the given byte index.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use codespan_reporting::files::Line;
+    ///
+    /// let line = Line {
+    ///     start: 2,
+    ///     number: 2,
+    ///     source: "🗻∈🌏",
+    /// };
+    ///
+    /// assert_eq!(line.column_number(0), 1);
+    /// assert_eq!(line.column_number(line.start + 0), 1);
+    /// assert_eq!(line.column_number(line.start + 1), 1);
+    /// assert_eq!(line.column_number(line.start + 4), 2);
+    /// assert_eq!(line.column_number(line.start + 8), 3);
+    /// assert_eq!(line.column_number(line.start + line.source.len()), 4);
+    /// ```
     pub fn column_number(&self, byte_index: usize) -> usize {
         self.column_index(byte_index) + 1
     }
