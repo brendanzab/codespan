@@ -5,21 +5,21 @@ use crate::term::Config;
 
 /// The left-hand gutter of a source line.
 pub struct Gutter {
-    line_index: Option<usize>,
+    line_number: Option<usize>,
     gutter_padding: usize,
 }
 
 impl Gutter {
-    pub fn new(line_index: impl Into<Option<usize>>, gutter_padding: usize) -> Gutter {
+    pub fn new(line_number: impl Into<Option<usize>>, gutter_padding: usize) -> Gutter {
         Gutter {
-            line_index: line_index.into(),
+            line_number: line_number.into(),
             gutter_padding,
         }
     }
 
     pub fn emit(&self, writer: &mut (impl WriteColor + ?Sized), config: &Config) -> io::Result<()> {
         write!(writer, " ")?;
-        match self.line_index {
+        match self.line_number {
             None => {
                 write!(
                     writer,
@@ -28,12 +28,12 @@ impl Gutter {
                     width = self.gutter_padding,
                 )?;
             },
-            Some(line_index) => {
+            Some(line_number) => {
                 writer.set_color(&config.styles.line_number)?;
                 write!(
                     writer,
-                    "{line: >width$}",
-                    line = line_index + 1,
+                    "{line_number: >width$}",
+                    line_number = line_number,
                     width = self.gutter_padding,
                 )?;
                 writer.reset()?;

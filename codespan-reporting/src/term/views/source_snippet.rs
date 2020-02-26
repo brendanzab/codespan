@@ -96,14 +96,17 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
 
         let origin = files.origin(self.file_id).expect("origin");
         let location = |byte_index| files.location(self.file_id, byte_index);
+        let line_index = |byte_index| files.line_index(self.file_id, byte_index);
         let line = |line_index| files.line(self.file_id, line_index);
 
         let (source_range, locus_range) = self.source_locus_ranges();
-        let locus_start = location(locus_range.start).expect("locus_range_start");
-        let source_end = location(source_range.end).expect("source_range_end");
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = count_digits(source_end.line + 1);
+        let gutter_padding = {
+            let line_index = line_index(source_range.end).expect("source_end_line_index");
+            let line = line(line_index).expect("source_end_line_number");
+            count_digits(line.number)
+        };
 
         // Top left border and locus.
         //
@@ -116,7 +119,8 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        Locus::new(origin, locus_start).emit(writer, config)?;
+        let locus_location = location(locus_range.start).expect("locus_location");
+        Locus::new(origin, locus_location).emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;
@@ -124,10 +128,10 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
 
         // TODO: Better grouping
         for (i, (label, mark_style)) in self.ranges.iter().enumerate() {
-            let start = location(label.range.start).expect("location_start");
-            let end = location(label.range.end).expect("location_end");
-            let start_line = line(start.line).expect("start_line");
-            let end_line = line(end.line).expect("end_line");
+            let start_line_index = line_index(label.range.start).expect("start_line_index");
+            let end_line_index = line_index(label.range.end).expect("end_line_index");
+            let start_line = line(start_line_index).expect("start_line");
+            let end_line = line(end_line_index).expect("end_line");
 
             let label_style = mark_style.label_style(config);
 
@@ -149,7 +153,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
             NewLine::new().emit(writer, config)?;
 
             // Write underlined source section
-            if start.line == end.line {
+            if start_line_index == end_line_index {
                 // Single line
                 //
                 // ```text
@@ -165,7 +169,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 let suffix_source = &start_line.source.as_ref()[highlight_end..];
 
                 // Write line number and border
-                Gutter::new(start.line, gutter_padding).emit(writer, config)?;
+                Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
 
                 // Write line source
@@ -213,7 +217,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                     // ```
 
                     // Write line number, border, and underline
-                    Gutter::new(start.line, gutter_padding).emit(writer, config)?;
+                    Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
                     UnderlineTopLeft::new(*mark_style).emit(writer, config)?;
 
@@ -233,7 +237,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                     // ```
 
                     // Write line number and border
-                    Gutter::new(start.line, gutter_padding).emit(writer, config)?;
+                    Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
 
                     // Write source line
@@ -258,11 +262,11 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
 
-                for line_index in (start.line + 1)..end.line {
-                    let highlighted_line = line(line_index).expect("highlighted_source_2");
+                for line_index in (start_line_index + 1)..end_line_index {
+                    let highlighted_line = line(line_index).expect("highlighted_line");
 
                     // Write line number, border, and underline
-                    Gutter::new(line_index, gutter_padding).emit(writer, config)?;
+                    Gutter::new(highlighted_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
                     UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
@@ -285,7 +289,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 let suffix_source = &end_line.source.as_ref()[highlight_end..];
 
                 // Write line number, border, and underline
-                Gutter::new(end.line, gutter_padding).emit(writer, config)?;
+                Gutter::new(end_line.number, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
                 UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
