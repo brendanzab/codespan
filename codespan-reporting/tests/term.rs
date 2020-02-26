@@ -19,9 +19,8 @@ mod empty_spans {
 
     lazy_static::lazy_static! {
         static ref TEST_DATA: TestData<SimpleFile<&'static str, &'static str>> = {
-            let source = "Hello world!\nBye world!";
-            let files = SimpleFile::new("hello", source);
-            let eof = source.len();
+            let file = SimpleFile::new("hello", "Hello world!\nBye world!");
+            let eof = file.source().len();
 
             let diagnostics = vec![
                 Diagnostic::new_note("middle", Label::new((), 6..6, "middle")),
@@ -29,7 +28,7 @@ mod empty_spans {
                 Diagnostic::new_note("end of file", Label::new((), eof..eof, "end of file")),
             ];
 
-            TestData { files, diagnostics }
+            TestData { files: file, diagnostics }
         };
     }
 

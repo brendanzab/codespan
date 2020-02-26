@@ -134,6 +134,16 @@ where
         }
     }
 
+    /// Return the origin of the file.
+    pub fn origin(&self) -> &Origin {
+        &self.origin
+    }
+
+    /// Return the source of the file.
+    pub fn source(&self) -> &Source {
+        &self.source
+    }
+
     fn line_start(&self, line_index: usize) -> Option<usize> {
         use std::cmp::Ordering;
 
@@ -209,6 +219,11 @@ where
         self.files.push(SimpleFile::new(origin, source));
         file_id
     }
+
+    /// Get the file corresponding to the given id.
+    pub fn get(&self, file_id: usize) -> Option<&SimpleFile<Origin, Source>> {
+        self.files.get(file_id)
+    }
 }
 
 impl<Origin, Source> Files for SimpleFiles<Origin, Source>
@@ -221,15 +236,15 @@ where
     type LineSource = String;
 
     fn origin(&self, file_id: usize) -> Option<Origin> {
-        self.files.get(file_id)?.origin(())
+        Some(self.get(file_id)?.origin().clone())
     }
 
     fn line_index(&self, file_id: usize, byte_index: usize) -> Option<usize> {
-        self.files.get(file_id)?.line_index((), byte_index)
+        self.get(file_id)?.line_index((), byte_index)
     }
 
     fn line(&self, file_id: usize, line_index: usize) -> Option<Line<String>> {
-        self.files.get(file_id)?.line((), line_index)
+        self.get(file_id)?.line((), line_index)
     }
 }
 
