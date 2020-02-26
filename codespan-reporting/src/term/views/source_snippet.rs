@@ -133,7 +133,8 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
             let start_line = line(start_line_index).expect("start_line");
             let end_line = line(end_line_index).expect("end_line");
 
-            let label_style = mark_style.label_style(config);
+            let start_source = start_line.source.as_ref();
+            let end_source = end_line.source.as_ref();
 
             // Code snippet
             //
@@ -161,35 +162,24 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 //   │         ^^ expected `Int` but found `String`
                 // ```
 
-                let highlight_start = label.range.start - start_line.start;
-                let highlight_end = label.range.end - start_line.start;
-                let prefix_source = &start_line.source.as_ref()[..highlight_start];
-                let highlighted_source =
-                    &start_line.source.as_ref()[highlight_start..highlight_end];
-                let suffix_source = &start_line.source.as_ref()[highlight_end..];
+                let mark_start = label.range.start - start_line.start;
+                let mark_end = label.range.end - start_line.start;
+                let prefix_source = &start_source[..mark_start];
+                let marked_source = &start_source[mark_start..mark_end];
 
                 // Write line number and border
                 Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
 
                 // Write line source
-                write!(config.source(writer), " {}", prefix_source)?;
-                writer.set_color(label_style)?;
-                write!(config.source(writer), "{}", highlighted_source)?;
-                writer.reset()?;
-                write!(config.source(writer), "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), " {}", start_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label
                 Gutter::new(None, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-                Underline::new(
-                    *mark_style,
-                    &prefix_source,
-                    &highlighted_source,
-                    &label.message,
-                )
-                .emit(writer, config)?;
+                Underline::new(*mark_style, &prefix_source, &marked_source, &label.message)
+                    .emit(writer, config)?;
                 NewLine::new().emit(writer, config)?;
             } else {
                 // Multiple lines
@@ -204,9 +194,8 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let highlight_start = label.range.start - start_line.start;
-                let prefix_source = &start_line.source.as_ref()[..highlight_start];
-                let highlighted_source = &start_line.source.as_ref()[highlight_start..];
+                let mark_start = label.range.start - start_line.start;
+                let prefix_source = &start_source[..mark_start];
 
                 if prefix_source.trim().is_empty() {
                     // Section is prefixed by empty space, so we don't need to take
@@ -222,10 +211,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                     UnderlineTopLeft::new(*mark_style).emit(writer, config)?;
 
                     // Write source line
-                    write!(config.source(writer), " {}", prefix_source)?;
-                    writer.set_color(&label_style)?;
-                    write!(config.source(writer), "{}", highlighted_source.trim_end())?;
-                    writer.reset()?;
+                    write!(config.source(writer), " {}", start_source.trim_end())?;
                     NewLine::new().emit(writer, config)?;
                 } else {
                     // There's source code in the prefix, so run an underline
@@ -241,10 +227,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                     BorderLeft::new().emit(writer, config)?;
 
                     // Write source line
-                    write!(config.source(writer), "   {}", prefix_source)?;
-                    writer.set_color(&label_style)?;
-                    write!(config.source(writer), "{}", highlighted_source.trim_end())?;
-                    writer.reset()?;
+                    write!(config.source(writer), "   {}", start_source.trim_end())?;
                     NewLine::new().emit(writer, config)?;
 
                     // Write border and underline
@@ -254,7 +237,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                     NewLine::new().emit(writer, config)?;
                 }
 
-                // Write highlighted lines
+                // Write marked lines
                 //
                 // ```text
                 // 5 │ │     0 0 => "FizzBuzz"
@@ -263,30 +246,27 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 // ```
 
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let highlighted_line = line(line_index).expect("highlighted_line");
+                    let marked_line = line(line_index).expect("marked_line");
 
                     // Write line number, border, and underline
-                    Gutter::new(highlighted_line.number, gutter_padding).emit(writer, config)?;
+                    Gutter::new(marked_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
                     UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
-                    // Write highlighted source
-                    writer.set_color(label_style)?;
-                    write!(writer, " {}", highlighted_line.source.as_ref().trim_end())?;
-                    writer.reset()?;
+                    // Write marked source
+                    write!(writer, " {}", marked_line.source.as_ref().trim_end())?;
                     NewLine::new().emit(writer, config)?;
                 }
 
-                // Write last highlighted line
+                // Write last marked line
                 //
                 // ```text
                 // 8 │ │     _ _ => num
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let highlight_end = label.range.end - end_line.start;
-                let highlighted_source = &end_line.source.as_ref()[..highlight_end];
-                let suffix_source = &end_line.source.as_ref()[highlight_end..];
+                let mark_end = label.range.end - end_line.start;
+                let marked_source = &end_source[..mark_end];
 
                 // Write line number, border, and underline
                 Gutter::new(end_line.number, gutter_padding).emit(writer, config)?;
@@ -294,16 +274,13 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
                 UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
                 // Write line source
-                writer.set_color(label_style)?;
-                write!(config.source(writer), " {}", highlighted_source)?;
-                writer.reset()?;
-                write!(config.source(writer), "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), " {}", end_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label
                 Gutter::new(None, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-                UnderlineBottom::new(*mark_style, &highlighted_source, &label.message)
+                UnderlineBottom::new(*mark_style, &marked_source, &label.message)
                     .emit(writer, config)?;
                 NewLine::new().emit(writer, config)?;
             }
