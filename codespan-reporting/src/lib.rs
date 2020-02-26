@@ -28,18 +28,50 @@ impl<Source> Line<Source>
 where
     Source: AsRef<str>,
 {
-    pub fn column_index(&self, byte_index: usize) -> Option<usize> {
+    /// The column index at the given byte index in the source file.
+    /// This is the number of characters to the given byte index.
+    ///
+    /// If the byte index is smaller than the start of the line, then `0` is returned.
+    /// If the byte index is past the end of the line, the column index of the last
+    /// character `+ 1` is returned.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use codespan_reporting::Line;
+    ///
+    /// let line = Line {
+    ///     start: 2,
+    ///     number: 2,
+    ///     source: "🗻∈🌏",
+    /// };
+    ///
+    /// assert_eq!(line.column_index(0), 0);
+    /// assert_eq!(line.column_index(line.start + 0), 0);
+    /// // FIXME: Snap column index to the previous character boundary
+    /// // assert_eq!(line.column_index(line.start + 1), 0);
+    /// assert_eq!(line.column_index(line.start + 4), 1);
+    /// assert_eq!(line.column_index(line.start + 8), 3);
+    /// assert_eq!(line.column_index(line.start + 48), 3);
+    /// ```
+    pub fn column_index(&self, byte_index: usize) -> usize {
         match byte_index.checked_sub(self.start) {
-            None => Some(0),
+            None => 0,
             Some(relative_index) => {
-                let source = self.source.as_ref().get(..relative_index)?;
-                Some(source.chars().count())
+                let line_source = self.source.as_ref();
+
+                line_source
+                    .char_indices()
+                    .map(|(i, _)| i)
+                    .take_while(|i| *i < relative_index)
+                    .count()
             },
         }
     }
 
-    pub fn column_number(&self, byte_index: usize) -> Option<usize> {
-        Some(self.column_index(byte_index)? + 1)
+    /// The 1-indexed column number at the given byte index.
+    pub fn column_number(&self, byte_index: usize) -> usize {
+        self.column_index(byte_index) + 1
     }
 }
 
@@ -65,7 +97,7 @@ pub trait Files {
 
         Some(Location {
             line_number: line.number,
-            column_number: line.column_number(byte_index)?,
+            column_number: line.column_number(byte_index),
         })
     }
 }
