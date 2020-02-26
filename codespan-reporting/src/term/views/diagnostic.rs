@@ -20,12 +20,15 @@ where
         RichDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &impl Files<FileId = FileId>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         use std::collections::BTreeMap;
 
         use super::MarkStyle;
@@ -82,12 +85,15 @@ where
         ShortDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &impl Files<FileId = FileId>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         let label = &self.diagnostic.primary_label;
         let origin = files
             .origin(self.diagnostic.primary_label.file_id)

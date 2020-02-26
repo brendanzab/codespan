@@ -41,18 +41,18 @@ fn count_digits(mut n: usize) -> usize {
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a, F: Files> {
+pub struct SourceSnippet<'a, 'files, F: Files<'files>> {
     file_id: F::FileId,
     ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
     notes: &'a [String],
 }
 
-impl<'a, F: Files> SourceSnippet<'a, F> {
+impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
     pub fn new(
         file_id: F::FileId,
         ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
         notes: &'a [String],
-    ) -> SourceSnippet<'a, F> {
+    ) -> SourceSnippet<'a, 'files, F> {
         SourceSnippet {
             file_id,
             ranges,
@@ -89,7 +89,7 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
 
     pub fn emit(
         &self,
-        files: &F,
+        files: &'files F,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
     ) -> io::Result<()> {

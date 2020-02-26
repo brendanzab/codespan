@@ -79,22 +79,26 @@ where
 }
 
 /// Files that can be used for pretty printing.
-pub trait Files {
-    type FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash;
-    type Origin: std::fmt::Display;
-    type LineSource: AsRef<str>;
+///
+/// A lifetime parameter `'a` is provided to allow any of the returned values to returned by reference.
+/// This is to workaround the lack of higher kinded lifetime parameters.
+/// This can be ignored if this is not needed, however.
+pub trait Files<'a> {
+    type FileId: 'a + Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash;
+    type Origin: 'a + std::fmt::Display;
+    type LineSource: 'a + AsRef<str>;
 
     /// The origin of a file.
-    fn origin(&self, id: Self::FileId) -> Option<Self::Origin>;
+    fn origin(&'a self, id: Self::FileId) -> Option<Self::Origin>;
 
     /// The line at the given index.
-    fn line(&self, id: Self::FileId, line_index: usize) -> Option<Line<Self::LineSource>>;
+    fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line<Self::LineSource>>;
 
     /// The index of the line at the given byte index.
-    fn line_index(&self, id: Self::FileId, byte_index: usize) -> Option<usize>;
+    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
 
     /// The location of the given byte index.
-    fn location(&self, id: Self::FileId, byte_index: usize) -> Option<Location> {
+    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Option<Location> {
         let line_index = self.line_index(id, byte_index)?;
         let line = self.line(id, line_index)?;
 
@@ -165,10 +169,10 @@ where
     }
 }
 
-impl<Origin, Source> Files for SimpleFile<Origin, Source>
+impl<'a, Origin, Source> Files<'a> for SimpleFile<Origin, Source>
 where
-    Origin: std::fmt::Display + Clone,
-    Source: AsRef<str>,
+    Origin: 'a + std::fmt::Display + Clone,
+    Source: 'a + AsRef<str>,
 {
     type FileId = ();
     type Origin = Origin;
@@ -229,10 +233,10 @@ where
     }
 }
 
-impl<Origin, Source> Files for SimpleFiles<Origin, Source>
+impl<'a, Origin, Source> Files<'a> for SimpleFiles<Origin, Source>
 where
-    Origin: std::fmt::Display + Clone,
-    Source: AsRef<str>,
+    Origin: 'a + std::fmt::Display + Clone,
+    Source: 'a + AsRef<str>,
 {
     type FileId = usize;
     type Origin = Origin;
