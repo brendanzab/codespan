@@ -52,12 +52,10 @@ where
                     .take_while(|i| *i < relative_index)
                     .count();
 
-                if relative_index >= line_source.len()
-                    || line_source.is_char_boundary(relative_index)
-                {
-                    column_index
-                } else {
-                    column_index - 1
+                match () {
+                    () if relative_index >= line_source.len() => column_index,
+                    () if line_source.is_char_boundary(relative_index) => column_index,
+                    () => column_index - 1,
                 }
             },
         }
