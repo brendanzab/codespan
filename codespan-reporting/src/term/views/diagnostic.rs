@@ -95,13 +95,13 @@ where
         FileId: 'files,
     {
         let label = &self.diagnostic.primary_label;
-        let origin = files
-            .origin(self.diagnostic.primary_label.file_id)
-            .expect("origin");
-        let location = files
-            .location(label.file_id, label.range.start)
-            .expect("location");
-        Locus::new(origin, location).emit(writer, config)?;
+        let start = label.range.start;
+
+        let origin = files.origin(label.file_id).expect("origin");
+        let line_index = files.line_index(label.file_id, start).expect("line_index");
+        let line = files.line(label.file_id, line_index).expect("line");
+
+        Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
         write!(writer, ": ")?;
         Header::new(self.diagnostic).emit(writer, config)?;
 

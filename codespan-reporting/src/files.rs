@@ -2,15 +2,6 @@
 
 use std::ops::Range;
 
-/// A location in a source file.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Location {
-    /// The line number in the source file.
-    pub line_number: usize,
-    /// The column number in the source file.
-    pub column_number: usize,
-}
-
 /// A line within a source file.
 pub struct Line<Source> {
     /// The starting byte index of the line.
@@ -96,17 +87,6 @@ pub trait Files<'a> {
 
     /// The index of the line at the given byte index.
     fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
-
-    /// The location of the given byte index.
-    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Option<Location> {
-        let line_index = self.line_index(id, byte_index)?;
-        let line = self.line(id, line_index)?;
-
-        Some(Location {
-            line_number: line.number,
-            column_number: line.column_number(byte_index),
-        })
-    }
 }
 
 /// A single source file.

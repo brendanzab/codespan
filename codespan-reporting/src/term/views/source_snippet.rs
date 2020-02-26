@@ -96,7 +96,6 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
         use std::io::Write;
 
         let origin = files.origin(self.file_id).expect("origin");
-        let location = |byte_index| files.location(self.file_id, byte_index);
         let line_index = |byte_index| files.line_index(self.file_id, byte_index);
         let line = |line_index| files.line(self.file_id, line_index);
 
@@ -120,8 +119,14 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        let locus_location = location(locus_range.start).expect("locus_location");
-        Locus::new(origin, locus_location).emit(writer, config)?;
+        let locus_line_index = line_index(locus_range.start).expect("locus_line_index");
+        let locus_line = line(locus_line_index).expect("locus_line");
+        Locus::new(
+            origin,
+            locus_line.number,
+            locus_line.column_number(locus_range.start),
+        )
+        .emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;

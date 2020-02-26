@@ -1,7 +1,6 @@
 use std::io;
 use termcolor::WriteColor;
 
-use crate::files::Location;
 use crate::term::Config;
 
 /// The 'location focus' of a source code snippet.
@@ -14,15 +13,20 @@ use crate::term::Config;
 /// ```
 pub struct Locus<Origin> {
     origin: Origin,
-    location: Location,
+    line_number: usize,
+    column_number: usize,
 }
 
 impl<Origin> Locus<Origin>
 where
     Origin: std::fmt::Display,
 {
-    pub fn new(origin: Origin, location: Location) -> Locus<Origin> {
-        Locus { origin, location }
+    pub fn new(origin: Origin, line_number: usize, column_number: usize) -> Locus<Origin> {
+        Locus {
+            origin,
+            line_number,
+            column_number,
+        }
     }
 
     pub fn emit(
@@ -34,8 +38,8 @@ where
             writer,
             "{origin}:{line_number}:{column_number}",
             origin = self.origin,
-            line_number = self.location.line_number,
-            column_number = self.location.column_number,
+            line_number = self.line_number,
+            column_number = self.column_number,
         )
     }
 }
