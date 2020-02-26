@@ -45,23 +45,29 @@ where
     ///
     /// assert_eq!(line.column_index(0), 0);
     /// assert_eq!(line.column_index(line.start + 0), 0);
-    /// // FIXME: Snap column index to the previous character boundary
-    /// // assert_eq!(line.column_index(line.start + 1), 0);
+    /// assert_eq!(line.column_index(line.start + 1), 0);
     /// assert_eq!(line.column_index(line.start + 4), 1);
-    /// assert_eq!(line.column_index(line.start + 8), 3);
-    /// assert_eq!(line.column_index(line.start + 48), 3);
+    /// assert_eq!(line.column_index(line.start + 8), 2);
+    /// assert_eq!(line.column_index(line.start + line.source.len()), 3);
     /// ```
     pub fn column_index(&self, byte_index: usize) -> usize {
         match byte_index.checked_sub(self.start) {
             None => 0,
             Some(relative_index) => {
                 let line_source = self.source.as_ref();
-
-                line_source
+                let column_index = line_source
                     .char_indices()
                     .map(|(i, _)| i)
                     .take_while(|i| *i < relative_index)
-                    .count()
+                    .count();
+
+                if relative_index >= line_source.len()
+                    || line_source.is_char_boundary(relative_index)
+                {
+                    column_index
+                } else {
+                    column_index - 1
+                }
             },
         }
     }
