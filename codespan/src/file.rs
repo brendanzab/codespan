@@ -295,7 +295,7 @@ where
 }
 
 #[cfg(feature = "reporting")]
-impl<Source> codespan_reporting::Files for Files<Source>
+impl<Source> codespan_reporting::files::Files for Files<Source>
 where
     Source: AsRef<str>,
 {
@@ -313,11 +313,15 @@ where
         Some(self.line_index(id, byte_index as u32).to_usize())
     }
 
-    fn line(&self, id: FileId, line_index: usize) -> Option<codespan_reporting::Line<String>> {
+    fn line(
+        &self,
+        id: FileId,
+        line_index: usize,
+    ) -> Option<codespan_reporting::files::Line<String>> {
         let span = self.line_span(id, line_index as u32).ok()?;
         let source = self.source_slice(id, span).ok()?;
 
-        Some(codespan_reporting::Line {
+        Some(codespan_reporting::files::Line {
             start: span.start().to_usize(),
             number: line_index + 1,
             source: source.to_owned(),

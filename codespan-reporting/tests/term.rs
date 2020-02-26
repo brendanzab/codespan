@@ -1,6 +1,6 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::files::{SimpleFile, SimpleFiles};
 use codespan_reporting::term::{termcolor::Color, Config, DisplayStyle, Styles};
-use codespan_reporting::{SimpleFile, SimpleFiles};
 
 mod support;
 

@@ -3,8 +3,8 @@ use std::ops::Range;
 use termcolor::WriteColor;
 
 use crate::diagnostic::Label;
+use crate::files::Files;
 use crate::term::Config;
-use crate::Files;
 
 use super::{Locus, NewLine};
 

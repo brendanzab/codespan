@@ -2,8 +2,8 @@ use std::io;
 use termcolor::WriteColor;
 
 use crate::diagnostic::Diagnostic;
+use crate::files::Files;
 use crate::term::Config;
-use crate::Files;
 
 use super::{Header, Locus, NewLine, SourceSnippet};
 

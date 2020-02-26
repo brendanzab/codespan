@@ -5,7 +5,7 @@ use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
 use crate::diagnostic::Diagnostic;
-use crate::Files;
+use crate::files::Files;
 
 mod config;
 mod views;
@@ -95,7 +95,7 @@ mod tests {
     use super::*;
 
     use crate::diagnostic::Label;
-    use crate::SimpleFiles;
+    use crate::files::SimpleFiles;
 
     #[test]
     fn unsized_emit() {
