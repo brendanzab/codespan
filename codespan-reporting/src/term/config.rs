@@ -175,13 +175,14 @@ impl Styles {
     }
 
     /// The style used to mark a primary label at a given severity.
-    pub fn primary_label(&self, severity: Severity) -> &ColorSpec {
+    pub fn label(&self, severity: Option<Severity>) -> &ColorSpec {
         match severity {
-            Severity::Bug => &self.primary_label_bug,
-            Severity::Error => &self.primary_label_error,
-            Severity::Warning => &self.primary_label_warning,
-            Severity::Note => &self.primary_label_note,
-            Severity::Help => &self.primary_label_help,
+            Some(Severity::Bug) => &self.primary_label_bug,
+            Some(Severity::Error) => &self.primary_label_error,
+            Some(Severity::Warning) => &self.primary_label_warning,
+            Some(Severity::Note) => &self.primary_label_note,
+            Some(Severity::Help) => &self.primary_label_help,
+            None => &self.secondary_label,
         }
     }
 
@@ -252,25 +253,41 @@ pub struct Chars {
 
     /// The character to use for marking the ends of a multi-line primary label.
     /// Defaults to: `'^'`.
-    pub multiline_primary_caret: char,
+    pub multi_primary_caret: char,
     /// The character to use for marking the ends of a multi-line secondary label.
     /// Defaults to: `'\''`.
-    pub multiline_secondary_caret: char,
+    pub multi_secondary_caret: char,
     /// The character to use for the top-left corner of a multi-line label.
     /// Defaults to: `'╭'`.
-    pub multiline_top_left: char,
+    pub multi_top_left: char,
     /// The character to use for the top of a multi-line label.
     /// Defaults to: `'─'`.
-    pub multiline_top: char,
+    pub multi_top: char,
     /// The character to use for the bottom-left corner of a multi-line label.
     /// Defaults to: `'╰'`.
-    pub multiline_bottom_left: char,
+    pub multi_bottom_left: char,
     /// The character to use when marking the bottom of a multi-line label.
     /// Defaults to: `'─'`.
-    pub multiline_bottom: char,
+    pub multi_bottom: char,
     /// The character to use for the left of a multi-line label.
     /// Defaults to: `'│'`.
-    pub multiline_left: char,
+    pub multi_left: char,
+}
+
+impl Chars {
+    pub fn caret_char(&self, severity: Option<Severity>) -> char {
+        match severity {
+            Some(_) => self.primary_caret,
+            None => self.secondary_caret,
+        }
+    }
+
+    pub fn multi_caret_char(&self, severity: Option<Severity>) -> char {
+        match severity {
+            Some(_) => self.multi_primary_caret,
+            None => self.multi_secondary_caret,
+        }
+    }
 }
 
 impl Default for Chars {
@@ -286,13 +303,13 @@ impl Default for Chars {
             primary_caret: '^',
             secondary_caret: '-',
 
-            multiline_primary_caret: '^',
-            multiline_secondary_caret: '\'',
-            multiline_top_left: '╭',
-            multiline_top: '─',
-            multiline_bottom_left: '╰',
-            multiline_bottom: '─',
-            multiline_left: '│',
+            multi_primary_caret: '^',
+            multi_secondary_caret: '\'',
+            multi_top_left: '╭',
+            multi_top: '─',
+            multi_bottom_left: '╰',
+            multi_bottom: '─',
+            multi_left: '│',
         }
     }
 }

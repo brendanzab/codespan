@@ -5,6 +5,8 @@ use std::ops::Range;
 /// A line within a source file.
 pub struct Line<Source> {
     /// The starting byte index of the line.
+    pub index: usize,
+    /// The starting byte index of the line.
     pub start: usize,
     /// The line number.
     pub number: usize,
@@ -29,6 +31,7 @@ where
     /// use codespan_reporting::files::Line;
     ///
     /// let line = Line {
+    ///     index: 1,
     ///     start: 2,
     ///     number: 2,
     ///     source: "🗻∈🌏",
@@ -69,6 +72,7 @@ where
     /// use codespan_reporting::files::Line;
     ///
     /// let line = Line {
+    ///     index: 1,
     ///     start: 2,
     ///     number: 2,
     ///     source: "🗻∈🌏",
@@ -103,7 +107,7 @@ pub trait Files<'a> {
     fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line<Self::LineSource>>;
 
     /// The index of the line at the given byte index.
-    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
+    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<Line<Self::LineSource>>;
 }
 
 /// A single source file.
@@ -210,17 +214,19 @@ where
         Some(self.origin.clone())
     }
 
-    fn line_index(&self, (): (), byte_index: usize) -> Option<usize> {
-        match self.line_starts.binary_search(&byte_index) {
-            Ok(line) => Some(line),
-            Err(next_line) => Some(next_line - 1),
-        }
+    fn line_index(&self, (): (), byte_index: usize) -> Option<Line<&str>> {
+        let line_index = match self.line_starts.binary_search(&byte_index) {
+            Ok(line) => line,
+            Err(next_line) => next_line - 1,
+        };
+        self.line((), line_index)
     }
 
     fn line(&self, (): (), line_index: usize) -> Option<Line<&str>> {
         let range = self.line_range(line_index)?;
 
         Some(Line {
+            index: line_index,
             start: range.start,
             number: line_index + 1,
             source: &self.source.as_ref()[range],
@@ -274,7 +280,7 @@ where
         Some(self.get(file_id)?.origin().clone())
     }
 
-    fn line_index(&self, file_id: usize, byte_index: usize) -> Option<usize> {
+    fn line_index(&self, file_id: usize, byte_index: usize) -> Option<Line<&str>> {
         self.get(file_id)?.line_index((), byte_index)
     }
 

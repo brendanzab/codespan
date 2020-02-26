@@ -309,8 +309,13 @@ where
         Some(PathBuf::from(self.name(id)).display().to_string())
     }
 
-    fn line_index(&self, id: FileId, byte_index: usize) -> Option<usize> {
-        Some(self.line_index(id, byte_index as u32).to_usize())
+    fn line_index(
+        &'a self,
+        id: FileId,
+        byte_index: usize,
+    ) -> Option<codespan_reporting::files::Line<&'a str>> {
+        let line_index = self.line_index(id, byte_index as u32).to_usize();
+        self.line(id, line_index)
     }
 
     fn line(
@@ -322,6 +327,7 @@ where
         let source = self.source_slice(id, span).ok()?;
 
         Some(codespan_reporting::files::Line {
+            index: line_index,
             start: span.start().to_usize(),
             number: line_index + 1,
             source,
