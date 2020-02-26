@@ -151,7 +151,7 @@ where
         use std::cmp::Ordering;
 
         match line_index.cmp(&self.line_starts.len()) {
-            Ordering::Less => Some(self.line_starts[line_index]),
+            Ordering::Less => self.line_starts.get(line_index).cloned(),
             Ordering::Equal => Some(self.source.as_ref().len()),
             Ordering::Greater => None,
         }
