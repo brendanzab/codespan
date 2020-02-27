@@ -14,21 +14,6 @@ pub use termcolor;
 
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
-/// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit<'files, F: Files<'files>>(
-    writer: &mut (impl WriteColor + ?Sized),
-    config: &Config,
-    files: &'files F,
-    diagnostic: &Diagnostic<F::FileId>,
-) -> io::Result<()> {
-    use self::views::{RichDiagnostic, ShortDiagnostic};
-
-    match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).emit(files, writer, config),
-        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).emit(files, writer, config),
-    }
-}
-
 /// A command line argument that configures the coloring of the output.
 ///
 /// This can be used with command line argument parsers like `clap` or `structopt`.
@@ -90,6 +75,21 @@ impl Into<ColorChoice> for ColorArg {
     }
 }
 
+/// Emit a diagnostic using the given writer, context, config, and files.
+pub fn emit<'files, F: Files<'files>>(
+    writer: &mut (impl WriteColor + ?Sized),
+    config: &Config,
+    files: &'files F,
+    diagnostic: &Diagnostic<F::FileId>,
+) -> io::Result<()> {
+    use self::views::{RichDiagnostic, ShortDiagnostic};
+
+    match config.display_style {
+        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).emit(files, writer, config),
+        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).emit(files, writer, config),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,12 +102,9 @@ mod tests {
         let mut files = SimpleFiles::new();
 
         let id = files.add("test", "");
-        emit(
-            &mut termcolor::NoColor::new(Vec::<u8>::new()) as &mut dyn WriteColor,
-            &Config::default(),
-            &files,
-            &Diagnostic::new_bug("", Label::new(id, 0..0, "")),
-        )
-        .unwrap();
+        let mut writer = termcolor::NoColor::new(Vec::<u8>::new());
+        let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
+
+        emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();
     }
 }

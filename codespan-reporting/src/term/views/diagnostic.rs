@@ -1,11 +1,29 @@
 use std::io;
+use std::ops::Range;
 use termcolor::WriteColor;
 
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::Files;
 use crate::term::Config;
 
-use super::{Header, Locus, NewLine, SourceSnippet};
+use super::{Header, Locus, Note};
+
+/// Count the number of decimal digits in `n`.
+fn count_digits(mut n: usize) -> usize {
+    let mut count = 0;
+    while n != 0 {
+        count += 1;
+        n /= 10; // remove last digit
+    }
+    count
+}
+
+/// Merge two ranges.
+fn merge(range0: &Range<usize>, range1: &Range<usize>) -> Range<usize> {
+    let start = std::cmp::min(range0.start, range1.start);
+    let end = std::cmp::max(range0.end, range1.end);
+    start..end
+}
 
 /// Output a richly formatted diagnostic, with source code previews.
 pub struct RichDiagnostic<'a, FileId> {
@@ -31,42 +49,97 @@ where
     {
         use std::collections::BTreeMap;
 
-        use super::MarkStyle;
+        use super::{NewLine, SourceSnippet};
 
-        Header::new(self.diagnostic).emit(writer, config)?;
-        NewLine::new().emit(writer, config)?;
+        // Group marks by file
 
-        let primary_label = &self.diagnostic.primary_label;
-        let primary_file_id = self.diagnostic.primary_label.file_id;
-        let severity = self.diagnostic.severity;
-        let notes = &self.diagnostic.notes;
+        let mut mark_groups = BTreeMap::new();
+        let mut gutter_padding = 0;
 
-        // Group labels by file
+        for label in &self.diagnostic.labels {
+            use std::collections::btree_map::Entry;
 
-        let mut label_groups = BTreeMap::new();
+            use super::{Mark, MarkGroup, MarkStyle};
 
-        label_groups
-            .entry(primary_file_id)
-            .or_insert(vec![])
-            .push((primary_label, MarkStyle::Primary(severity)));
+            let mark_style = match label.style {
+                LabelStyle::Primary => MarkStyle::Primary(self.diagnostic.severity),
+                LabelStyle::Secondary => MarkStyle::Secondary,
+            };
 
-        for secondary_label in &self.diagnostic.secondary_labels {
-            label_groups
-                .entry(secondary_label.file_id)
-                .or_insert(vec![])
-                .push((secondary_label, MarkStyle::Secondary));
+            // Compute the width of the gutter for the following source snippets and notes
+            let end_line = files
+                .line_index(label.file_id, label.range.end)
+                .and_then(|index| files.line(label.file_id, index))
+                .expect("end_line");
+            gutter_padding = std::cmp::max(gutter_padding, count_digits(end_line.number));
+
+            let mark = Mark {
+                style: mark_style,
+                range: label.range.clone(),
+                message: label.message.as_str(),
+            };
+
+            // TODO: Sort snippets by the mark group origin
+            // TODO: Group contiguous line index ranges using some sort of interval set algorithm
+            // TODO: Flatten mark groups to overlapping underlines that can be easily rendered.
+            match mark_groups.entry(label.file_id) {
+                Entry::Vacant(entry) => {
+                    entry.insert(MarkGroup {
+                        origin: files.origin(label.file_id).expect("origin"),
+                        range: label.range.clone(),
+                        marks: vec![mark],
+                    });
+                },
+                Entry::Occupied(mut entry) => {
+                    let mark_group = entry.get_mut();
+                    mark_group.range = merge(&mark_group.range, &mark.range);
+                    mark_group.marks.push(mark);
+                },
+            }
         }
 
-        // Emit the snippets, starting with the one that contains the primary label
+        // Sort marks lexicographically by the range of source code they cover.
+        for (_, mark_group) in mark_groups.iter_mut() {
+            mark_group.marks.sort_by_key(|mark| {
+                // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
+                // to piggyback off its lexicographic sorting implementation.
+                (mark.range.start, mark.range.end)
+            });
+        }
 
-        let labels = label_groups.remove(&primary_file_id).unwrap_or(vec![]);
-        SourceSnippet::new(primary_file_id, labels, notes).emit(files, writer, config)?;
-        NewLine::new().emit(writer, config)?;
-
-        for (file_id, labels) in label_groups {
-            SourceSnippet::new(file_id, labels, &[]).emit(files, writer, config)?;
+        // Emit the title
+        //
+        // ```text
+        // error[E0001]: unexpected type in `+` application
+        // ```
+        Header::new(self.diagnostic).emit(writer, config)?;
+        if !mark_groups.is_empty() {
             NewLine::new().emit(writer, config)?;
         }
+
+        // Emit the source snippets
+        //
+        // ```text
+        //   ┌── test:2:9 ───
+        //   │
+        // 2 │ (+ test "")
+        //   │         ^^ expected `Int` but found `String`
+        //   │
+        // ```
+        for (file_id, mark_group) in mark_groups {
+            SourceSnippet::new(gutter_padding, file_id, mark_group).emit(files, writer, config)?;
+        }
+
+        // Additional notes
+        //
+        // ```text
+        // = expected type `Int`
+        //      found type `String`
+        // ```
+        for note in &self.diagnostic.notes {
+            Note::new(gutter_padding, &note).emit(writer, config)?;
+        }
+        NewLine::new().emit(writer, config)?;
 
         Ok(())
     }
@@ -94,16 +167,27 @@ where
     where
         FileId: 'files,
     {
-        let label = &self.diagnostic.primary_label;
-        let start = label.range.start;
+        let mut primary_labels = 0;
 
-        let origin = files.origin(label.file_id).expect("origin");
-        let line_index = files.line_index(label.file_id, start).expect("line_index");
-        let line = files.line(label.file_id, line_index).expect("line");
+        for label in &self.diagnostic.labels {
+            if label.style == LabelStyle::Primary {
+                primary_labels += 1;
 
-        Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
-        write!(writer, ": ")?;
-        Header::new(self.diagnostic).emit(writer, config)?;
+                let origin = files.origin(label.file_id).expect("origin");
+                let start = label.range.start;
+                let line_index = files.line_index(label.file_id, start).expect("line_index");
+                let line = files.line(label.file_id, line_index).expect("line");
+
+                Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
+                write!(writer, ": ")?;
+                Header::new(self.diagnostic).emit(writer, config)?;
+            }
+        }
+
+        // Fallback to printing a non-located header if no primary labels were encountered
+        if primary_labels == 0 {
+            Header::new(self.diagnostic).emit(writer, config)?;
+        }
 
         Ok(())
     }
