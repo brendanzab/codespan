@@ -169,19 +169,18 @@ where
     {
         let mut primary_labels = 0;
 
-        for label in &self.diagnostic.labels {
-            if label.style == LabelStyle::Primary {
-                primary_labels += 1;
+        let labels = self.diagnostic.labels.iter();
+        for label in labels.filter(|label| label.style == LabelStyle::Primary) {
+            primary_labels += 1;
 
-                let origin = files.origin(label.file_id).expect("origin");
-                let start = label.range.start;
-                let line_index = files.line_index(label.file_id, start).expect("line_index");
-                let line = files.line(label.file_id, line_index).expect("line");
+            let origin = files.origin(label.file_id).expect("origin");
+            let start = label.range.start;
+            let line_index = files.line_index(label.file_id, start).expect("line_index");
+            let line = files.line(label.file_id, line_index).expect("line");
 
-                Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
-                write!(writer, ": ")?;
-                Header::new(self.diagnostic).emit(writer, config)?;
-            }
+            Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
+            write!(writer, ": ")?;
+            Header::new(self.diagnostic).emit(writer, config)?;
         }
 
         // Fallback to printing a non-located header if no primary labels were encountered
