@@ -19,7 +19,7 @@ pub struct Header<'a> {
 }
 
 impl<'a> Header<'a> {
-    pub fn new(diagnostic: &'a Diagnostic) -> Header<'a> {
+    pub fn new<FileId>(diagnostic: &'a Diagnostic<FileId>) -> Header<'a> {
         Header {
             severity: diagnostic.severity,
             code: diagnostic.code.as_ref().map(String::as_str),

@@ -14,16 +14,17 @@
 [gitter-badge]: https://badges.gitter.im/codespan-rs/codespan.svg
 [gitter-lobby]: https://gitter.im/codespan-rs/Lobby
 
-Diagnostic reporting support for the codespan crate.
+Diagnostic reporting for text-based programming languages.
 
 ## Running the CLI example
 
 To get an idea of what the colored CLI output looks like with
-`codespan-reporting`, clone the repository and run the following:
+`codespan-reporting`, clone the [repository](https://github.com/brendanzab/codespan)
+and run the following shell command:
 
 ```sh
-cargo run -p codespan-reporting --example=term
-cargo run -p codespan-reporting --example=term -- --color never
+cargo run --example=term
+cargo run --example=term -- --color never
 ```
 
 You should see something like the following in your terminal:

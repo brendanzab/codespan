@@ -1,9 +1,9 @@
 use structopt::StructOpt;
 
-use codespan::Files;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::StandardStream;
-use codespan_reporting::term::{emit, ColorArg};
+use codespan_reporting::term::{self, ColorArg};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "emit")]
@@ -21,7 +21,7 @@ pub struct Opts {
 
 fn main() {
     let opts = Opts::from_args();
-    let mut files = Files::new();
+    let mut files = SimpleFiles::new();
 
     let file_id1 = files.add(
         "Data/Nat.fun",
@@ -149,6 +149,6 @@ fn main() {
     let writer = StandardStream::stderr(opts.color.into());
     let config = codespan_reporting::term::Config::default();
     for diagnostic in &diagnostics {
-        emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
+        term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
 }

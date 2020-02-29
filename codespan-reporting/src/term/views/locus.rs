@@ -1,5 +1,3 @@
-use codespan::Location;
-use std::ffi::OsStr;
 use std::io;
 use termcolor::WriteColor;
 
@@ -13,16 +11,21 @@ use crate::term::Config;
 /// ```text
 /// test:2:9
 /// ```
-pub struct Locus<'a> {
-    file_name: &'a OsStr,
-    location: Location,
+pub struct Locus<Origin> {
+    origin: Origin,
+    line_number: usize,
+    column_number: usize,
 }
 
-impl<'a> Locus<'a> {
-    pub fn new(file_name: &'a OsStr, location: Location) -> Locus<'a> {
+impl<Origin> Locus<Origin>
+where
+    Origin: std::fmt::Display,
+{
+    pub fn new(origin: Origin, line_number: usize, column_number: usize) -> Locus<Origin> {
         Locus {
-            file_name,
-            location,
+            origin,
+            line_number,
+            column_number,
         }
     }
 
@@ -31,13 +34,12 @@ impl<'a> Locus<'a> {
         writer: &mut (impl WriteColor + ?Sized),
         _config: &Config,
     ) -> io::Result<()> {
-        use std::path::PathBuf;
         write!(
             writer,
-            "{file}:{line}:{column}",
-            file = PathBuf::from(self.file_name).display(),
-            line = self.location.line.number(),
-            column = self.location.column.number(),
+            "{origin}:{line_number}:{column_number}",
+            origin = self.origin,
+            line_number = self.line_number,
+            column_number = self.column_number,
         )
     }
 }

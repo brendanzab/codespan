@@ -1,8 +1,9 @@
-use codespan::{FileId, Files, LineIndex, Span};
 use std::io;
+use std::ops::Range;
 use termcolor::WriteColor;
 
 use crate::diagnostic::Label;
+use crate::files::Files;
 use crate::term::Config;
 
 use super::{Locus, NewLine};
@@ -19,6 +20,16 @@ use self::underline::{Underline, UnderlineBottom, UnderlineLeft, UnderlineTop, U
 
 pub use self::underline::MarkStyle;
 
+/// Count the number of digits in `n`.
+fn count_digits(mut n: usize) -> usize {
+    let mut count = 0;
+    while n != 0 {
+        count += 1;
+        n /= 10; // remove last digit
+    }
+    count
+}
+
 /// An underlined snippet of source code.
 ///
 /// ```text
@@ -30,69 +41,71 @@ pub use self::underline::MarkStyle;
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a> {
-    file_id: FileId,
-    spans: Vec<(&'a Label, MarkStyle)>,
+pub struct SourceSnippet<'a, 'files, F: Files<'files>> {
+    file_id: F::FileId,
+    ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
     notes: &'a [String],
 }
 
-impl<'a> SourceSnippet<'a> {
-    pub fn new(file_id: FileId, spans: Vec<(&'a Label, MarkStyle)>, notes: &'a [String]) -> Self {
+impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
+    pub fn new(
+        file_id: F::FileId,
+        ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
+        notes: &'a [String],
+    ) -> SourceSnippet<'a, 'files, F> {
         SourceSnippet {
             file_id,
-            spans,
+            ranges,
             notes,
         }
     }
 
-    fn source_locus_spans(&self) -> (Span, Span) {
-        let mut source_span = None;
-        let mut locus_span = None;
+    fn source_locus_ranges(&self) -> (Range<usize>, Range<usize>) {
+        fn merge(range0: Range<usize>, range1: Range<usize>) -> Range<usize> {
+            let start = std::cmp::min(range0.start, range1.start);
+            let end = std::cmp::max(range0.end, range1.end);
+            start..end
+        }
 
-        for (label, mark_style) in &self.spans {
-            source_span =
-                Some(source_span.map_or(label.span, |span| Span::merge(span, label.span)));
+        let mut source_range = None;
+        let mut locus_range = None;
+
+        for (label, mark_style) in &self.ranges {
+            source_range = Some(source_range.map_or(label.range.clone(), |range| {
+                merge(range, label.range.clone())
+            }));
             if let MarkStyle::Primary(_) = mark_style {
-                locus_span =
-                    Some(locus_span.map_or(label.span, |span| Span::merge(span, label.span)));
+                locus_range = Some(locus_range.map_or(label.range.clone(), |range| {
+                    merge(range, label.range.clone())
+                }));
             }
         }
 
-        let source_span = source_span.unwrap_or(Span::initial());
-        let locus_span = locus_span.unwrap_or(source_span);
+        let source_range = source_range.unwrap_or(0..0);
+        let locus_range = locus_range.unwrap_or(source_range.clone());
 
-        (source_span, locus_span)
+        (source_range, locus_range)
     }
 
     pub fn emit(
         &self,
-        files: &'a Files<impl AsRef<str>>,
+        files: &'files F,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
     ) -> io::Result<()> {
-        // NOTE: All of the things we need with `files` is done here. Could this
-        // help us decide on a decent trait for the file provider?
-        let file_name = files.name(self.file_id);
-        let location = |byte_index| files.location(self.file_id, byte_index);
-        let get_line = |line_index| {
-            // NOTE: We could simplify this into a single `get_line` method
-            let span = files.line_span(self.file_id, line_index).ok()?;
-            let source = files.source_slice(self.file_id, span).ok()?;
-            Some((span, source))
-        };
+        use std::io::Write;
 
-        let (source_span, locus_span) = self.source_locus_spans();
-        let locus_start = location(locus_span.start()).expect("locus_span_start");
-        let source_end = location(source_span.end()).expect("source_span_end");
+        let origin = files.origin(self.file_id).expect("origin");
+        let line_index = |byte_index| files.line_index(self.file_id, byte_index);
+        let line = |line_index| files.line(self.file_id, line_index);
+
+        let (source_range, locus_range) = self.source_locus_ranges();
 
         // Use the length of the last line number as the gutter padding
-        let gutter_padding = format!("{}", source_end.line.number()).len();
-        // Cache the tabs we'll be using to pad the source strings.
-        let tab = config.tab_padding();
-        let replace_tabs = |source: &str| {
-            // NOTE: Not sure if we can do this more efficiently?
-            // Perhaps a custom writer might be better?
-            source.replace('\t', &tab)
+        let gutter_padding = {
+            let line_index = line_index(source_range.end).expect("source_end_line_index");
+            let line = line(line_index).expect("source_end_line_number");
+            count_digits(line.number)
         };
 
         // Top left border and locus.
@@ -106,20 +119,28 @@ impl<'a> SourceSnippet<'a> {
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        Locus::new(file_name, locus_start).emit(writer, config)?;
+        let locus_line_index = line_index(locus_range.start).expect("locus_line_index");
+        let locus_line = line(locus_line_index).expect("locus_line");
+        Locus::new(
+            origin,
+            locus_line.number,
+            locus_line.column_number(locus_range.start),
+        )
+        .emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;
         NewLine::new().emit(writer, config)?;
 
         // TODO: Better grouping
-        for (i, (label, mark_style)) in self.spans.iter().enumerate() {
-            let start = location(label.span.start()).expect("location_start");
-            let end = location(label.span.end()).expect("location_end");
-            let (start_line_span, start_line) = get_line(start.line).expect("start_line_span");
-            let (end_line_span, end_line) = get_line(end.line).expect("end_line_span");
+        for (i, (label, mark_style)) in self.ranges.iter().enumerate() {
+            let start_line_index = line_index(label.range.start).expect("start_line_index");
+            let end_line_index = line_index(label.range.end).expect("end_line_index");
+            let start_line = line(start_line_index).expect("start_line");
+            let end_line = line(end_line_index).expect("end_line");
 
-            let label_style = mark_style.label_style(config);
+            let start_source = start_line.source.as_ref();
+            let end_source = end_line.source.as_ref();
 
             // Code snippet
             //
@@ -139,7 +160,7 @@ impl<'a> SourceSnippet<'a> {
             NewLine::new().emit(writer, config)?;
 
             // Write underlined source section
-            if start.line == end.line {
+            if start_line_index == end_line_index {
                 // Single line
                 //
                 // ```text
@@ -147,34 +168,24 @@ impl<'a> SourceSnippet<'a> {
                 //   │         ^^ expected `Int` but found `String`
                 // ```
 
-                let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
-                let highlight_end = (label.span.end() - start_line_span.start()).to_usize();
-                let prefix_source = replace_tabs(&start_line[..highlight_start]);
-                let highlighted_source = replace_tabs(&start_line[highlight_start..highlight_end]);
-                let suffix_source = replace_tabs(&start_line[highlight_end..]);
+                let mark_start = label.range.start - start_line.start;
+                let mark_end = label.range.end - start_line.start;
+                let prefix_source = &start_source[..mark_start];
+                let marked_source = &start_source[mark_start..mark_end];
 
                 // Write line number and border
-                Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+                Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
 
                 // Write line source
-                write!(writer, " {}", prefix_source)?;
-                writer.set_color(label_style)?;
-                write!(writer, "{}", highlighted_source)?;
-                writer.reset()?;
-                write!(writer, "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), " {}", start_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label
                 Gutter::new(None, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-                Underline::new(
-                    *mark_style,
-                    &prefix_source,
-                    &highlighted_source,
-                    &label.message,
-                )
-                .emit(writer, config)?;
+                Underline::new(*mark_style, &prefix_source, &marked_source, &label.message)
+                    .emit(writer, config)?;
                 NewLine::new().emit(writer, config)?;
             } else {
                 // Multiple lines
@@ -189,9 +200,8 @@ impl<'a> SourceSnippet<'a> {
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let highlight_start = (label.span.start() - start_line_span.start()).to_usize();
-                let prefix_source = replace_tabs(&start_line[..highlight_start]);
-                let highlighted_source = replace_tabs(&start_line[highlight_start..]);
+                let mark_start = label.range.start - start_line.start;
+                let prefix_source = &start_source[..mark_start];
 
                 if prefix_source.trim().is_empty() {
                     // Section is prefixed by empty space, so we don't need to take
@@ -202,19 +212,16 @@ impl<'a> SourceSnippet<'a> {
                     // ```
 
                     // Write line number, border, and underline
-                    Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+                    Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
                     UnderlineTopLeft::new(*mark_style).emit(writer, config)?;
 
                     // Write source line
-                    write!(writer, " {}", prefix_source)?;
-                    writer.set_color(&label_style)?;
-                    write!(writer, "{}", highlighted_source.trim_end())?;
-                    writer.reset()?;
+                    write!(config.source(writer), " {}", start_source.trim_end())?;
                     NewLine::new().emit(writer, config)?;
                 } else {
                     // There's source code in the prefix, so run an underline
-                    // underneath it to get to the start of the span.
+                    // underneath it to get to the start of the range.
                     //
                     // ```text
                     // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
@@ -222,14 +229,11 @@ impl<'a> SourceSnippet<'a> {
                     // ```
 
                     // Write line number and border
-                    Gutter::new(start.line.number(), gutter_padding).emit(writer, config)?;
+                    Gutter::new(start_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
 
                     // Write source line
-                    write!(writer, "   {}", prefix_source)?;
-                    writer.set_color(&label_style)?;
-                    write!(writer, "{}", highlighted_source.trim_end())?;
-                    writer.reset()?;
+                    write!(config.source(writer), "   {}", start_source.trim_end())?;
                     NewLine::new().emit(writer, config)?;
 
                     // Write border and underline
@@ -239,7 +243,7 @@ impl<'a> SourceSnippet<'a> {
                     NewLine::new().emit(writer, config)?;
                 }
 
-                // Write highlighted lines
+                // Write marked lines
                 //
                 // ```text
                 // 5 │ │     0 0 => "FizzBuzz"
@@ -247,51 +251,42 @@ impl<'a> SourceSnippet<'a> {
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
 
-                for line_index in ((start.line.to_usize() + 1)..end.line.to_usize())
-                    .map(|i| LineIndex::from(i as u32))
-                {
-                    let (_, highlighted_source) =
-                        get_line(line_index).expect("highlighted_source_2");
+                for line_index in (start_line_index + 1)..end_line_index {
+                    let marked_line = line(line_index).expect("marked_line");
 
                     // Write line number, border, and underline
-                    Gutter::new(line_index.number(), gutter_padding).emit(writer, config)?;
+                    Gutter::new(marked_line.number, gutter_padding).emit(writer, config)?;
                     BorderLeft::new().emit(writer, config)?;
                     UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
-                    // Write highlighted source
-                    writer.set_color(label_style)?;
-                    write!(writer, " {}", highlighted_source.trim_end())?;
-                    writer.reset()?;
+                    // Write marked source
+                    write!(writer, " {}", marked_line.source.as_ref().trim_end())?;
                     NewLine::new().emit(writer, config)?;
                 }
 
-                // Write last highlighted line
+                // Write last marked line
                 //
                 // ```text
                 // 8 │ │     _ _ => num
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let highlight_end = (label.span.end() - end_line_span.start()).to_usize();
-                let highlighted_source = replace_tabs(&end_line[..highlight_end]);
-                let suffix_source = replace_tabs(&end_line[highlight_end..]);
+                let mark_end = label.range.end - end_line.start;
+                let marked_source = &end_source[..mark_end];
 
                 // Write line number, border, and underline
-                Gutter::new(end.line.number(), gutter_padding).emit(writer, config)?;
+                Gutter::new(end_line.number, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
                 UnderlineLeft::new(*mark_style).emit(writer, config)?;
 
                 // Write line source
-                writer.set_color(label_style)?;
-                write!(writer, " {}", highlighted_source)?;
-                writer.reset()?;
-                write!(writer, "{}", suffix_source.trim_end())?;
+                write!(config.source(writer), " {}", end_source.trim_end())?;
                 NewLine::new().emit(writer, config)?;
 
                 // Write border, underline, and label
                 Gutter::new(None, gutter_padding).emit(writer, config)?;
                 BorderLeft::new().emit(writer, config)?;
-                UnderlineBottom::new(*mark_style, &highlighted_source, &label.message)
+                UnderlineBottom::new(*mark_style, &marked_source, &label.message)
                     .emit(writer, config)?;
                 NewLine::new().emit(writer, config)?;
             }

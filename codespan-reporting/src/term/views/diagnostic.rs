@@ -1,28 +1,34 @@
-use codespan::Files;
 use std::io;
 use termcolor::WriteColor;
 
 use crate::diagnostic::Diagnostic;
+use crate::files::Files;
 use crate::term::Config;
 
 use super::{Header, Locus, NewLine, SourceSnippet};
 
 /// Output a richly formatted diagnostic, with source code previews.
-pub struct RichDiagnostic<'a> {
-    diagnostic: &'a Diagnostic,
+pub struct RichDiagnostic<'a, FileId> {
+    diagnostic: &'a Diagnostic<FileId>,
 }
 
-impl<'a> RichDiagnostic<'a> {
-    pub fn new(diagnostic: &'a Diagnostic) -> Self {
+impl<'a, FileId> RichDiagnostic<'a, FileId>
+where
+    FileId: Copy + Ord,
+{
+    pub fn new(diagnostic: &'a Diagnostic<FileId>) -> RichDiagnostic<'a, FileId> {
         RichDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &'a Files<impl AsRef<str>>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         use std::collections::BTreeMap;
 
         use super::MarkStyle;
@@ -67,27 +73,35 @@ impl<'a> RichDiagnostic<'a> {
 }
 
 /// Output a short diagnostic, with a line number, severity, and message.
-pub struct ShortDiagnostic<'a> {
-    diagnostic: &'a Diagnostic,
+pub struct ShortDiagnostic<'a, FileId> {
+    diagnostic: &'a Diagnostic<FileId>,
 }
 
-impl<'a> ShortDiagnostic<'a> {
-    pub fn new(diagnostic: &'a Diagnostic) -> ShortDiagnostic<'a> {
+impl<'a, FileId> ShortDiagnostic<'a, FileId>
+where
+    FileId: Copy + Ord,
+{
+    pub fn new(diagnostic: &'a Diagnostic<FileId>) -> ShortDiagnostic<'a, FileId> {
         ShortDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &'a Files<impl AsRef<str>>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         let label = &self.diagnostic.primary_label;
-        let location = files
-            .location(label.file_id, label.span.start())
-            .expect("location");
-        Locus::new(files.name(self.diagnostic.primary_label.file_id), location)
-            .emit(writer, config)?;
+        let start = label.range.start;
+
+        let origin = files.origin(label.file_id).expect("origin");
+        let line_index = files.line_index(label.file_id, start).expect("line_index");
+        let line = files.line(label.file_id, line_index).expect("line");
+
+        Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
         write!(writer, ": ")?;
         Header::new(self.diagnostic).emit(writer, config)?;
 
