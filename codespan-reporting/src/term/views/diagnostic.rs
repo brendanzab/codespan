@@ -1,7 +1,8 @@
 use std::io;
 use termcolor::WriteColor;
 
-use crate::diagnostic::{Diagnostic, Files};
+use crate::diagnostic::Diagnostic;
+use crate::files::Files;
 use crate::term::Config;
 
 use super::{Header, Locus, NewLine, SourceSnippet};
@@ -13,18 +14,21 @@ pub struct RichDiagnostic<'a, FileId> {
 
 impl<'a, FileId> RichDiagnostic<'a, FileId>
 where
-    FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash,
+    FileId: Copy + Ord,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> RichDiagnostic<'a, FileId> {
         RichDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &impl Files<FileId = FileId>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         use std::collections::BTreeMap;
 
         use super::MarkStyle;
@@ -75,26 +79,29 @@ pub struct ShortDiagnostic<'a, FileId> {
 
 impl<'a, FileId> ShortDiagnostic<'a, FileId>
 where
-    FileId: Copy + PartialEq + PartialOrd + Eq + Ord + std::hash::Hash,
+    FileId: Copy + Ord,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> ShortDiagnostic<'a, FileId> {
         ShortDiagnostic { diagnostic }
     }
 
-    pub fn emit(
+    pub fn emit<'files>(
         &self,
-        files: &impl Files<FileId = FileId>,
+        files: &'files impl Files<'files, FileId = FileId>,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
-    ) -> io::Result<()> {
+    ) -> io::Result<()>
+    where
+        FileId: 'files,
+    {
         let label = &self.diagnostic.primary_label;
-        let origin = files
-            .origin(self.diagnostic.primary_label.file_id)
-            .expect("origin");
-        let location = files
-            .location(label.file_id, label.range.start)
-            .expect("location");
-        Locus::new(origin, location).emit(writer, config)?;
+        let start = label.range.start;
+
+        let origin = files.origin(label.file_id).expect("origin");
+        let line_index = files.line_index(label.file_id, start).expect("line_index");
+        let line = files.line(label.file_id, line_index).expect("line");
+
+        Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
         write!(writer, ": ")?;
         Header::new(self.diagnostic).emit(writer, config)?;
 

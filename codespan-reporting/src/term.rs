@@ -4,7 +4,8 @@ use std::io;
 use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
-use crate::diagnostic::{Diagnostic, Files};
+use crate::diagnostic::Diagnostic;
+use crate::files::Files;
 
 mod config;
 mod views;
@@ -14,10 +15,10 @@ pub use termcolor;
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit<F: Files>(
+pub fn emit<'files, F: Files<'files>>(
     writer: &mut (impl WriteColor + ?Sized),
     config: &Config,
-    files: &F,
+    files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> io::Result<()> {
     use self::views::{RichDiagnostic, ShortDiagnostic};
@@ -94,10 +95,11 @@ mod tests {
     use super::*;
 
     use crate::diagnostic::Label;
+    use crate::files::SimpleFiles;
 
     #[test]
     fn unsized_emit() {
-        let mut files = codespan::Files::new();
+        let mut files = SimpleFiles::new();
 
         let id = files.add("test", "");
         emit(

@@ -2,7 +2,8 @@ use std::io;
 use std::ops::Range;
 use termcolor::WriteColor;
 
-use crate::diagnostic::{Files, Label};
+use crate::diagnostic::Label;
+use crate::files::Files;
 use crate::term::Config;
 
 use super::{Locus, NewLine};
@@ -40,18 +41,18 @@ fn count_digits(mut n: usize) -> usize {
 ///   = expected type `Int`
 ///        found type `String`
 /// ```
-pub struct SourceSnippet<'a, F: Files> {
+pub struct SourceSnippet<'a, 'files, F: Files<'files>> {
     file_id: F::FileId,
     ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
     notes: &'a [String],
 }
 
-impl<'a, F: Files> SourceSnippet<'a, F> {
+impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
     pub fn new(
         file_id: F::FileId,
         ranges: Vec<(&'a Label<F::FileId>, MarkStyle)>,
         notes: &'a [String],
-    ) -> SourceSnippet<'a, F> {
+    ) -> SourceSnippet<'a, 'files, F> {
         SourceSnippet {
             file_id,
             ranges,
@@ -88,14 +89,13 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
 
     pub fn emit(
         &self,
-        files: &F,
+        files: &'files F,
         writer: &mut (impl WriteColor + ?Sized),
         config: &Config,
     ) -> io::Result<()> {
         use std::io::Write;
 
         let origin = files.origin(self.file_id).expect("origin");
-        let location = |byte_index| files.location(self.file_id, byte_index);
         let line_index = |byte_index| files.line_index(self.file_id, byte_index);
         let line = |line_index| files.line(self.file_id, line_index);
 
@@ -119,8 +119,14 @@ impl<'a, F: Files> SourceSnippet<'a, F> {
         BorderTop::new(2).emit(writer, config)?;
         write!(writer, " ")?;
 
-        let locus_location = location(locus_range.start).expect("locus_location");
-        Locus::new(origin, locus_location).emit(writer, config)?;
+        let locus_line_index = line_index(locus_range.start).expect("locus_line_index");
+        let locus_line = line(locus_line_index).expect("locus_line");
+        Locus::new(
+            origin,
+            locus_line.number,
+            locus_line.column_number(locus_range.start),
+        )
+        .emit(writer, config)?;
 
         write!(writer, " ")?;
         BorderTop::new(3).emit(writer, config)?;

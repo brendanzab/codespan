@@ -4,7 +4,7 @@ version = "0.8.0" # CODESPAN
 readme = "README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
-description = "Diagnostic reporting support for the codespan crate"
+description = "Diagnostic reporting for text-based programming languages"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-reporting"
@@ -12,7 +12,6 @@ exclude = ["assets/**"]
 edition = "2018"
 
 [dependencies]
-codespan = { path = "../codespan", version = "0.8.0" } # CODESPAN
 serde = { version = "1", optional = true, features = ["derive"] }
 termcolor = "1.0"
 unicode-width = "0.1"
@@ -24,4 +23,4 @@ structopt = "0.3"
 unindent = "0.1"
 
 [features]
-serialization = ["serde", "serde/rc", "codespan/serialization"]
+serialization = ["serde", "serde/rc"]
