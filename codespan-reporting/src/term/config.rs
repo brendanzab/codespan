@@ -99,12 +99,16 @@ pub enum DisplayStyle {
     ///    │
     ///    = expected type `Int`
     ///         found type `String`
+    ///
+    /// error[E0002]: Bad config found
+    ///
     /// ```
     Rich,
     /// Output a short diagnostic, with a line number, severity, and message.
     ///
     /// ```text
     /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// error[E0002]: Bad config found
     /// ```
     Short,
 }

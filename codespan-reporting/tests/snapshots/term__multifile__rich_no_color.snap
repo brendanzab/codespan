@@ -22,16 +22,15 @@ warning: unused parameter pattern: `n₂`
 
 error[E0001]: unexpected type in application of `_+_`
 
-   ┌── Test.fun:4:11 ───
-   │
- 4 │ _ = 123 + "hello"
-   │           ^^^^^^^ expected `Nat`, found `String`
-   │
-
     ┌── Data/Nat.fun:11:1 ───
     │
  11 │ _+_ : Nat → Nat → Nat
     │ --------------------- based on the definition of `_+_`
+    │
+    ┌── Test.fun:4:11 ───
+    │
+  4 │ _ = 123 + "hello"
+    │           ^^^^^^^ expected `Nat`, found `String`
     │
 
 

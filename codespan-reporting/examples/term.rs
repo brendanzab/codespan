@@ -86,64 +86,68 @@ fn main() {
 
     let diagnostics = [
         // Unknown builtin error
-        Diagnostic::new_error(
-            "unknown builtin: `NATRAL`",
-            Label::new(file_id1, 96..102, "unknown builtin"),
-        )
-        .with_notes(vec![
-            "there is a builtin with a similar name: `NATURAL`".to_owned()
-        ]),
+        Diagnostic::error()
+            .with_message("unknown builtin: `NATRAL`")
+            .with_labels(vec![
+                Label::primary(file_id1, 96..102).with_message("unknown builtin")
+            ])
+            .with_notes(vec![
+                "there is a builtin with a similar name: `NATURAL`".to_owned()
+            ]),
         // Unused parameter warning
-        Diagnostic::new_warning(
-            "unused parameter pattern: `n₂`",
-            Label::new(file_id1, 285..289, "unused parameter"),
-        )
-        .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
+        Diagnostic::warning()
+            .with_message("unused parameter pattern: `n₂`")
+            .with_labels(vec![
+                Label::primary(file_id1, 285..289).with_message("unused parameter")
+            ])
+            .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
         // Unexpected type error
-        Diagnostic::new_error(
-            "unexpected type in application of `_+_`",
-            Label::new(file_id2, 37..44, "expected `Nat`, found `String`"),
-        )
-        .with_code("E0001")
-        .with_secondary_labels(vec![Label::new(
-            file_id1,
-            130..155,
-            "based on the definition of `_+_`",
-        )]),
+        Diagnostic::error()
+            .with_message("unexpected type in application of `_+_`")
+            .with_code("E0001")
+            .with_labels(vec![
+                Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
+                Label::secondary(file_id1, 130..155)
+                    .with_message("based on the definition of `_+_`"),
+            ]),
         // Incompatible match clause error
-        Diagnostic::new_error(
-            "`case` clauses have incompatible types",
-            Label::new(file_id3, 163..166, "expected `String`, found `Nat`"),
-        )
-        .with_code("E0308")
-        .with_notes(vec![unindent::unindent(
-            "
-                expected type `String`
-                   found type `Nat`
-            ",
-        )])
-        .with_secondary_labels(vec![
-            Label::new(file_id3, 62..166, "`case` clauses have incompatible types"),
-            Label::new(file_id3, 41..47, "expected type `String` found here"),
-        ]),
+        Diagnostic::error()
+            .with_message("`case` clauses have incompatible types")
+            .with_code("E0308")
+            .with_labels(vec![
+                Label::primary(file_id3, 163..166).with_message("expected `String`, found `Nat`"),
+                Label::secondary(file_id3, 62..166)
+                    .with_message("`case` clauses have incompatible types"),
+                Label::secondary(file_id3, 41..47)
+                    .with_message("expected type `String` found here"),
+            ])
+            .with_notes(vec![unindent::unindent(
+                "
+                    expected type `String`
+                       found type `Nat`
+                ",
+            )]),
         // Incompatible match clause error
-        Diagnostic::new_error(
-            "`case` clauses have incompatible types",
-            Label::new(file_id3, 303..306, "expected `String`, found `Nat`"),
-        )
-        .with_code("E0308")
-        .with_notes(vec![unindent::unindent(
-            "
-                expected type `String`
-                   found type `Nat`
-            ",
-        )])
-        .with_secondary_labels(vec![
-            Label::new(file_id3, 186..306, "`case` clauses have incompatible types"),
-            Label::new(file_id3, 233..243, "this is found to be of type `String`"),
-            Label::new(file_id3, 259..265, "this is found to be of type `String`"),
-            Label::new(file_id3, 281..287, "this is found to be of type `String`"),
-        ]),
+        Diagnostic::error()
+            .with_message("`case` clauses have incompatible types")
+            .with_code("E0308")
+            .with_labels(vec![
+                Label::primary(file_id3, 303..306).with_message("expected `String`, found `Nat`"),
+                Label::secondary(file_id3, 186..306)
+                    .with_message("`case` clauses have incompatible types"),
+                Label::secondary(file_id3, 233..243)
+                    .with_message("this is found to be of type `String`"),
+                Label::secondary(file_id3, 259..265)
+                    .with_message("this is found to be of type `String`"),
+                Label::secondary(file_id3, 281..287)
+                    .with_message("this is found to be of type `String`"),
+            ])
+            .with_notes(vec![unindent::unindent(
+                "
+                    expected type `String`
+                       found type `Nat`
+                ",
+            )]),
     ];
 
     let writer = StandardStream::stderr(opts.color.into());

@@ -22,16 +22,15 @@ expression: TEST_DATA.emit_color(&config)
 
 {fg:Red bold bright}error[E0001]{bold bright}: unexpected type in application of `_+_`{/}
 
-   {fg:Blue}┌{/}{fg:Blue}──{/} Test.fun:4:11 {fg:Blue}───{/}
-   {fg:Blue}│{/}
- {fg:Blue}4{/} {fg:Blue}│{/} _ = 123 + "hello"
-   {fg:Blue}│{/}           {fg:Red}^^^^^^^ expected `Nat`, found `String`{/}
-   {fg:Blue}│{/}
-
     {fg:Blue}┌{/}{fg:Blue}──{/} Data/Nat.fun:11:1 {fg:Blue}───{/}
     {fg:Blue}│{/}
  {fg:Blue}11{/} {fg:Blue}│{/} _+_ : Nat → Nat → Nat
     {fg:Blue}│{/} {fg:Blue}--------------------- based on the definition of `_+_`{/}
+    {fg:Blue}│{/}
+    {fg:Blue}┌{/}{fg:Blue}──{/} Test.fun:4:11 {fg:Blue}───{/}
+    {fg:Blue}│{/}
+ {fg:Blue} 4{/} {fg:Blue}│{/} _ = 123 + "hello"
+    {fg:Blue}│{/}           {fg:Red}^^^^^^^ expected `Nat`, found `String`{/}
     {fg:Blue}│{/}
 
 
