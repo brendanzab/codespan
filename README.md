@@ -1,11 +1,11 @@
 # codespan
 
-[![Actions Status][actions-badge]][actions-url]
+[![Continuous integration][actions-badge]][actions-url]
 [![Crates.io][crate-badge]][crate-url]
 [![Docs.rs][docs-badge]][docs-url]
 [![Gitter][gitter-badge]][gitter-lobby]
 
-[actions-badge]: https://github.com/brendanzab/codespan/workflows/ci/badge.svg
+[actions-badge]: https://img.shields.io/github/workflow/status/brendanzab/codespan/Continuous%20integration
 [actions-url]: https://github.com/brendanzab/codespan/actions
 [crate-url]: https://crates.io/crates/codespan
 [crate-badge]: https://img.shields.io/crates/v/codespan.svg
