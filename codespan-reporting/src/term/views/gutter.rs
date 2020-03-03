@@ -27,7 +27,7 @@ impl Gutter {
                     space = "",
                     width = self.gutter_padding,
                 )?;
-            },
+            }
             Some(line_number) => {
                 writer.set_color(&config.styles.line_number)?;
                 write!(
@@ -37,7 +37,7 @@ impl Gutter {
                     width = self.gutter_padding,
                 )?;
                 writer.reset()?;
-            },
+            }
         }
         write!(writer, " ")?;
 

@@ -89,12 +89,12 @@ where
                         range: label.range.clone(),
                         marks: vec![mark],
                     });
-                },
+                }
                 Entry::Occupied(mut entry) => {
                     let mark_group = entry.get_mut();
                     mark_group.range = merge(&mark_group.range, &mark.range);
                     mark_group.marks.push(mark);
-                },
+                }
             }
         }
 

@@ -57,7 +57,7 @@ where
                     () if line_source.is_char_boundary(relative_index) => column_index,
                     () => column_index - 1,
                 }
-            },
+            }
         }
     }
 
