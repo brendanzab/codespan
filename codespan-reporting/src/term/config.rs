@@ -61,21 +61,18 @@ impl<W: io::Write> io::Write for SourceWriter<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let mut last_term = 0usize;
         for (i, ch) in buf.iter().enumerate() {
-            match ch {
-                b'\t' => {
-                    self.writer.write(&buf[last_term..i])?;
-                    last_term = i + 1;
-                    write!(
-                        self.writer,
-                        "{space: >width$}",
-                        space = "",
-                        width = self.tab_width,
-                    )?
-                },
-                _ => {},
+            if *ch == b'\t' {
+                self.writer.write_all(&buf[last_term..i])?;
+                last_term = i + 1;
+                write!(
+                    self.writer,
+                    "{space: >width$}",
+                    space = "",
+                    width = self.tab_width,
+                )?;
             }
         }
-        self.writer.write(&buf[last_term..])?;
+        self.writer.write_all(&buf[last_term..])?;
         Ok(buf.len())
     }
 
@@ -198,7 +195,7 @@ impl Styles {
             header_warning: header.clone().set_fg(Some(Color::Yellow)).clone(),
             header_note: header.clone().set_fg(Some(Color::Green)).clone(),
             header_help: header.clone().set_fg(Some(Color::Cyan)).clone(),
-            header_message: header.clone(),
+            header_message: header,
 
             primary_label_bug: ColorSpec::new().set_fg(Some(Color::Red)).clone(),
             primary_label_error: ColorSpec::new().set_fg(Some(Color::Red)).clone(),
