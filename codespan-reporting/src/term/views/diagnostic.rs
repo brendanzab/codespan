@@ -32,7 +32,7 @@ pub struct RichDiagnostic<'a, FileId> {
 
 impl<'a, FileId> RichDiagnostic<'a, FileId>
 where
-    FileId: Copy + Ord,
+    FileId: Copy + PartialEq,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> RichDiagnostic<'a, FileId> {
         RichDiagnostic { diagnostic }
@@ -47,18 +47,14 @@ where
     where
         FileId: 'files,
     {
-        use std::collections::BTreeMap;
-
         use super::{NewLine, SourceSnippet};
 
         // Group marks by file
 
-        let mut mark_groups = BTreeMap::new();
+        let mut mark_groups = Vec::new();
         let mut gutter_padding = 0;
 
         for label in &self.diagnostic.labels {
-            use std::collections::btree_map::Entry;
-
             use super::{Mark, MarkGroup, MarkStyle};
 
             let mark_style = match label.style {
@@ -79,19 +75,21 @@ where
                 message: label.message.as_str(),
             };
 
-            // TODO: Sort snippets by the mark group origin
             // TODO: Group contiguous line index ranges using some sort of interval set algorithm
             // TODO: Flatten mark groups to overlapping underlines that can be easily rendered.
-            match mark_groups.entry(label.file_id) {
-                Entry::Vacant(entry) => {
-                    entry.insert(MarkGroup {
+            match mark_groups
+                .iter_mut()
+                .find(|(file_id, _)| label.file_id == *file_id)
+            {
+                None => mark_groups.push((
+                    label.file_id,
+                    MarkGroup {
                         origin: files.origin(label.file_id).expect("origin"),
                         range: label.range.clone(),
                         marks: vec![mark],
-                    });
-                }
-                Entry::Occupied(mut entry) => {
-                    let mark_group = entry.get_mut();
+                    },
+                )),
+                Some((_, mark_group)) => {
                     mark_group.range = merge(&mark_group.range, &mark.range);
                     mark_group.marks.push(mark);
                 }
@@ -152,7 +150,7 @@ pub struct ShortDiagnostic<'a, FileId> {
 
 impl<'a, FileId> ShortDiagnostic<'a, FileId>
 where
-    FileId: Copy + Ord,
+    FileId: Copy + PartialEq,
 {
     pub fn new(diagnostic: &'a Diagnostic<FileId>) -> ShortDiagnostic<'a, FileId> {
         ShortDiagnostic { diagnostic }
