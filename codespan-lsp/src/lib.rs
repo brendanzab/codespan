@@ -27,10 +27,10 @@ impl fmt::Display for Error {
             Error::UnableToCorrelateFilename(s) => {
                 let p = PathBuf::from(s);
                 write!(f, "Unable to correlate filename `{}` to url", p.display())
-            },
+            }
             Error::ColumnOutOfBounds { given, max } => {
                 write!(f, "Column out of bounds - given: {}, max: {}", given, max)
-            },
+            }
             Error::Location(e) => e.fmt(f),
             Error::LineIndexOutOfBounds(e) => e.fmt(f),
             Error::SpanOutOfBounds(e) => e.fmt(f),

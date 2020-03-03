@@ -1,12 +1,12 @@
 # codespan
 
-[![Build Status][travis-badge]][travis-url]
+[![Actions Status][actions-badge]][actions-url]
 [![Crates.io][crate-badge]][crate-url]
 [![Docs.rs][docs-badge]][docs-url]
 [![Gitter][gitter-badge]][gitter-lobby]
 
-[travis-badge]: https://travis-ci.org/brendanzab/codespan.svg?branch=master
-[travis-url]: https://travis-ci.org/brendanzab/codespan
+[actions-badge]: https://github.com/brendanzab/codespan/workflows/ci/badge.svg
+[actions-url]: https://github.com/brendanzab/codespan/actions
 [crate-url]: https://crates.io/crates/codespan
 [crate-badge]: https://img.shields.io/crates/v/codespan.svg
 [docs-url]: https://docs.rs/codespan

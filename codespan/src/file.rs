@@ -42,7 +42,7 @@ impl fmt::Display for LocationError {
             ),
             LocationError::InvalidCharBoundary { given } => {
                 write!(f, "Byte index within character boundary - given: {}", given)
-            },
+            }
         }
     }
 }
