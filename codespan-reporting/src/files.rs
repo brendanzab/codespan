@@ -120,7 +120,38 @@ pub struct SimpleFile<Origin, Source> {
     line_starts: Vec<usize>,
 }
 
-fn line_starts<'a>(source: &'a str) -> impl 'a + Iterator<Item = usize> {
+/// Return the starting byte index of each line in the source string.
+///
+/// This can make it easier to implement new `Files` implementations.
+///
+/// # Example
+///
+/// ```rust
+/// use codespan_reporting::files;
+///
+/// let source = "foo\nbar\r\n\nbaz";
+/// let line_starts: Vec<_> = files::line_starts(source).collect();
+///
+/// assert_eq!(
+///     line_starts,
+///     [
+///         0,  // "foo\n"
+///         4,  // "bar\r\n"
+///         9,  // ""
+///         10, // "baz"
+///     ],
+/// );
+///
+/// fn line_index(line_starts: &[usize], byte_index: usize) -> Option<usize> {
+///     match line_starts.binary_search(&byte_index) {
+///         Ok(line) => Some(line),
+///         Err(next_line) => Some(next_line - 1),
+///     }
+/// }
+///
+/// assert_eq!(line_index(&line_starts, 5), Some(1));
+/// ```
+pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
     std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 
