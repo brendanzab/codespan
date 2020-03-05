@@ -263,6 +263,7 @@ mod fizz_buzz {
                             _ 0 => "Buzz"
                             _ _ => num
 
+                        fizz₂ : Nat → String
                         fizz₂ num =
                             case (mod num 5) (mod num 3) of
                                 0 0 => "FizzBuzz"
@@ -294,11 +295,12 @@ mod fizz_buzz {
                     .with_message("`case` clauses have incompatible types")
                     .with_code("E0308")
                     .with_labels(vec![
-                        Label::primary(file_id, 303..306).with_message("expected `String`, found `Nat`"),
-                        Label::secondary(file_id, 186..306).with_message("`case` clauses have incompatible types"),
-                        Label::secondary(file_id, 233..243).with_message("this is found to be of type `String`"),
-                        Label::secondary(file_id, 259..265).with_message("this is found to be of type `String`"),
-                        Label::secondary(file_id, 281..287).with_message("this is found to be of type `String`"),
+                        Label::primary(file_id, 328..331).with_message("expected `String`, found `Nat`"),
+                        Label::secondary(file_id, 211..331).with_message("`case` clauses have incompatible types"),
+                        Label::secondary(file_id, 258..268).with_message("this is found to be of type `String`"),
+                        Label::secondary(file_id, 284..290).with_message("this is found to be of type `String`"),
+                        Label::secondary(file_id, 306..312).with_message("this is found to be of type `String`"),
+                        Label::secondary(file_id, 186..192).with_message("expected type `String` found here"),
                     ])
                     .with_notes(vec![unindent::unindent(
                         "

@@ -40,7 +40,6 @@ where
         // TODO: Make this data structure external, to allow for allocation reuse
         let mut file_ids_to_labels = Vec::new();
         let mut outer_padding = 0;
-
         // Group marks by file
         for label in &self.diagnostic.labels {
             let end_line = files
@@ -235,17 +234,45 @@ where
                     })?;
                 }
 
-                // Source break if there's another label after this one.
-                //
-                // ```text
-                // ·
-                // ```
                 if let Some((_, next_start_line, _)) = labels.peek() {
-                    if end_line.index + 1 != next_start_line.index {
-                        renderer.render(&Entry::SourceBreak {
-                            outer_padding,
-                            left_marks: Vec::new(),
-                        })?;
+                    match next_start_line.index.checked_sub(end_line.index) {
+                        // Same line
+                        Some(0) => {
+                            // TODO: Accumulate marks!
+                            renderer.render(&Entry::SourceBreak {
+                                outer_padding,
+                                left_marks: Vec::new(),
+                            })?
+                        }
+                        // Consecutive lines
+                        Some(1) => {}
+                        // Only one line between us and the next label
+                        Some(2) => {
+                            // Write a source line
+                            let next_line = files
+                                .line(label.file_id, end_line.index + 1)
+                                .expect("next_line");
+                            renderer.render(&Entry::SourceLine {
+                                outer_padding,
+                                line_number: next_line.number,
+                                source: next_line.source.as_ref(),
+                                marks: vec![],
+                            })?;
+                        }
+                        // Either:
+                        // - one line between us and the next label
+                        // - labels are out of order
+                        Some(_) | None => {
+                            // Source break
+                            //
+                            // ```text
+                            // ·
+                            // ```
+                            renderer.render(&Entry::SourceBreak {
+                                outer_padding,
+                                left_marks: Vec::new(),
+                            })?
+                        }
                     }
                 }
             }
