@@ -93,50 +93,45 @@ where
         //   │
         // ```
         for (file_id, labels) in &file_ids_to_labels {
-            for (i, label) in labels.iter().enumerate() {
+            let mut labels = labels
+                .iter()
+                .map(|label| {
+                    let start_line = files
+                        .line_index(label.file_id, label.range.start)
+                        .expect("start_index");
+                    let end_line = files
+                        .line_index(label.file_id, label.range.end)
+                        .expect("end_index");
+                    (label, start_line, end_line)
+                })
+                .peekable();
+
+            // Top left border and locus.
+            //
+            // ```text
+            // ┌── test:2:9 ───
+            // ```
+            if let Some((label, start_line, _)) = labels.peek() {
+                renderer.render(&Entry::SourceStart {
+                    outer_padding,
+                    locus: Locus {
+                        origin: files.origin(*file_id).expect("origin").to_string(),
+                        line_number: start_line.number,
+                        column_number: start_line.column_number(label.range.start),
+                    },
+                })?;
+                renderer.render(&Entry::SourceEmpty {
+                    outer_padding,
+                    left_marks: Vec::new(),
+                })?;
+            }
+
+            while let Some((label, start_line, end_line)) = labels.next() {
                 let severity = match label.style {
                     LabelStyle::Primary => Some(self.diagnostic.severity),
                     LabelStyle::Secondary => None,
                 };
 
-                let start_line = files
-                    .line_index(label.file_id, label.range.start)
-                    .expect("start_index");
-                let end_line = files
-                    .line_index(label.file_id, label.range.end)
-                    .expect("end_index");
-
-                if i == 0 {
-                    // Top left border and locus.
-                    //
-                    // ```text
-                    // ┌── test:2:9 ───
-                    // ```
-                    renderer.render(&Entry::SourceStart {
-                        outer_padding,
-                        locus: Locus {
-                            origin: files.origin(*file_id).expect("origin").to_string(),
-                            line_number: start_line.number,
-                            column_number: start_line.column_number(label.range.start),
-                        },
-                    })?;
-                    renderer.render(&Entry::SourceEmpty {
-                        outer_padding,
-                        left_marks: Vec::new(),
-                    })?;
-                } else {
-                    // Source break.
-                    //
-                    // ```text
-                    // ·
-                    // ```
-                    renderer.render(&Entry::SourceBreak {
-                        outer_padding,
-                        left_marks: Vec::new(),
-                    })?;
-                };
-
-                // Attempt to split off the last line.
                 if start_line.index == end_line.index {
                     // Single line
                     //
@@ -146,6 +141,8 @@ where
                     // ```
                     let mark_start = label.range.start - start_line.start;
                     let mark_end = label.range.end - start_line.start;
+
+                    // TODO: check for new marks to merge onto this line?
 
                     renderer.render(&Entry::SourceLine {
                         outer_padding,
@@ -236,6 +233,20 @@ where
                             Mark::MultiBottom(..mark_end, &label.message),
                         ))],
                     })?;
+                }
+
+                // Source break if there's another label after this one.
+                //
+                // ```text
+                // ·
+                // ```
+                if let Some((_, next_start_line, _)) = labels.peek() {
+                    if end_line.index + 1 != next_start_line.index {
+                        renderer.render(&Entry::SourceBreak {
+                            outer_padding,
+                            left_marks: Vec::new(),
+                        })?;
+                    }
                 }
             }
             renderer.render(&Entry::SourceEmpty {

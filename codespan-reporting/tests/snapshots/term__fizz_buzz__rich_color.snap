@@ -8,7 +8,6 @@ expression: TEST_DATA.emit_color(&config)
    {fg:Blue}│{/}
  {fg:Blue}3{/} {fg:Blue}│{/} fizz₁ : Nat → String
    {fg:Blue}│{/}               {fg:Blue}------ expected type `String` found here{/}
-   {fg:Blue}·{/}
  {fg:Blue}4{/} {fg:Blue}│{/}   fizz₁ num = case (mod num 5) (mod num 3) of
    {fg:Blue}│{/} {fg:Blue}╭{/}{fg:Blue}─────────────'{/}
  {fg:Blue}5{/} {fg:Blue}│{/} {fg:Blue}│{/}     0 0 => "FizzBuzz"
@@ -36,13 +35,10 @@ expression: TEST_DATA.emit_color(&config)
     {fg:Blue}·{/}
  {fg:Blue}12{/} {fg:Blue}│{/}         0 0 => "FizzBuzz"
     {fg:Blue}│{/}                {fg:Blue}---------- this is found to be of type `String`{/}
-    {fg:Blue}·{/}
  {fg:Blue}13{/} {fg:Blue}│{/}         0 _ => "Fizz"
     {fg:Blue}│{/}                {fg:Blue}------ this is found to be of type `String`{/}
-    {fg:Blue}·{/}
  {fg:Blue}14{/} {fg:Blue}│{/}         _ 0 => "Buzz"
     {fg:Blue}│{/}                {fg:Blue}------ this is found to be of type `String`{/}
-    {fg:Blue}·{/}
  {fg:Blue}15{/} {fg:Blue}│{/}         _ _ => num
     {fg:Blue}│{/}                {fg:Red}^^^ expected `String`, found `Nat`{/}
     {fg:Blue}│{/}

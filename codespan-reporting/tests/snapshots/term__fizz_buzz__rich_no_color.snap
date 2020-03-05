@@ -8,7 +8,6 @@ error[E0308]: `case` clauses have incompatible types
    │
  3 │ fizz₁ : Nat → String
    │               ------ expected type `String` found here
-   ·
  4 │   fizz₁ num = case (mod num 5) (mod num 3) of
    │ ╭─────────────'
  5 │ │     0 0 => "FizzBuzz"
@@ -36,13 +35,10 @@ error[E0308]: `case` clauses have incompatible types
     ·
  12 │         0 0 => "FizzBuzz"
     │                ---------- this is found to be of type `String`
-    ·
  13 │         0 _ => "Fizz"
     │                ------ this is found to be of type `String`
-    ·
  14 │         _ 0 => "Buzz"
     │                ------ this is found to be of type `String`
-    ·
  15 │         _ _ => num
     │                ^^^ expected `String`, found `Nat`
     │
