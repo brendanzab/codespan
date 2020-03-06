@@ -341,20 +341,14 @@ struct File<Source> {
     line_starts: Vec<ByteIndex>,
 }
 
-// FIXME: Check file size
-fn compute_line_starts(source: &str) -> Vec<ByteIndex> {
-    std::iter::once(0)
-        .chain(source.match_indices('\n').map(|(i, _)| i as u32 + 1))
-        .map(ByteIndex::from)
-        .collect()
-}
-
 impl<Source> File<Source>
 where
     Source: AsRef<str>,
 {
     fn new(name: OsString, source: Source) -> Self {
-        let line_starts = compute_line_starts(source.as_ref());
+        let line_starts = codespan_reporting::files::line_starts(source.as_ref())
+            .map(|i| ByteIndex::from(i as u32))
+            .collect();
 
         File {
             name,
@@ -364,7 +358,9 @@ where
     }
 
     fn update(&mut self, source: Source) {
-        let line_starts = compute_line_starts(source.as_ref());
+        let line_starts = codespan_reporting::files::line_starts(source.as_ref())
+            .map(|i| ByteIndex::from(i as u32))
+            .collect();
         self.source = source;
         self.line_starts = line_starts;
     }
