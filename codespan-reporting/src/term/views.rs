@@ -40,11 +40,19 @@ where
         // TODO: Make this data structure external, to allow for allocation reuse
         let mut file_ids_to_labels = Vec::new();
         let mut outer_padding = 0;
+
         // Group marks by file
         for label in &self.diagnostic.labels {
+            let start_line = files
+                .line_index(label.file_id, label.range.start)
+                .expect("start_index");
             let end_line = files
                 .line_index(label.file_id, label.range.end)
                 .expect("end_index");
+            // The label spans over multiple lines if if the line indices of the
+            // start and end differ.
+            let is_multiline = start_line.index != end_line.index;
+            // Update the outer padding based on the last lin number
             outer_padding = std::cmp::max(outer_padding, count_digits(end_line.number));
 
             // TODO: Group contiguous line index ranges using some sort of interval set algorithm.
@@ -52,18 +60,27 @@ where
             // TODO: If start line and end line are too far apart, we should add a source break.
             match file_ids_to_labels
                 .iter_mut()
-                .find(|(file_id, _)| label.file_id == *file_id)
+                .find(|(file_id, _, _)| label.file_id == *file_id)
             {
-                None => file_ids_to_labels.push((label.file_id, vec![label])),
-                Some((_, labels)) => labels.push(label),
+                None => file_ids_to_labels.push((label.file_id, is_multiline, vec![label])),
+                Some((_, seen_multiline, labels)) => {
+                    // Keep track of if we've sen a multiline label. This helps
+                    // us to figure out the inner padding of the source snippet.
+                    // TODO: This will need to be more complicated once we allow multiline labels to overlap.
+                    *seen_multiline |= is_multiline;
+                    // Ensure that the vector of labels is sorted
+                    // lexicographically by the range of source code they cover.
+                    // This should make our job easier later on.
+                    match labels.binary_search_by(|other| {
+                        // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
+                        // to piggyback off its lexicographic sorting implementation.
+                        (other.range.start, other.range.end)
+                            .cmp(&(label.range.start, label.range.end))
+                    }) {
+                        Ok(i) | Err(i) => labels.insert(i, label),
+                    }
+                }
             }
-        }
-
-        // Sort labels lexicographically by the range of source code they cover.
-        for (_, labels) in file_ids_to_labels.iter_mut() {
-            // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
-            // to piggyback off its lexicographic sorting implementation.
-            labels.sort_by_key(|label| (label.range.start, label.range.end));
         }
 
         // Header and message
@@ -91,7 +108,7 @@ where
         //   │         ^^ expected `Int` but found `String`
         //   │
         // ```
-        for (file_id, labels) in &file_ids_to_labels {
+        for (file_id, seen_multiline, labels) in &file_ids_to_labels {
             let mut labels = labels
                 .iter()
                 .map(|label| {
@@ -143,14 +160,16 @@ where
 
                     // TODO: check for new marks to merge onto this line?
 
+                    let mark = Some((severity, Mark::Single(mark_start..mark_end, &label.message)));
+
                     renderer.render(&Entry::SourceLine {
                         outer_padding,
                         line_number: start_line.number,
                         source: start_line.source.as_ref(),
-                        marks: vec![Some((
-                            severity,
-                            Mark::Single(mark_start..mark_end, &label.message),
-                        ))],
+                        marks: match seen_multiline {
+                            true => vec![None, mark],
+                            false => vec![mark],
+                        },
                     })?;
                 } else {
                     // Multiple lines
@@ -256,7 +275,10 @@ where
                                 outer_padding,
                                 line_number: next_line.number,
                                 source: next_line.source.as_ref(),
-                                marks: vec![],
+                                marks: match seen_multiline {
+                                    true => vec![None],
+                                    false => vec![],
+                                },
                             })?;
                         }
                         // Either:
