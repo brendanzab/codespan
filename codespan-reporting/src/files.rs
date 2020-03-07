@@ -97,11 +97,11 @@ pub trait Files<'a> {
     /// The source of a file.
     fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
 
-    /// The line at the given index.
-    fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line>;
-
     /// The index of the line at the given byte index.
     fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
+
+    /// The line at the given index.
+    fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line>;
 }
 
 /// A single source file.

@@ -8,6 +8,7 @@ use crate::diagnostic::Diagnostic;
 use crate::files::Files;
 
 mod config;
+mod renderer;
 mod views;
 
 pub use termcolor;
@@ -77,16 +78,18 @@ impl Into<ColorChoice> for ColorArg {
 
 /// Emit a diagnostic using the given writer, context, config, and files.
 pub fn emit<'files, F: Files<'files>>(
-    writer: &mut (impl WriteColor + ?Sized),
+    writer: &mut dyn WriteColor,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> io::Result<()> {
+    use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
+    let mut renderer = Renderer::new(writer, config);
     match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).emit(files, writer, config),
-        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).emit(files, writer, config),
+        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).render(files, &mut renderer),
+        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).render(files, &mut renderer),
     }
 }
 
