@@ -1,9 +1,8 @@
-use structopt::StructOpt;
-
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::StandardStream;
 use codespan_reporting::term::{self, ColorArg};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "emit")]

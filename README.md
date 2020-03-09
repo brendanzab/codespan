@@ -29,7 +29,7 @@ cargo run --example=term -- --color never
 
 You should see something like the following in your terminal:
 
-![screenshot](./assets/screenshot.png)
+![sample](./codespan-reporting/assets/sample.svg?sanitize=true)
 
 We're still working on improving the output - stay tuned for updates!
 
