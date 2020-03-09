@@ -49,32 +49,24 @@ pub trait Files<'a> {
 /// ```rust
 /// use codespan_reporting::files;
 ///
-/// let source = "\n\n🗻∈🌏";
+/// let source = "\n\n🗻∈🌏\n\n";
 ///
+/// assert_eq!(files::column_index(source, 0..1, 0), 0);
 /// assert_eq!(files::column_index(source, 2..13, 0), 0);
 /// assert_eq!(files::column_index(source, 2..13, 2 + 0), 0);
 /// assert_eq!(files::column_index(source, 2..13, 2 + 1), 0);
 /// assert_eq!(files::column_index(source, 2..13, 2 + 4), 1);
 /// assert_eq!(files::column_index(source, 2..13, 2 + 8), 2);
-/// assert_eq!(files::column_index(source, 2..13, source.len()), 3);
+/// assert_eq!(files::column_index(source, 2..13, 2 + 10), 2);
+/// assert_eq!(files::column_index(source, 2..13, 2 + 11), 3);
+/// assert_eq!(files::column_index(source, 2..13, 2 + 12), 3);
 /// ```
 pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -> usize {
-    let relative_index = match byte_index.checked_sub(line_range.start) {
-        None => return 0,
-        Some(relative_index) => relative_index,
-    };
-    let line_source = &source[line_range];
-    let column_index = line_source
-        .char_indices()
-        .map(|(i, _)| i)
-        .take_while(|i| *i < relative_index)
-        .count();
+    let end_index = std::cmp::min(byte_index, std::cmp::min(line_range.end, source.len()));
 
-    match () {
-        () if relative_index >= line_source.len() => column_index,
-        () if line_source.is_char_boundary(relative_index) => column_index,
-        () => column_index - 1,
-    }
+    (line_range.start..end_index)
+        .filter(|byte_index| source.is_char_boundary(byte_index + 1))
+        .count()
 }
 
 /// The 1-indexed column number at the given byte index.
@@ -87,12 +79,15 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 /// let source = "\n\n🗻∈🌏";
 /// let line_range = 2..13;
 ///
+/// assert_eq!(files::column_number(source, 0..1, 0), 1);
 /// assert_eq!(files::column_number(source, 2..13, 0), 1);
 /// assert_eq!(files::column_number(source, 2..13, 2 + 0), 1);
 /// assert_eq!(files::column_number(source, 2..13, 2 + 1), 1);
 /// assert_eq!(files::column_number(source, 2..13, 2 + 4), 2);
 /// assert_eq!(files::column_number(source, 2..13, 2 + 8), 3);
-/// assert_eq!(files::column_number(source, 2..13, source.len()), 4);
+/// assert_eq!(files::column_number(source, 2..13, 2 + 10), 3);
+/// assert_eq!(files::column_number(source, 2..13, 2 + 11), 4);
+/// assert_eq!(files::column_number(source, 2..13, 2 + 12), 4);
 /// ```
 pub fn column_number(source: &str, line_range: Range<usize>, byte_index: usize) -> usize {
     column_index(source, line_range, byte_index) + 1
