@@ -1,4 +1,27 @@
 //! Source file support for diagnostic reporting.
+//!
+//! The main trait defined in this module is the [`Files`] trait, which provides
+//! provides the minimum amount of functionality required for printing [`Diagnostics`]
+//! with the [`term::emit`] function.
+//!
+//! Simple implementations of this trait are implemented:
+//!
+//! - [`SimpleFile`]: For single-file use-cases
+//! - [`SimpleFiles`]: For single-file use-cases
+//!
+//! These data structures provide a pretty minimal API, however,
+//! so end-users are encouraged to create their own implementations for their
+//! own specific use-cases, such as an implementation that accesses the file
+//! system directly (and caches the line start locations), or an implementation
+//! using an incremental compilation library like [`salsa`].
+//!
+//! [`term::emit`]: crate::term::emit
+//! [`Diagnostics`]: crate::diagnostic::Diagnostic
+//! [`Files`]: Files
+//! [`SimpleFile`]: SimpleFile
+//! [`SimpleFiles`]: SimpleFiles
+//!
+//! [`salsa`]: https://crates.io/crates/salsa
 
 use std::ops::Range;
 
@@ -97,23 +120,11 @@ pub fn column_number(source: &str, line_range: Range<usize>, byte_index: usize) 
     column_index(source, line_range, byte_index) + 1
 }
 
-/// A single source file.
-///
-/// This is useful for simple language tests, but it might be worth creating a
-/// custom implementation when a language scales beyond a certain size.
-#[derive(Debug, Clone)]
-pub struct SimpleFile<Name, Source> {
-    /// The name of the file.
-    name: Name,
-    /// The source code of the file.
-    source: Source,
-    /// The starting byte indices in the source code.
-    line_starts: Vec<usize>,
-}
-
 /// Return the starting byte index of each line in the source string.
 ///
-/// This can make it easier to implement new `Files` implementations.
+/// This can make it easier to implement new [`Files`] implementations.
+///
+/// [`Files`]: Files
 ///
 /// # Example
 ///
@@ -144,6 +155,24 @@ pub struct SimpleFile<Name, Source> {
 /// ```
 pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
     std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+}
+
+/// A file database that contains a single source file.
+///
+/// Because there is only single file in this database we use `()` as a [`FileId`].
+///
+/// This is useful for simple language tests, but it might be worth creating a
+/// custom implementation when a language scales beyond a certain size.
+///
+/// [`FileId`]: Files::FileId
+#[derive(Debug, Clone)]
+pub struct SimpleFile<Name, Source> {
+    /// The name of the file.
+    name: Name,
+    /// The source code of the file.
+    source: Source,
+    /// The starting byte indices in the source code.
+    line_starts: Vec<usize>,
 }
 
 impl<Name, Source> SimpleFile<Name, Source>

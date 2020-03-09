@@ -17,14 +17,17 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// A command line argument that configures the coloring of the output.
 ///
-/// This can be used with command line argument parsers like `clap` or `structopt`.
+/// This can be used with command line argument parsers like [`clap`] or [`structopt`].
+///
+/// [`clap`]: https://crates.io/crates/clap
+/// [`structopt`]: https://crates.io/crates/structopt
 ///
 /// # Example
 ///
 /// ```rust
-/// use structopt::StructOpt;
 /// use codespan_reporting::term::termcolor::StandardStream;
 /// use codespan_reporting::term::ColorArg;
+/// use structopt::StructOpt;
 ///
 /// #[derive(Debug, StructOpt)]
 /// #[structopt(name = "groovey-app")]
@@ -32,10 +35,9 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 ///     /// Configure coloring of output
 ///     #[structopt(
 ///         long = "color",
-///         parse(try_from_str),
 ///         default_value = "auto",
 ///         possible_values = ColorArg::VARIANTS,
-///         case_insensitive = true
+///         case_insensitive = true,
 ///     )]
 ///     pub color: ColorArg,
 /// }
@@ -51,8 +53,11 @@ pub struct ColorArg(pub ColorChoice);
 impl ColorArg {
     /// Allowed values the argument.
     ///
-    /// This is useful for generating documentation via `clap` or `structopt`'s
+    /// This is useful for generating documentation via [`clap`] or `structopt`'s
     /// `possible_values` configuration.
+    ///
+    /// [`clap`]: https://crates.io/crates/clap
+    /// [`structopt`]: https://crates.io/crates/structopt
     pub const VARIANTS: &'static [&'static str] = &["auto", "always", "ansi", "never"];
 }
 

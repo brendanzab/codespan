@@ -89,12 +89,16 @@ impl<FileId> Label<FileId> {
         }
     }
 
-    /// Create a new primary label.
+    /// Create a new label with a style of [`LabelStyle::Primary`].
+    ///
+    /// [`LabelStyle::Primary`]: LabelStyle::Primary
     pub fn primary(file_id: FileId, range: impl Into<Range<usize>>) -> Label<FileId> {
         Label::new(LabelStyle::Primary, file_id, range)
     }
 
-    /// Create a new secondary label.
+    /// Create a new label with a style of [`LabelStyle::Secondary`].
+    ///
+    /// [`LabelStyle::Secondary`]: LabelStyle::Secondary
     pub fn secondary(file_id: FileId, range: impl Into<Range<usize>>) -> Label<FileId> {
         Label::new(LabelStyle::Secondary, file_id, range)
     }
@@ -140,27 +144,37 @@ impl<FileId> Diagnostic<FileId> {
         }
     }
 
-    /// Create a new diagnostic with a severity of `Severity::Bug`.
+    /// Create a new diagnostic with a severity of [`Severity::Bug`].
+    ///
+    /// [`Severity::Bug`]: Severity::Bug
     pub fn bug() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Bug)
     }
 
-    /// Create a new diagnostic with a severity of `Severity::Error`.
+    /// Create a new diagnostic with a severity of [`Severity::Error`].
+    ///
+    /// [`Severity::Error`]: Severity::Error
     pub fn error() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Error)
     }
 
-    /// Create a new diagnostic with a severity of `Severity::Warning`.
+    /// Create a new diagnostic with a severity of [`Severity::Warning`].
+    ///
+    /// [`Severity::Warning`]: Severity::Warning
     pub fn warning() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Warning)
     }
 
-    /// Create a new diagnostic with a severity of `Severity::Note`.
+    /// Create a new diagnostic with a severity of [`Severity::Note`].
+    ///
+    /// [`Severity::Note`]: Severity::Note
     pub fn note() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Note)
     }
 
-    /// Create a new diagnostic with a severity of `Severity::Help`.
+    /// Create a new diagnostic with a severity of [`Severity::Help`].
+    ///
+    /// [`Severity::Help`]: Severity::Help
     pub fn help() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Help)
     }
