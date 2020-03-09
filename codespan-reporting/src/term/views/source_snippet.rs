@@ -58,6 +58,7 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
     ) -> io::Result<()> {
         use std::io::Write;
 
+        let source = files.source(self.file_id).expect("source");
         let line_index = |byte_index| files.line_index(self.file_id, byte_index);
         let line = |line_index| files.line(self.file_id, line_index);
 
@@ -77,8 +78,10 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
             let start = self.mark_group.range.start;
             let line_index = line_index(start).expect("locus_line_index");
             let line = line(line_index).expect("locus_line");
+            let line_source = &source.as_ref()[line.range.clone()];
 
-            Locus::new(&origin, line.number, line.column_number(start)).emit(writer, config)?;
+            Locus::new(&origin, line.number, line.column_number(line_source, start))
+                .emit(writer, config)?;
         }
 
         write!(writer, " ")?;
@@ -91,8 +94,8 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
             let start_line = line(start_line_index).expect("start_line");
             let end_line = line(end_line_index).expect("end_line");
 
-            let start_source = start_line.source.as_ref();
-            let end_source = end_line.source.as_ref();
+            let start_source = &source.as_ref()[start_line.range.clone()];
+            let end_source = &source.as_ref()[end_line.range.clone()];
 
             // Code snippet
             //
@@ -120,8 +123,8 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
                 //   │         ^^ expected `Int` but found `String`
                 // ```
 
-                let mark_start = mark.range.start - start_line.start;
-                let mark_end = mark.range.end - start_line.start;
+                let mark_start = mark.range.start - start_line.range.start;
+                let mark_end = mark.range.end - start_line.range.start;
                 let prefix_source = &start_source[..mark_start];
                 let marked_source = &start_source[mark_start..mark_end];
 
@@ -152,7 +155,7 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let mark_start = mark.range.start - start_line.start;
+                let mark_start = mark.range.start - start_line.range.start;
                 let prefix_source = &start_source[..mark_start];
 
                 if prefix_source.trim().is_empty() {
@@ -205,6 +208,10 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
 
                 for line_index in (start_line_index + 1)..end_line_index {
                     let marked_line = line(line_index).expect("marked_line");
+                    let marked_source = &source
+                        .as_ref()
+                        .get(marked_line.range.clone())
+                        .expect("marked_source");
 
                     // Write line number, border, and underline
                     Gutter::new(marked_line.number, self.gutter_padding).emit(writer, config)?;
@@ -212,7 +219,7 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
                     UnderlineLeft::new(mark.style).emit(writer, config)?;
 
                     // Write marked source
-                    write!(writer, " {}", marked_line.source.as_ref().trim_end())?;
+                    write!(writer, " {}", marked_source.trim_end())?;
                     NewLine::new().emit(writer, config)?;
                 }
 
@@ -223,7 +230,7 @@ impl<'a, 'files: 'a, F: Files<'files>> SourceSnippet<'a, 'files, F> {
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let mark_end = mark.range.end - end_line.start;
+                let mark_end = mark.range.end - end_line.range.start;
                 let marked_source = &end_source[..mark_end];
 
                 // Write line number, border, and underline
