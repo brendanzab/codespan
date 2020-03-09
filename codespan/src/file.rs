@@ -317,13 +317,10 @@ where
         Some(self.line_index(id, byte_index as u32).to_usize())
     }
 
-    fn line(&'a self, id: FileId, line_index: usize) -> Option<codespan_reporting::files::Line> {
+    fn line_range(&'a self, id: FileId, line_index: usize) -> Option<std::ops::Range<usize>> {
         let span = self.line_span(id, line_index as u32).ok()?;
 
-        Some(codespan_reporting::files::Line {
-            number: line_index + 1,
-            range: span.start().to_usize()..span.end().to_usize(),
-        })
+        Some(span.start().to_usize()..span.end().to_usize())
     }
 }
 
