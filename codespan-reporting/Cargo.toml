@@ -1,10 +1,10 @@
 [package]
 name = "codespan-reporting"
 version = "0.8.0" # CODESPAN
-readme = "README.md"
+readme = "../README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
-description = "Diagnostic reporting for text-based programming languages"
+description = "Beautiful diagnostic reporting for text-based programming languages"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-reporting"
