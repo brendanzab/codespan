@@ -32,17 +32,15 @@ pub enum Opts {
     },
 }
 
-const SVG_START: &str = r#"<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+const SVG_START: &str = r#"<svg viewBox="0 0 882 440" xmlns="http://www.w3.org/2000/svg">
   <style>
     /* https://github.com/aaron-williamson/base16-alacritty/blob/master/colors/base16-tomorrow-night-256.yml */
     pre {
       background: #1d1f21;
-      margin: 15px;
       padding: 10px;
-      border-radius: 5px;
-      box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+      border-radius: 6px;
       color: #ffffff;
-      font: 10px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+      font: 12px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
     }
 
     pre .bold { font-weight: bold; }
@@ -84,7 +82,7 @@ const SVG_START: &str = r#"<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2
     pre .bg.white.bright    { background-color: #ffffff; }
   </style>
 
-  <foreignObject x="10" y="10" width="580" height="380">
+  <foreignObject x="0" y="0" width="882" height="440">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <pre>"#;
 
