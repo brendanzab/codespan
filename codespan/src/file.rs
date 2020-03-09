@@ -445,8 +445,6 @@ where
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::assert_eq;
-
     use super::*;
 
     const TEST_SOURCE: &str = "foo\nbar\r\n\nbaz";
