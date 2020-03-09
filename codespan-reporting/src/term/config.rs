@@ -175,13 +175,14 @@ impl Styles {
     }
 
     /// The style used to mark a primary label at a given severity.
-    pub fn primary_label(&self, severity: Severity) -> &ColorSpec {
+    pub fn label(&self, severity: Option<Severity>) -> &ColorSpec {
         match severity {
-            Severity::Bug => &self.primary_label_bug,
-            Severity::Error => &self.primary_label_error,
-            Severity::Warning => &self.primary_label_warning,
-            Severity::Note => &self.primary_label_note,
-            Severity::Help => &self.primary_label_help,
+            Some(Severity::Bug) => &self.primary_label_bug,
+            Some(Severity::Error) => &self.primary_label_error,
+            Some(Severity::Warning) => &self.primary_label_warning,
+            Some(Severity::Note) => &self.primary_label_note,
+            Some(Severity::Help) => &self.primary_label_help,
+            None => &self.secondary_label,
         }
     }
 
@@ -243,34 +244,63 @@ pub struct Chars {
     /// Defaults to: `'='`.
     pub note_bullet: char,
 
-    /// The character to use for marking a primary label.
+    /// The character to use for marking a single-line primary label.
     /// Defaults to: `'^'`.
-    pub primary_caret: char,
-    /// The character to use for marking a secondary label.
+    pub single_primary_caret: char,
+    /// The character to use for marking a single-line secondary label.
     /// Defaults to: `'-'`.
-    pub secondary_caret: char,
+    pub single_secondary_caret: char,
 
-    /// The character to use for marking the ends of a multi-line primary label.
+    /// The character to use for marking the start of a multi-line primary label.
     /// Defaults to: `'^'`.
-    pub multiline_primary_caret: char,
-    /// The character to use for marking the ends of a multi-line secondary label.
+    pub multi_primary_caret_start: char,
+    /// The character to use for marking the end of a multi-line primary label.
+    /// Defaults to: `'^'`.
+    pub multi_primary_caret_end: char,
+    /// The character to use for marking the start of a multi-line secondary label.
     /// Defaults to: `'\''`.
-    pub multiline_secondary_caret: char,
+    pub multi_secondary_caret_start: char,
+    /// The character to use for marking the end of a multi-line secondary label.
+    /// Defaults to: `'\''`.
+    pub multi_secondary_caret_end: char,
     /// The character to use for the top-left corner of a multi-line label.
     /// Defaults to: `'╭'`.
-    pub multiline_top_left: char,
+    pub multi_top_left: char,
     /// The character to use for the top of a multi-line label.
     /// Defaults to: `'─'`.
-    pub multiline_top: char,
+    pub multi_top: char,
     /// The character to use for the bottom-left corner of a multi-line label.
     /// Defaults to: `'╰'`.
-    pub multiline_bottom_left: char,
+    pub multi_bottom_left: char,
     /// The character to use when marking the bottom of a multi-line label.
     /// Defaults to: `'─'`.
-    pub multiline_bottom: char,
+    pub multi_bottom: char,
     /// The character to use for the left of a multi-line label.
     /// Defaults to: `'│'`.
-    pub multiline_left: char,
+    pub multi_left: char,
+}
+
+impl Chars {
+    pub fn single_caret_char(&self, severity: Option<Severity>) -> char {
+        match severity {
+            Some(_) => self.single_primary_caret,
+            None => self.single_secondary_caret,
+        }
+    }
+
+    pub fn multi_caret_char_start(&self, severity: Option<Severity>) -> char {
+        match severity {
+            Some(_) => self.multi_primary_caret_start,
+            None => self.multi_secondary_caret_start,
+        }
+    }
+
+    pub fn multi_caret_char_end(&self, severity: Option<Severity>) -> char {
+        match severity {
+            Some(_) => self.multi_primary_caret_end,
+            None => self.multi_secondary_caret_end,
+        }
+    }
 }
 
 impl Default for Chars {
@@ -283,16 +313,18 @@ impl Default for Chars {
 
             note_bullet: '=',
 
-            primary_caret: '^',
-            secondary_caret: '-',
+            single_primary_caret: '^',
+            single_secondary_caret: '-',
 
-            multiline_primary_caret: '^',
-            multiline_secondary_caret: '\'',
-            multiline_top_left: '╭',
-            multiline_top: '─',
-            multiline_bottom_left: '╰',
-            multiline_bottom: '─',
-            multiline_left: '│',
+            multi_primary_caret_start: '^',
+            multi_primary_caret_end: '^',
+            multi_secondary_caret_start: '\'',
+            multi_secondary_caret_end: '\'',
+            multi_top_left: '╭',
+            multi_top: '─',
+            multi_bottom_left: '╰',
+            multi_bottom: '─',
+            multi_left: '│',
         }
     }
 }
