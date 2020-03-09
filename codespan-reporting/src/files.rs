@@ -3,19 +3,14 @@
 use std::ops::Range;
 
 /// A line within a source file.
-pub struct Line<Source> {
-    /// The starting byte index of the line.
-    pub start: usize,
+pub struct Line {
     /// The line number.
     pub number: usize,
-    /// The source of the line.
-    pub source: Source,
+    /// The byte range of the line.
+    pub range: Range<usize>,
 }
 
-impl<Source> Line<Source>
-where
-    Source: AsRef<str>,
-{
+impl Line {
     /// The column index at the given byte index in the source file.
     /// This is the number of characters to the given byte index.
     ///
@@ -28,36 +23,35 @@ where
     /// ```rust
     /// use codespan_reporting::files::Line;
     ///
+    /// let source = "\n\n🗻∈🌏";
+    /// let line_source = &source[2..13];
     /// let line = Line {
-    ///     start: 2,
     ///     number: 2,
-    ///     source: "🗻∈🌏",
+    ///     range: 2..13,
     /// };
     ///
-    /// assert_eq!(line.column_index(0), 0);
-    /// assert_eq!(line.column_index(line.start + 0), 0);
-    /// assert_eq!(line.column_index(line.start + 1), 0);
-    /// assert_eq!(line.column_index(line.start + 4), 1);
-    /// assert_eq!(line.column_index(line.start + 8), 2);
-    /// assert_eq!(line.column_index(line.start + line.source.len()), 3);
+    /// assert_eq!(line.column_index(line_source, 0), 0);
+    /// assert_eq!(line.column_index(line_source, line.range.start + 0), 0);
+    /// assert_eq!(line.column_index(line_source, line.range.start + 1), 0);
+    /// assert_eq!(line.column_index(line_source, line.range.start + 4), 1);
+    /// assert_eq!(line.column_index(line_source, line.range.start + 8), 2);
+    /// assert_eq!(line.column_index(line_source, line.range.start + line_source.len()), 3);
     /// ```
-    pub fn column_index(&self, byte_index: usize) -> usize {
-        match byte_index.checked_sub(self.start) {
-            None => 0,
-            Some(relative_index) => {
-                let line_source = self.source.as_ref();
-                let column_index = line_source
-                    .char_indices()
-                    .map(|(i, _)| i)
-                    .take_while(|i| *i < relative_index)
-                    .count();
+    pub fn column_index(&self, line_source: &str, byte_index: usize) -> usize {
+        let relative_index = match byte_index.checked_sub(self.range.start) {
+            None => return 0,
+            Some(relative_index) => relative_index,
+        };
+        let column_index = line_source
+            .char_indices()
+            .map(|(i, _)| i)
+            .take_while(|i| *i < relative_index)
+            .count();
 
-                match () {
-                    () if relative_index >= line_source.len() => column_index,
-                    () if line_source.is_char_boundary(relative_index) => column_index,
-                    () => column_index - 1,
-                }
-            }
+        match () {
+            () if relative_index >= line_source.len() => column_index,
+            () if line_source.is_char_boundary(relative_index) => column_index,
+            () => column_index - 1,
         }
     }
 
@@ -68,21 +62,22 @@ where
     /// ```rust
     /// use codespan_reporting::files::Line;
     ///
+    /// let source = "\n\n🗻∈🌏";
+    /// let line_source = &source[2..13];
     /// let line = Line {
-    ///     start: 2,
     ///     number: 2,
-    ///     source: "🗻∈🌏",
+    ///     range: 2..13,
     /// };
     ///
-    /// assert_eq!(line.column_number(0), 1);
-    /// assert_eq!(line.column_number(line.start + 0), 1);
-    /// assert_eq!(line.column_number(line.start + 1), 1);
-    /// assert_eq!(line.column_number(line.start + 4), 2);
-    /// assert_eq!(line.column_number(line.start + 8), 3);
-    /// assert_eq!(line.column_number(line.start + line.source.len()), 4);
+    /// assert_eq!(line.column_number(line_source, 0), 1);
+    /// assert_eq!(line.column_number(line_source, line.range.start + 0), 1);
+    /// assert_eq!(line.column_number(line_source, line.range.start + 1), 1);
+    /// assert_eq!(line.column_number(line_source, line.range.start + 4), 2);
+    /// assert_eq!(line.column_number(line_source, line.range.start + 8), 3);
+    /// assert_eq!(line.column_number(line_source, line.range.start + line_source.len()), 4);
     /// ```
-    pub fn column_number(&self, byte_index: usize) -> usize {
-        self.column_index(byte_index) + 1
+    pub fn column_number(&self, line_source: &str, byte_index: usize) -> usize {
+        self.column_index(line_source, byte_index) + 1
     }
 }
 
@@ -94,13 +89,16 @@ where
 pub trait Files<'a> {
     type FileId: 'a + Copy + PartialEq;
     type Origin: 'a + std::fmt::Display;
-    type LineSource: 'a + AsRef<str>;
+    type Source: 'a + AsRef<str>;
 
     /// The origin of a file.
     fn origin(&'a self, id: Self::FileId) -> Option<Self::Origin>;
 
+    /// The source of a file.
+    fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
+
     /// The line at the given index.
-    fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line<Self::LineSource>>;
+    fn line(&'a self, id: Self::FileId, line_index: usize) -> Option<Line>;
 
     /// The index of the line at the given byte index.
     fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
@@ -204,10 +202,14 @@ where
 {
     type FileId = ();
     type Origin = Origin;
-    type LineSource = &'a str;
+    type Source = &'a str;
 
     fn origin(&self, (): ()) -> Option<Origin> {
         Some(self.origin.clone())
+    }
+
+    fn source(&self, (): ()) -> Option<&str> {
+        Some(self.source.as_ref())
     }
 
     fn line_index(&self, (): (), byte_index: usize) -> Option<usize> {
@@ -217,13 +219,10 @@ where
         }
     }
 
-    fn line(&self, (): (), line_index: usize) -> Option<Line<&str>> {
-        let range = self.line_range(line_index)?;
-
+    fn line(&self, (): (), line_index: usize) -> Option<Line> {
         Some(Line {
-            start: range.start,
             number: line_index + 1,
-            source: &self.source.as_ref()[range],
+            range: self.line_range(line_index)?,
         })
     }
 }
@@ -268,17 +267,21 @@ where
 {
     type FileId = usize;
     type Origin = Origin;
-    type LineSource = &'a str;
+    type Source = &'a str;
 
     fn origin(&self, file_id: usize) -> Option<Origin> {
         Some(self.get(file_id)?.origin().clone())
+    }
+
+    fn source(&self, file_id: usize) -> Option<&str> {
+        Some(self.get(file_id)?.source().as_ref())
     }
 
     fn line_index(&self, file_id: usize, byte_index: usize) -> Option<usize> {
         self.get(file_id)?.line_index((), byte_index)
     }
 
-    fn line(&self, file_id: usize, line_index: usize) -> Option<Line<&str>> {
+    fn line(&self, file_id: usize, line_index: usize) -> Option<Line> {
         self.get(file_id)?.line((), line_index)
     }
 }

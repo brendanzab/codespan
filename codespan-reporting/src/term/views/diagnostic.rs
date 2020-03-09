@@ -172,11 +172,14 @@ where
             primary_labels += 1;
 
             let origin = files.origin(label.file_id).expect("origin");
+            let source = files.source(label.file_id).expect("source");
             let start = label.range.start;
             let line_index = files.line_index(label.file_id, start).expect("line_index");
             let line = files.line(label.file_id, line_index).expect("line");
+            let line_source = &source.as_ref()[line.range.clone()];
 
-            Locus::new(origin, line.number, line.column_number(start)).emit(writer, config)?;
+            Locus::new(origin, line.number, line.column_number(line_source, start))
+                .emit(writer, config)?;
             write!(writer, ": ")?;
             Header::new(self.diagnostic).emit(writer, config)?;
         }

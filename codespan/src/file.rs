@@ -301,7 +301,7 @@ where
 {
     type FileId = FileId;
     type Origin = String;
-    type LineSource = &'a str;
+    type Source = &'a str;
 
     fn origin(&self, id: FileId) -> Option<String> {
         use std::path::PathBuf;
@@ -309,22 +309,20 @@ where
         Some(PathBuf::from(self.name(id)).display().to_string())
     }
 
+    fn source(&'a self, id: FileId) -> Option<&str> {
+        Some(self.source(id).as_ref())
+    }
+
     fn line_index(&self, id: FileId, byte_index: usize) -> Option<usize> {
         Some(self.line_index(id, byte_index as u32).to_usize())
     }
 
-    fn line(
-        &'a self,
-        id: FileId,
-        line_index: usize,
-    ) -> Option<codespan_reporting::files::Line<&'a str>> {
+    fn line(&'a self, id: FileId, line_index: usize) -> Option<codespan_reporting::files::Line> {
         let span = self.line_span(id, line_index as u32).ok()?;
-        let source = self.source_slice(id, span).ok()?;
 
         Some(codespan_reporting::files::Line {
-            start: span.start().to_usize(),
             number: line_index + 1,
-            source,
+            range: span.start().to_usize()..span.end().to_usize(),
         })
     }
 }
