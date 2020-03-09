@@ -300,10 +300,10 @@ where
     Source: AsRef<str>,
 {
     type FileId = FileId;
-    type Origin = String;
+    type Name = String;
     type Source = &'a str;
 
-    fn origin(&self, id: FileId) -> Option<String> {
+    fn name(&self, id: FileId) -> Option<String> {
         use std::path::PathBuf;
 
         Some(PathBuf::from(self.name(id)).display().to_string())

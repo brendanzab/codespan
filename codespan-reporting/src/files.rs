@@ -2,20 +2,24 @@
 
 use std::ops::Range;
 
-/// Files that can be used for pretty diagnostic rendering.
+/// A minimal interface for accessing source files when rendering diagnostics.
 ///
 /// A lifetime parameter `'a` is provided to allow any of the returned values to returned by reference.
 /// This is to workaround the lack of higher kinded lifetime parameters.
 /// This can be ignored if this is not needed, however.
 pub trait Files<'a> {
+    /// A unique identifier for files in the file provider. This will be used
+    /// for rendering `diagnostic::Label`s in the corresponding source files.
     type FileId: 'a + Copy + PartialEq;
-    type Origin: 'a + std::fmt::Display;
+    /// The user-facing name of a file, to be displayed in diagnostics.
+    type Name: 'a + std::fmt::Display;
+    /// The source code of a file.
     type Source: 'a + AsRef<str>;
 
-    /// The origin of a file.
-    fn origin(&'a self, id: Self::FileId) -> Option<Self::Origin>;
+    /// The user-facing name of a file.
+    fn name(&'a self, id: Self::FileId) -> Option<Self::Name>;
 
-    /// The source of a file.
+    /// The source code of a file.
     fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
 
     /// The index of the line at the given byte index.
@@ -98,9 +102,9 @@ pub fn column_number(source: &str, line_range: Range<usize>, byte_index: usize) 
 /// This is useful for simple language tests, but it might be worth creating a
 /// custom implementation when a language scales beyond a certain size.
 #[derive(Debug, Clone)]
-pub struct SimpleFile<Origin, Source> {
-    /// The origin of the file.
-    origin: Origin,
+pub struct SimpleFile<Name, Source> {
+    /// The name of the file.
+    name: Name,
     /// The source code of the file.
     source: Source,
     /// The starting byte indices in the source code.
@@ -142,23 +146,23 @@ pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Ite
     std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 
-impl<Origin, Source> SimpleFile<Origin, Source>
+impl<Name, Source> SimpleFile<Name, Source>
 where
-    Origin: std::fmt::Display,
+    Name: std::fmt::Display,
     Source: AsRef<str>,
 {
     /// Create a new source file.
-    pub fn new(origin: Origin, source: Source) -> SimpleFile<Origin, Source> {
+    pub fn new(name: Name, source: Source) -> SimpleFile<Name, Source> {
         SimpleFile {
-            origin,
+            name,
             line_starts: line_starts(source.as_ref()).collect(),
             source,
         }
     }
 
-    /// Return the origin of the file.
-    pub fn origin(&self) -> &Origin {
-        &self.origin
+    /// Return the name of the file.
+    pub fn name(&self) -> &Name {
+        &self.name
     }
 
     /// Return the source of the file.
@@ -177,17 +181,17 @@ where
     }
 }
 
-impl<'a, Origin, Source> Files<'a> for SimpleFile<Origin, Source>
+impl<'a, Name, Source> Files<'a> for SimpleFile<Name, Source>
 where
-    Origin: 'a + std::fmt::Display + Clone,
+    Name: 'a + std::fmt::Display + Clone,
     Source: 'a + AsRef<str>,
 {
     type FileId = ();
-    type Origin = Origin;
+    type Name = Name;
     type Source = &'a str;
 
-    fn origin(&self, (): ()) -> Option<Origin> {
-        Some(self.origin.clone())
+    fn name(&self, (): ()) -> Option<Name> {
+        Some(self.name.clone())
     }
 
     fn source(&self, (): ()) -> Option<&str> {
@@ -214,45 +218,45 @@ where
 /// This is useful for simple language tests, but it might be worth creating a
 /// custom implementation when a language scales beyond a certain size.
 #[derive(Debug, Clone)]
-pub struct SimpleFiles<Origin, Source> {
-    files: Vec<SimpleFile<Origin, Source>>,
+pub struct SimpleFiles<Name, Source> {
+    files: Vec<SimpleFile<Name, Source>>,
 }
 
-impl<Origin, Source> SimpleFiles<Origin, Source>
+impl<Name, Source> SimpleFiles<Name, Source>
 where
-    Origin: std::fmt::Display,
+    Name: std::fmt::Display,
     Source: AsRef<str>,
 {
     /// Create a new files database.
-    pub fn new() -> SimpleFiles<Origin, Source> {
+    pub fn new() -> SimpleFiles<Name, Source> {
         SimpleFiles { files: Vec::new() }
     }
 
     /// Add a file to the database, returning the handle that can be used to
     /// refer to it again.
-    pub fn add(&mut self, origin: Origin, source: Source) -> usize {
+    pub fn add(&mut self, name: Name, source: Source) -> usize {
         let file_id = self.files.len();
-        self.files.push(SimpleFile::new(origin, source));
+        self.files.push(SimpleFile::new(name, source));
         file_id
     }
 
     /// Get the file corresponding to the given id.
-    pub fn get(&self, file_id: usize) -> Option<&SimpleFile<Origin, Source>> {
+    pub fn get(&self, file_id: usize) -> Option<&SimpleFile<Name, Source>> {
         self.files.get(file_id)
     }
 }
 
-impl<'a, Origin, Source> Files<'a> for SimpleFiles<Origin, Source>
+impl<'a, Name, Source> Files<'a> for SimpleFiles<Name, Source>
 where
-    Origin: 'a + std::fmt::Display + Clone,
+    Name: 'a + std::fmt::Display + Clone,
     Source: 'a + AsRef<str>,
 {
     type FileId = usize;
-    type Origin = Origin;
+    type Name = Name;
     type Source = &'a str;
 
-    fn origin(&self, file_id: usize) -> Option<Origin> {
-        Some(self.get(file_id)?.origin().clone())
+    fn name(&self, file_id: usize) -> Option<Name> {
+        Some(self.get(file_id)?.name().clone())
     }
 
     fn source(&self, file_id: usize) -> Option<&str> {

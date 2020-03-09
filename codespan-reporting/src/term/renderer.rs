@@ -7,8 +7,8 @@ use crate::term::{Chars, Config, Styles};
 
 /// The 'location focus' of a source code snippet.
 pub struct Locus {
-    /// The origin of the locus.
-    pub origin: String,
+    /// The user-facing name of the file.
+    pub name: String,
     /// The line number.
     pub line_number: usize,
     /// The column number.
@@ -374,7 +374,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(
             self,
             "{origin}:{line_number}:{column_number}",
-            origin = locus.origin,
+            origin = locus.name,
             line_number = locus.line_number,
             column_number = locus.column_number,
         )
