@@ -125,7 +125,7 @@ where
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
-                        origin: files.origin(file_id).unwrap().to_string(),
+                        name: files.name(file_id).unwrap().to_string(),
                         line_number: files.line_number(file_id, start_index).unwrap(),
                         column_number: files::column_number(source, start_range, label.range.start),
                     },
@@ -344,7 +344,7 @@ where
 
             renderer.render_header(
                 Some(&Locus {
-                    origin: files.origin(label.file_id).unwrap().to_string(),
+                    name: files.name(label.file_id).unwrap().to_string(),
                     line_number: files.line_number(label.file_id, line_index).unwrap(),
                     column_number: files::column_number(source, line_range, label.range.start),
                 }),
