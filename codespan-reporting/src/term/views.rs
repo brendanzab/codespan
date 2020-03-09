@@ -41,19 +41,23 @@ where
 
         // Group marks by file
         for label in &self.diagnostic.labels {
-            let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
-            let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
+            let start_index = files.line_index(label.file_id, label.range.start).unwrap();
+            let end_index = files.line_index(label.file_id, label.range.end).unwrap();
+            let end_number = files.line_number(label.file_id, end_index).unwrap();
 
             // The label spans over multiple lines if if the line indices of the
             // start and end differ.
-            let is_multiline = start_line_index != end_line_index;
+            let is_multiline = start_index != end_index;
             // Update the outer padding based on the last line number
-            outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
+            outer_padding = std::cmp::max(outer_padding, count_digits(end_number));
 
-            // TODO: Group contiguous line index ranges using some sort of interval set algorithm.
-            // TODO: Flatten mark groups to overlapping underlines that can be easily rendered.
-            // TODO: If start line and end line are too far apart, we should add a source break.
+            // TODO(#100): Group contiguous line index ranges using some sort of interval set algorithm.
+            // TODO(#100): Flatten mark groups to overlapping underlines that can be easily rendered.
+            // TODO(#125): If start line and end line are too far apart, we should add a source break.
+
+            // NOTE: This could be made more efficient by using an associative
+            // data structure like a hashmap or B-tree,  but we use a vector to
+            // preserve the order that unique files appear in the list of labels.
             match file_ids_to_labels
                 .iter_mut()
                 .find(|(file_id, _, _)| label.file_id == *file_id)
@@ -69,11 +73,11 @@ where
                     // This should make our job easier later on.
                     match labels.binary_search_by(|other| {
                         // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
-                        // to piggyback off its lexicographic sorting implementation.
+                        // to piggyback off its lexicographic comparison implementation.
                         (other.range.start, other.range.end)
                             .cmp(&(label.range.start, label.range.end))
                     }) {
-                        Ok(i) | Err(i) => labels.insert(i, label),
+                        Ok(index) | Err(index) => labels.insert(index, label),
                     }
                 }
             }
@@ -104,60 +108,53 @@ where
         //   │         ^^ expected `Int` but found `String`
         //   │
         // ```
-        for (file_id, seen_multiline, labels) in &file_ids_to_labels {
-            let source = files.source(*file_id).unwrap();
-            let mut labels = labels
-                .iter()
-                .map(|label| {
-                    let start_line_index = files.line_index(*file_id, label.range.start).unwrap();
-                    let end_line_index = files.line_index(*file_id, label.range.end).unwrap();
-                    (label, start_line_index, end_line_index)
-                })
-                .peekable();
+        for (file_id, seen_multiline, labels) in file_ids_to_labels {
+            let source = files.source(file_id).unwrap();
+            let source = source.as_ref();
+            let mut labels = labels.into_iter().peekable();
 
             // Top left border and locus.
             //
             // ```text
             // ┌── test:2:9 ───
             // ```
-            if let Some((label, start_line_index, _)) = labels.peek() {
-                let origin = files.origin(*file_id).unwrap().to_string();
-                let line_number = files.line_number(*file_id, *start_line_index).unwrap();
-                let line_range = files.line_range(*file_id, *start_line_index).unwrap();
-                let column_number =
-                    files::column_number(source.as_ref(), line_range, label.range.start);
+            if let Some(label) = labels.peek() {
+                let start_index = files.line_index(file_id, label.range.start).unwrap();
+                let start_range = files.line_range(file_id, start_index).unwrap();
 
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
-                        origin,
-                        line_number,
-                        column_number,
+                        origin: files.origin(file_id).unwrap().to_string(),
+                        line_number: files.line_number(file_id, start_index).unwrap(),
+                        column_number: files::column_number(source, start_range, label.range.start),
                     },
                 )?;
                 renderer.render_source_empty(outer_padding, &[])?;
             }
 
-            while let Some((label, start_line_index, end_line_index)) = labels.next() {
+            while let Some(label) = labels.next() {
                 let severity = match label.style {
                     LabelStyle::Primary => Some(self.diagnostic.severity),
                     LabelStyle::Secondary => None,
                 };
 
-                let start_line_number = files.line_number(*file_id, start_line_index).unwrap();
-                let start_line_range = files.line_range(*file_id, start_line_index).unwrap();
-                let end_line_number = files.line_number(*file_id, end_line_index).unwrap();
-                let end_line_range = files.line_range(*file_id, end_line_index).unwrap();
+                let start_index = files.line_index(file_id, label.range.start).unwrap();
+                let start_number = files.line_number(file_id, start_index).unwrap();
+                let start_range = files.line_range(file_id, start_index).unwrap();
+                let end_index = files.line_index(file_id, label.range.end).unwrap();
+                let end_number = files.line_number(file_id, end_index).unwrap();
+                let end_range = files.line_range(file_id, end_index).unwrap();
 
-                if start_line_index == end_line_index {
+                if start_index == end_index {
                     // Single line
                     //
                     // ```text
                     // 2 │ (+ test "")
                     //   │         ^^ expected `Int` but found `String`
                     // ```
-                    let mark_start = label.range.start - start_line_range.start;
-                    let mark_end = label.range.end - start_line_range.start;
+                    let mark_start = label.range.start - start_range.start;
+                    let mark_end = label.range.end - start_range.start;
 
                     let mark = || (severity, Mark::Single(mark_start..mark_end, &label.message));
                     let multi_marks = [None, Some(mark())];
@@ -165,8 +162,8 @@ where
 
                     renderer.render_source_line(
                         outer_padding,
-                        start_line_number,
-                        &source.as_ref()[start_line_range.clone()],
+                        start_number,
+                        &source[start_range],
                         match seen_multiline {
                             true => &multi_marks,
                             false => &single_marks,
@@ -184,8 +181,8 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_start = label.range.start - start_line_range.start;
-                    let prefix_source = &source.as_ref()[start_line_range.start..label.range.start];
+                    let mark_start = label.range.start - start_range.start;
+                    let prefix_source = &source[start_range.start..label.range.start];
 
                     if prefix_source.trim().is_empty() {
                         // Section is prefixed by empty space, so we don't need to take
@@ -196,8 +193,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_line_number,
-                            &source.as_ref()[start_line_range.clone()],
+                            start_number,
+                            &source[start_range],
                             &[Some((severity, Mark::MultiTopLeft))],
                         )?;
                     } else {
@@ -210,8 +207,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_line_number,
-                            &source.as_ref()[start_line_range.clone()],
+                            start_number,
+                            &source[start_range],
                             &[Some((severity, Mark::MultiTop(..mark_start)))],
                         )?;
                     }
@@ -223,15 +220,11 @@ where
                     // 6 │ │     0 _ => "Fizz"
                     // 7 │ │     _ 0 => "Buzz"
                     // ```
-                    for marked_line_index in (start_line_index + 1)..end_line_index {
-                        let marked_line_range =
-                            files.line_range(*file_id, marked_line_index).unwrap();
-                        let marked_line_number =
-                            files.line_number(*file_id, marked_line_index).unwrap();
+                    for marked_index in (start_index + 1)..end_index {
                         renderer.render_source_line(
                             outer_padding,
-                            marked_line_number,
-                            &source.as_ref()[marked_line_range],
+                            files.line_number(file_id, marked_index).unwrap(),
+                            &source[files.line_range(file_id, marked_index).unwrap()],
                             &[Some((severity, Mark::MultiLeft))],
                         )?;
                     }
@@ -242,12 +235,12 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_end = label.range.end - end_line_range.start;
+                    let mark_end = label.range.end - end_range.start;
 
                     renderer.render_source_line(
                         outer_padding,
-                        end_line_number,
-                        &source.as_ref()[end_line_range.clone()],
+                        end_number,
+                        &source[end_range],
                         &[Some((
                             severity,
                             Mark::MultiBottom(..mark_end, &label.message),
@@ -255,8 +248,9 @@ where
                     )?;
                 }
 
-                if let Some((_, next_start_line_index, _)) = labels.peek() {
-                    match next_start_line_index.checked_sub(end_line_index) {
+                if let Some(label) = labels.peek() {
+                    let next_start_index = files.line_index(file_id, label.range.start).unwrap();
+                    match next_start_index.checked_sub(end_index) {
                         // Same line
                         Some(0) => {
                             // TODO: Accumulate marks!
@@ -267,13 +261,11 @@ where
                         // Only one line between us and the next label
                         Some(2) => {
                             // Write a source line
-                            let next_line_index = end_line_index + 1;
-                            let next_line_range =
-                                files.line_range(*file_id, next_line_index).unwrap();
+                            let next_index = end_index + 1;
                             renderer.render_source_line(
                                 outer_padding,
-                                files.line_number(*file_id, next_line_index).unwrap(),
-                                &source.as_ref()[next_line_range],
+                                files.line_number(file_id, next_index).unwrap(),
+                                &source[files.line_range(file_id, next_index).unwrap()],
                                 match seen_multiline {
                                     true => &[None],
                                     false => &[],
@@ -345,25 +337,17 @@ where
         for label in labels.filter(|label| label.style == LabelStyle::Primary) {
             primary_labels_encountered += 1;
 
-            let locus = {
-                let origin = files.origin(label.file_id).unwrap().to_string();
-                let source = files.source(label.file_id).unwrap();
-
-                let line_index = files.line_index(label.file_id, label.range.start).unwrap();
-                let line_number = files.line_number(label.file_id, line_index).unwrap();
-                let line_range = files.line_range(label.file_id, line_index).unwrap();
-                let column_number =
-                    files::column_number(source.as_ref(), line_range, label.range.start);
-
-                Locus {
-                    origin,
-                    line_number,
-                    column_number,
-                }
-            };
+            let source = files.source(label.file_id).unwrap();
+            let source = source.as_ref();
+            let line_index = files.line_index(label.file_id, label.range.start).unwrap();
+            let line_range = files.line_range(label.file_id, line_index).unwrap();
 
             renderer.render_header(
-                Some(&locus),
+                Some(&Locus {
+                    origin: files.origin(label.file_id).unwrap().to_string(),
+                    line_number: files.line_number(label.file_id, line_index).unwrap(),
+                    column_number: files::column_number(source, line_range, label.range.start),
+                }),
                 self.diagnostic.severity,
                 self.diagnostic.code.as_ref().map(String::as_str),
                 self.diagnostic.message.as_str(),
