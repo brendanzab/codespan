@@ -16,7 +16,7 @@
 
 Beautiful diagnostic reporting for text-based programming languages.
 
-![sample](./codespan-reporting/assets/sample.svg?sanitize=true)
+![Preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)
 
 ## Running the CLI example
 
