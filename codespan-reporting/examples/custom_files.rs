@@ -8,7 +8,7 @@ use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use std::ops::Range;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     let mut files = files::Files::new();
 
     let file_id0 = files.add("0.greeting", "hello world!").unwrap();

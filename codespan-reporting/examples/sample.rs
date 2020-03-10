@@ -92,7 +92,7 @@ const SVG_END: &str = "</pre>
 </svg>
 ";
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     let file = SimpleFile::new(
         "FizzBuzz.fun",
         unindent::unindent(
@@ -144,7 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             write!(writer, "{}", SVG_START)?;
             for diagnostic in &diagnostics {
-                term::emit(&mut writer, &config, &file, &diagnostic).unwrap();
+                term::emit(&mut writer, &config, &file, &diagnostic)?;
             }
             write!(writer, "{}", SVG_END)?;
         }
@@ -152,7 +152,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let writer = StandardStream::stderr(color.into());
             let config = codespan_reporting::term::Config::default();
             for diagnostic in &diagnostics {
-                term::emit(&mut writer.lock(), &config, &file, &diagnostic).unwrap();
+                term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
             }
         }
     }
