@@ -18,7 +18,7 @@ pub struct Opts {
     pub color: ColorArg,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let opts = Opts::from_args();
     let mut files = SimpleFiles::new();
 
@@ -155,6 +155,8 @@ fn main() {
     let writer = StandardStream::stderr(opts.color.into());
     let config = codespan_reporting::term::Config::default();
     for diagnostic in &diagnostics {
-        term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
+        term::emit(&mut writer.lock(), &config, &files, &diagnostic)?;
     }
+
+    Ok(())
 }

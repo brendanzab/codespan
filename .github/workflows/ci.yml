@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.36.0", "stable", "beta", "nightly"]
+        rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Check (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.36.0", "stable", "beta", "nightly"]
+        rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Test Suite (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.36.0", "stable", "beta", "nightly"]
+        rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
