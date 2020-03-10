@@ -20,6 +20,8 @@ unicode-width = "0.1"
 anyhow = "1"
 insta = "0.15"
 lazy_static = "1.4"
+peg = "0.6"
+rustyline = "6"
 structopt = "0.3"
 unindent = "0.1"
 
