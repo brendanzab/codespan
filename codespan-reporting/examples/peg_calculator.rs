@@ -30,7 +30,7 @@ peg::parser! {
             v:@   "!"       { (1..v+1).product() }
             --
             "(" v:calculate() ")" { v }
-            n:number() {n}
+            n:number() { n }
         }
     }
 }
@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
     let mut editor = Editor::<()>::new();
 
     loop {
-        let line = match editor.readline(&"> ") {
+        let line = match editor.readline("> ") {
             Ok(line) => line,
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => return Ok(()),
             Err(error) => return Err(error.into()),
