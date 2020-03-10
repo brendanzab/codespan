@@ -7,7 +7,9 @@ use crate::diagnostic::Severity;
 #[derive(Clone, Debug)]
 pub struct Config {
     /// The display style to use when rendering diagnostics.
-    /// Defaults to: `DisplayStyle::Rich`.
+    /// Defaults to: [`DisplayStyle::Rich`].
+    ///
+    /// [`DisplayStyle::Rich`]: DisplayStyle::Rich
     pub display_style: DisplayStyle,
     /// Column width of tabs.
     /// Defaults to: `4`.
