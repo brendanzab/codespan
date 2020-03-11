@@ -3,16 +3,15 @@ use std::ops::{Range, RangeTo};
 use termcolor::{ColorSpec, WriteColor};
 
 use crate::diagnostic::Severity;
+use crate::files::Location;
 use crate::term::{Chars, Config, Styles};
 
 /// The 'location focus' of a source code snippet.
 pub struct Locus {
     /// The user-facing name of the file.
     pub name: String,
-    /// The line number.
-    pub line_number: usize,
-    /// The column number.
-    pub column_number: usize,
+    /// The location.
+    pub location: Location,
 }
 
 /// A mark to render.
@@ -375,8 +374,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             self,
             "{origin}:{line_number}:{column_number}",
             origin = locus.name,
-            line_number = locus.line_number,
-            column_number = locus.column_number,
+            line_number = locus.location.line_number,
+            column_number = locus.location.column_number,
         )
     }
 
