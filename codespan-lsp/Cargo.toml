@@ -11,5 +11,5 @@ edition = "2018"
 
 [dependencies]
 codespan = { version = "0.8.0", path = "../codespan" }
-lsp-types = "0.73"
+lsp-types = ">=0.70,<0.74"
 url = "2"

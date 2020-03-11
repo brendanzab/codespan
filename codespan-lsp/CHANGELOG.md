@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--  `lsp-types` was updated to v0.73
+-  The `lsp-types` dependency was updated to use a version range: `>=0.70,<0.74`,
+   which includes the latest updates in `0.73.0`.
 
 ### Removed
 
