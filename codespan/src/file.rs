@@ -365,16 +365,13 @@ where
     }
 
     fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, LineIndexOutOfBoundsError> {
-        use std::cmp::Ordering;
-
-        match line_index.cmp(&self.last_line_index()) {
-            Ordering::Less => Ok(self.line_starts[line_index.to_usize()]),
-            Ordering::Equal => Ok(self.source_span().end()),
-            Ordering::Greater => Err(LineIndexOutOfBoundsError {
+        self.line_starts
+            .get(line_index.to_usize())
+            .cloned()
+            .ok_or_else(|| LineIndexOutOfBoundsError {
                 given: line_index,
                 max: self.last_line_index(),
-            }),
-        }
+            })
     }
 
     fn last_line_index(&self) -> LineIndex {
@@ -461,6 +458,7 @@ mod test {
                 ByteIndex::from(4),  // "bar\r\n"
                 ByteIndex::from(9),  // ""
                 ByteIndex::from(10), // "baz"
+                ByteIndex::from(13), // EOF
             ],
         );
     }

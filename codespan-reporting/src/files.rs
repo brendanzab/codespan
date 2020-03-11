@@ -179,6 +179,7 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 ///         4,  // "bar\r\n"
 ///         9,  // ""
 ///         10, // "baz"
+///         13, // EOF
 ///     ],
 /// );
 ///
@@ -192,7 +193,9 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 /// assert_eq!(line_index(&line_starts, 5), Some(1));
 /// ```
 pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
-    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+    std::iter::once(0)
+        .chain(source.match_indices('\n').map(|(i, _)| i + 1))
+        .chain(std::iter::once(source.len()))
 }
 
 /// A file database that contains a single source file.
@@ -238,13 +241,7 @@ where
     }
 
     fn line_start(&self, line_index: usize) -> Option<usize> {
-        use std::cmp::Ordering;
-
-        match line_index.cmp(&self.line_starts.len()) {
-            Ordering::Less => self.line_starts.get(line_index).cloned(),
-            Ordering::Equal => Some(self.source.as_ref().len()),
-            Ordering::Greater => None,
-        }
+        self.line_starts.get(line_index).cloned()
     }
 }
 
@@ -356,6 +353,7 @@ mod test {
                 4,  // "bar\r\n"
                 9,  // ""
                 10, // "baz"
+                13, // EOF
             ],
         );
     }
