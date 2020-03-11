@@ -36,6 +36,17 @@ jobs:
         with:
           command: check
           args: --manifest-path "codespan-lsp/Cargo.toml"
+      - name: Switch to minimal `lsp-types` version
+        uses: actions-rs/cargo@v1
+        with:
+          command: update
+          # NOTE: Keep up to date with the minimum version of `lsp-types`
+          # specified in `codespan-lsp/Cargo.toml`
+          args: --precise lsp-types:0.70
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path "codespan-lsp/Cargo.toml"
 
   test:
     runs-on: ubuntu-latest
