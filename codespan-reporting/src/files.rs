@@ -46,13 +46,25 @@ pub trait Files<'a> {
     fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
 
     /// The index of the line at the given byte index.
+    ///
+    /// # Note for trait implementors
+    ///
+    /// This can be implemented efficiently by performing a binary search over
+    /// a list of line starts that was computed by calling the [`line_starts`]
+    /// function that is exported from the [`files`] module. It might be useful
+    /// to pre-compute and cache these line starts.
+    ///
+    /// [`line_starts`]: crate::files::line_starts
+    /// [`files`]: crate::files
     fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
 
     /// The user-facing line number at the given line index.
     ///
-    /// This can be useful for implementing something like the
-    /// [C preprocessor's `#line` macro][line-macro],
-    /// but is usually 1-indexed from the beginning of the file.
+    /// # Note for trait implementors
+    ///
+    /// This is usually 1-indexed from the beginning of the file, but
+    /// can be useful for implementing something like the
+    /// [C preprocessor's `#line` macro][line-macro].
     ///
     /// [line-macro]: https://en.cppreference.com/w/c/preprocessor/line
     #[allow(unused_variables)]
@@ -60,7 +72,28 @@ pub trait Files<'a> {
         Some(line_index + 1)
     }
 
-    /// The index of the line at the given byte index.
+    /// The user-facing column number at the given line index and byte index.
+    ///
+    /// # Note for trait implementors
+    ///
+    /// A default implementation is provided based on the [`column_number`]
+    /// function that is exported from the [`files`] module.
+    ///
+    /// [`files`]: crate::files
+    /// [`column_number`]: crate::files::column_number
+    fn column_number(
+        &'a self,
+        id: Self::FileId,
+        line_index: usize,
+        byte_index: usize,
+    ) -> Option<usize> {
+        let source = self.source(id)?;
+        let line_range = self.line_range(id, line_index)?;
+
+        Some(column_number(source.as_ref(), line_range, byte_index))
+    }
+
+    /// The byte range of line in the source of the file.
     fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Option<Range<usize>>;
 }
 
@@ -98,6 +131,11 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 
 /// The 1-indexed column number at the given byte index.
 ///
+/// This can make it easier to implementing [`Files::column_number`], and
+/// provides the basis for its default implementation.
+///
+/// [`Files::column_number`]: Files::column_number
+///
 /// # Example
 ///
 /// ```rust
@@ -122,9 +160,11 @@ pub fn column_number(source: &str, line_range: Range<usize>, byte_index: usize) 
 
 /// Return the starting byte index of each line in the source string.
 ///
-/// This can make it easier to implement new [`Files`] implementations.
+/// This can make it easier to implement [`Files::line_index`] by allowing
+/// users to pre-compute the line starts, then search for the matching line
+/// range, as shown in the example below.
 ///
-/// [`Files`]: Files
+/// [`Files::line_index`]: Files::line_index
 ///
 /// # Example
 ///

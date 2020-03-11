@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
-use crate::files::{self, Files};
+use crate::files::Files;
 use crate::term::renderer::{Locus, Mark, Renderer};
 
 /// Count the number of decimal digits in `n`.
@@ -120,14 +120,15 @@ where
             // ```
             if let Some(label) = labels.peek() {
                 let start_index = files.line_index(file_id, label.range.start).unwrap();
-                let start_range = files.line_range(file_id, start_index).unwrap();
 
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
                         name: files.name(file_id).unwrap().to_string(),
                         line_number: files.line_number(file_id, start_index).unwrap(),
-                        column_number: files::column_number(source, start_range, label.range.start),
+                        column_number: files
+                            .column_number(label.file_id, start_index, label.range.start)
+                            .unwrap(),
                     },
                 )?;
                 renderer.render_source_empty(outer_padding, &[])?;
@@ -337,16 +338,15 @@ where
         for label in labels.filter(|label| label.style == LabelStyle::Primary) {
             primary_labels_encountered += 1;
 
-            let source = files.source(label.file_id).unwrap();
-            let source = source.as_ref();
             let line_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let line_range = files.line_range(label.file_id, line_index).unwrap();
 
             renderer.render_header(
                 Some(&Locus {
                     name: files.name(label.file_id).unwrap().to_string(),
                     line_number: files.line_number(label.file_id, line_index).unwrap(),
-                    column_number: files::column_number(source, line_range, label.range.start),
+                    column_number: files
+                        .column_number(label.file_id, line_index, label.range.start)
+                        .unwrap(),
                 }),
                 self.diagnostic.severity,
                 self.diagnostic.code.as_ref().map(String::as_str),
