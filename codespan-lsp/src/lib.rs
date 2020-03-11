@@ -4,7 +4,11 @@ use codespan::{
     ByteIndex, ByteOffset, ColumnIndex, FileId, Files, LineIndex, LineIndexOutOfBoundsError,
     LocationError, RawIndex, RawOffset, Span, SpanOutOfBoundsError,
 };
-use lsp_types as lsp;
+// WARNING: Be extremely careful when adding new imports here, as it could break
+// the compatible version range that we claim in our `Cargo.toml`. This could
+// potentially break down-stream builds on a `cargo update`. This is an
+// absolute no-no, breaking much of what we enjoy about Cargo!
+use lsp_types::{Position as LspPosition, Range as LspRange};
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::{error, fmt};
@@ -72,7 +76,7 @@ fn location_to_position(
     line: LineIndex,
     column: ColumnIndex,
     byte_index: ByteIndex,
-) -> Result<lsp::Position, Error> {
+) -> Result<LspPosition, Error> {
     if column.to_usize() > line_str.len() {
         let max = ColumnIndex(line_str.len() as RawIndex);
         let given = column;
@@ -87,7 +91,7 @@ fn location_to_position(
         let character = line_utf16.count() as u64;
         let line = line.to_usize() as u64;
 
-        Ok(lsp::Position { line, character })
+        Ok(LspPosition { line, character })
     }
 }
 
@@ -95,7 +99,7 @@ pub fn byte_index_to_position<Source: AsRef<str>>(
     files: &Files<Source>,
     file_id: FileId,
     byte_index: ByteIndex,
-) -> Result<lsp::Position, Error> {
+) -> Result<LspPosition, Error> {
     let location = files.location(file_id, byte_index)?;
     let line_span = files.line_span(file_id, location.line)?;
     let line_str = files.source_slice(file_id, line_span)?;
@@ -108,8 +112,8 @@ pub fn byte_span_to_range<Source: AsRef<str>>(
     files: &Files<Source>,
     file_id: FileId,
     span: Span,
-) -> Result<lsp::Range, Error> {
-    Ok(lsp::Range {
+) -> Result<LspRange, Error> {
+    Ok(LspRange {
         start: byte_index_to_position(files, file_id, span.start())?,
         end: byte_index_to_position(files, file_id, span.end())?,
     })
@@ -145,7 +149,7 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<ByteOffset
 pub fn position_to_byte_index<Source: AsRef<str>>(
     files: &Files<Source>,
     file_id: FileId,
-    position: &lsp::Position,
+    position: &LspPosition,
 ) -> Result<ByteIndex, Error> {
     let line_span = files.line_span(file_id, position.line as RawIndex)?;
     let source = files.source_slice(file_id, line_span)?;
@@ -157,7 +161,7 @@ pub fn position_to_byte_index<Source: AsRef<str>>(
 pub fn range_to_byte_span<Source: AsRef<str>>(
     files: &Files<Source>,
     file_id: FileId,
-    range: &lsp::Range,
+    range: &LspRange,
 ) -> Result<Span, Error> {
     Ok(Span::new(
         position_to_byte_index(files, file_id, &range.start)?,
@@ -183,7 +187,7 @@ test
         let pos = position_to_byte_index(
             &files,
             file_id,
-            &lsp::Position {
+            &LspPosition {
                 line: 3,
                 character: 2,
             },
@@ -204,7 +208,7 @@ test
         let result = position_to_byte_index(
             &files,
             file_id,
-            &lsp::Position {
+            &LspPosition {
                 line: 0,
                 character: 3,
             },
@@ -214,7 +218,7 @@ test
         let result = position_to_byte_index(
             &files,
             file_id,
-            &lsp::Position {
+            &LspPosition {
                 line: 0,
                 character: 6,
             },
@@ -230,7 +234,7 @@ test
         let result = byte_index_to_position(&files, file_id, ByteIndex::from(5));
         assert_eq!(
             result,
-            Ok(lsp::Position {
+            Ok(LspPosition {
                 line: 0,
                 character: 3,
             })
@@ -239,7 +243,7 @@ test
         let result = byte_index_to_position(&files, file_id, ByteIndex::from(10));
         assert_eq!(
             result,
-            Ok(lsp::Position {
+            Ok(LspPosition {
                 line: 0,
                 character: 6,
             })

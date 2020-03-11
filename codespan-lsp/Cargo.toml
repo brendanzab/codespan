@@ -11,5 +11,10 @@ edition = "2018"
 
 [dependencies]
 codespan = { version = "0.8.0", path = "../codespan" }
-lsp-types = "0.73"
+# WARNING: Be extremely careful when expanding this version range.
+# We should be confident that all of the uses of `lsp-types` in `codespan-lsp`
+# will be valid for all the versions in this range. Getting this range wrong
+# could potentially break down-stream builds on a `cargo update`. This is an
+# absolute no-no, breaking much of what we enjoy about Cargo!
+lsp-types = ">=0.70,<0.74"
 url = "2"
