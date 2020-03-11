@@ -158,9 +158,10 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 /// Return the starting byte index of each line in the source string.
 ///
 /// This can make it easier to implement [`Files::line_index`] by allowing
-/// users to pre-compute the line starts, then search for the matching line
-/// range, as shown in the example below.
+/// implementors of [`Files`] to pre-compute the line starts, then search for
+/// the corresponding line range, as shown in the example below.
 ///
+/// [`Files`]: Files
 /// [`Files::line_index`]: Files::line_index
 ///
 /// # Example
