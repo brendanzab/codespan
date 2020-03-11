@@ -76,11 +76,12 @@ pub trait Files<'a> {
     ///
     /// # Note for trait implementors
     ///
-    /// A default implementation is provided based on the [`column_number`]
+    /// This is usually 1-indexed from the the start of the line.
+    /// A default implementation is provided, based on the [`column_index`]
     /// function that is exported from the [`files`] module.
     ///
     /// [`files`]: crate::files
-    /// [`column_number`]: crate::files::column_number
+    /// [`column_index`]: crate::files::column_index
     fn column_number(
         &'a self,
         id: Self::FileId,
@@ -89,8 +90,9 @@ pub trait Files<'a> {
     ) -> Option<usize> {
         let source = self.source(id)?;
         let line_range = self.line_range(id, line_index)?;
+        let column_index = column_index(source.as_ref(), line_range, byte_index);
 
-        Some(column_number(source.as_ref(), line_range, byte_index))
+        Some(column_index + 1)
     }
 
     /// Convenience method for returning line and column number at the given a
@@ -151,35 +153,6 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
     (line_range.start..end_index)
         .filter(|byte_index| source.is_char_boundary(byte_index + 1))
         .count()
-}
-
-/// The 1-indexed column number at the given byte index.
-///
-/// This can make it easier to implementing [`Files::column_number`], and
-/// provides the basis for its default implementation.
-///
-/// [`Files::column_number`]: Files::column_number
-///
-/// # Example
-///
-/// ```rust
-/// use codespan_reporting::files;
-///
-/// let source = "\n\n🗻∈🌏";
-/// let line_range = 2..13;
-///
-/// assert_eq!(files::column_number(source, 0..1, 0), 1);
-/// assert_eq!(files::column_number(source, 2..13, 0), 1);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 0), 1);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 1), 1);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 4), 2);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 8), 3);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 10), 3);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 11), 4);
-/// assert_eq!(files::column_number(source, 2..13, 2 + 12), 4);
-/// ```
-pub fn column_number(source: &str, line_range: Range<usize>, byte_index: usize) -> usize {
-    column_index(source, line_range, byte_index) + 1
 }
 
 /// Return the starting byte index of each line in the source string.
