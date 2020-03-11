@@ -16,6 +16,8 @@
 
 Beautiful diagnostic reporting for text-based programming languages.
 
+![Preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)
+
 ## Running the CLI example
 
 To get an idea of what the colored CLI output looks like,
@@ -27,15 +29,11 @@ cargo run --example=term
 cargo run --example=term -- --color never
 ```
 
-You should see something like the following in your terminal:
-
-![sample](./codespan-reporting/assets/sample.svg?sanitize=true)
-
 We're still working on improving the output - stay tuned for updates!
 
-## Codespan in use
+## Projects using codespan-reporting
 
-Codespan is currently used in the following projects:
+`codespan-reporting` is currently used in the following projects:
 
 - [Arret](https://arret-lang.org)
 - [Gleam](https://github.com/lpil/gleam/)
@@ -43,7 +41,7 @@ Codespan is currently used in the following projects:
 - [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 
-## Alternatives
+## Alternatives to codespan-reporting
 
 There are a number of alternatives to `codespan-reporting`, including:
 

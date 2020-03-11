@@ -1,9 +1,9 @@
-//! Renders the README sample SVG.
+//! Renders the preview SVG for the README.
 //!
-//! To update the sample run the following command from the top level of the repository:
+//! To update the preview run the following command from the top level of the repository:
 //!
 //! ```sh
-//! cargo run --example sample svg > codespan-reporting/assets/sample.svg
+//! cargo run --example readme_preview svg > codespan-reporting/assets/readme_preview.svg
 //! ```
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
@@ -31,66 +31,6 @@ pub enum Opts {
         color: ColorArg,
     },
 }
-
-const SVG_START: &str = r#"<svg viewBox="0 0 882 440" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    /* https://github.com/aaron-williamson/base16-alacritty/blob/master/colors/base16-tomorrow-night-256.yml */
-    pre {
-      background: #1d1f21;
-      padding: 10px;
-      border-radius: 6px;
-      color: #ffffff;
-      font: 12px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
-    }
-
-    pre .bold { font-weight: bold; }
-
-    pre .fg.black   { color: #1d1f21; }
-    pre .fg.red     { color: #cc6666; }
-    pre .fg.green   { color: #b5bd68; }
-    pre .fg.yellow  { color: #f0c674; }
-    pre .fg.blue    { color: #81a2be; }
-    pre .fg.magenta { color: #b294bb; }
-    pre .fg.cyan    { color: #8abeb7; }
-    pre .fg.white   { color: #c5c8c6; }
-
-    pre .fg.black.bright    { color: #969896; }
-    pre .fg.red.bright      { color: #cc6666; }
-    pre .fg.green.bright    { color: #b5bd68; }
-    pre .fg.yellow.bright   { color: #f0c674; }
-    pre .fg.blue.bright     { color: #81a2be; }
-    pre .fg.magenta.bright  { color: #b294bb; }
-    pre .fg.cyan.bright     { color: #8abeb7; }
-    pre .fg.white.bright    { color: #ffffff; }
-
-    pre .bg.black   { background-color: #1d1f21; }
-    pre .bg.red     { background-color: #cc6666; }
-    pre .bg.green   { background-color: #b5bd68; }
-    pre .bg.yellow  { background-color: #f0c674; }
-    pre .bg.blue    { background-color: #81a2be; }
-    pre .bg.magenta { background-color: #b294bb; }
-    pre .bg.cyan    { background-color: #8abeb7; }
-    pre .bg.white   { background-color: #c5c8c6; }
-
-    pre .bg.black.bright    { background-color: #969896; }
-    pre .bg.red.bright      { background-color: #cc6666; }
-    pre .bg.green.bright    { background-color: #b5bd68; }
-    pre .bg.yellow.bright   { background-color: #f0c674; }
-    pre .bg.blue.bright     { background-color: #81a2be; }
-    pre .bg.magenta.bright  { background-color: #b294bb; }
-    pre .bg.cyan.bright     { background-color: #8abeb7; }
-    pre .bg.white.bright    { background-color: #ffffff; }
-  </style>
-
-  <foreignObject x="0" y="0" width="882" height="440">
-    <div xmlns="http://www.w3.org/1999/xhtml">
-      <pre>"#;
-
-const SVG_END: &str = "</pre>
-    </div>
-  </foreignObject>
-</svg>
-";
 
 fn main() -> anyhow::Result<()> {
     let file = SimpleFile::new(
@@ -159,6 +99,66 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+const SVG_START: &str = r#"<svg viewBox="0 0 882 440" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* https://github.com/aaron-williamson/base16-alacritty/blob/master/colors/base16-tomorrow-night-256.yml */
+    pre {
+      background: #1d1f21;
+      padding: 10px;
+      border-radius: 6px;
+      color: #ffffff;
+      font: 12px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    }
+
+    pre .bold { font-weight: bold; }
+
+    pre .fg.black   { color: #1d1f21; }
+    pre .fg.red     { color: #cc6666; }
+    pre .fg.green   { color: #b5bd68; }
+    pre .fg.yellow  { color: #f0c674; }
+    pre .fg.blue    { color: #81a2be; }
+    pre .fg.magenta { color: #b294bb; }
+    pre .fg.cyan    { color: #8abeb7; }
+    pre .fg.white   { color: #c5c8c6; }
+
+    pre .fg.black.bright    { color: #969896; }
+    pre .fg.red.bright      { color: #cc6666; }
+    pre .fg.green.bright    { color: #b5bd68; }
+    pre .fg.yellow.bright   { color: #f0c674; }
+    pre .fg.blue.bright     { color: #81a2be; }
+    pre .fg.magenta.bright  { color: #b294bb; }
+    pre .fg.cyan.bright     { color: #8abeb7; }
+    pre .fg.white.bright    { color: #ffffff; }
+
+    pre .bg.black   { background-color: #1d1f21; }
+    pre .bg.red     { background-color: #cc6666; }
+    pre .bg.green   { background-color: #b5bd68; }
+    pre .bg.yellow  { background-color: #f0c674; }
+    pre .bg.blue    { background-color: #81a2be; }
+    pre .bg.magenta { background-color: #b294bb; }
+    pre .bg.cyan    { background-color: #8abeb7; }
+    pre .bg.white   { background-color: #c5c8c6; }
+
+    pre .bg.black.bright    { background-color: #969896; }
+    pre .bg.red.bright      { background-color: #cc6666; }
+    pre .bg.green.bright    { background-color: #b5bd68; }
+    pre .bg.yellow.bright   { background-color: #f0c674; }
+    pre .bg.blue.bright     { background-color: #81a2be; }
+    pre .bg.magenta.bright  { background-color: #b294bb; }
+    pre .bg.cyan.bright     { background-color: #8abeb7; }
+    pre .bg.white.bright    { background-color: #ffffff; }
+  </style>
+
+  <foreignObject x="0" y="0" width="882" height="440">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <pre>"#;
+
+const SVG_END: &str = "</pre>
+    </div>
+  </foreignObject>
+</svg>
+";
 
 pub struct SvgWriter<W> {
     upstream: W,
