@@ -93,8 +93,32 @@ pub trait Files<'a> {
         Some(column_number(source.as_ref(), line_range, byte_index))
     }
 
+    /// Convenience method for returning line and column number at the given a
+    /// byte index in the file.
+    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Option<Location> {
+        let line_index = self.line_index(id, byte_index)?;
+
+        Some(Location {
+            line_number: self.line_number(id, line_index)?,
+            column_number: self.column_number(id, line_index, byte_index)?,
+        })
+    }
+
     /// The byte range of line in the source of the file.
     fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Option<Range<usize>>;
+}
+
+/// A user-facing location in a source file.
+///
+/// Returned by [`Files::location`].
+///
+/// [`Files::location`]: Files::location
+#[derive(Debug, Copy, Clone)]
+pub struct Location {
+    /// The user-facing line number.
+    pub line_number: usize,
+    /// The user-facing column number.
+    pub column_number: usize,
 }
 
 /// The column index at the given byte index in the source file.
