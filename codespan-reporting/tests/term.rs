@@ -87,6 +87,51 @@ mod empty {
     test_emit!(short_no_color);
 }
 
+/// Based on: https://github.com/rust-lang/rust/blob/c20d7eecbc0928b57da8fe30b2ef8528e2bdd5be/src/test/ui/codemap_tests/one_line.stderr
+mod one_line {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "one_line.rs",
+                unindent::unindent(r#"
+                    fn main() {
+                        let mut v = vec![Some("foo"), Some("bar")];
+                        v.push(v.pop().unwrap());
+                    }
+                "#)
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_code("E0499")
+                    .with_message("cannot borrow `v` as mutable more than once at a time")
+                    .with_labels(vec![
+                        Label::primary((), 71..72)
+                            .with_message("second mutable borrow occurs here"),
+                        Label::secondary((), 64..65)
+                            .with_message("first borrow later used by call"),
+                        Label::secondary((), 66..70)
+                            .with_message("first mutable borrow occurs here"),
+                    ]),
+                Diagnostic::error()
+                    .with_message("aborting due to previous error")
+                    .with_notes(vec![
+                        "For more information about this error, try `rustc --explain E0499`.".to_owned(),
+                    ]),
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
+
 mod message {
     use super::*;
 
