@@ -23,7 +23,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
     (short_color) => {
@@ -34,7 +34,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("short_color", TEST_DATA.emit_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
     (rich_no_color) => {
@@ -45,7 +45,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("rich_no_color", TEST_DATA.emit_no_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
         }
     };
     (short_no_color) => {
@@ -56,7 +56,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("short_no_color", TEST_DATA.emit_no_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
         }
     };
 }
@@ -372,7 +372,7 @@ mod tabbed {
             ..TEST_CONFIG.clone()
         };
 
-        insta::assert_snapshot!("tab_width_3_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -382,6 +382,6 @@ mod tabbed {
             ..TEST_CONFIG.clone()
         };
 
-        insta::assert_snapshot!("tab_width_6_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 }
