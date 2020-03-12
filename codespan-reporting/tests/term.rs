@@ -430,3 +430,66 @@ mod tabbed {
         insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 }
+
+/// Based on: https://github.com/TheSamsa/rust/blob/75cf41afb468152611212271bae026948cd3ba46/src/test/ui/codemap_tests/unicode.stderr
+mod unicode {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let prefix = r#"extern "#;
+            let abi = r#""路濫狼á́́""#;
+            let suffix = r#" fn foo() {}"#;
+
+            let file = SimpleFile::new(
+                "unicode.rs",
+                format!("{}{}{}", prefix, abi, suffix),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_code("E0703")
+                    .with_message("invalid ABI: found `路濫狼á́́`")
+                    .with_labels(vec![
+                        Label::primary((), prefix.len()..(prefix.len() + abi.len()))
+                            .with_message("invalid ABI"),
+                    ])
+                    .with_notes(vec![unindent::unindent(
+                        "
+                            valid ABIs:
+                              - aapcs
+                              - amdgpu-kernel
+                              - C
+                              - cdecl
+                              - efiapi
+                              - fastcall
+                              - msp430-interrupt
+                              - platform-intrinsic
+                              - ptx-kernel
+                              - Rust
+                              - rust-call
+                              - rust-intrinsic
+                              - stdcall
+                              - system
+                              - sysv64
+                              - thiscall
+                              - unadjusted
+                              - vectorcall
+                              - win64
+                              - x86-interrupt
+                        ",
+                    )]),
+                Diagnostic::error()
+                    .with_message("aborting due to previous error")
+                    .with_notes(vec![
+                        "For more information about this error, try `rustc --explain E0703`.".to_owned(),
+                    ]),
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
