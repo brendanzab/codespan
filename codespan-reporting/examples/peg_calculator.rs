@@ -51,7 +51,7 @@ fn main() -> anyhow::Result<()> {
         match arithmetic::calculate(&line) {
             Ok(number) => println!("{}", number),
             Err(error) => {
-                let file = SimpleFile::new("input", line);
+                let file = SimpleFile::new("<repl>", line);
 
                 let start = error.location.offset;
                 let diagnostic = Diagnostic::error()
