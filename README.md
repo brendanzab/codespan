@@ -25,11 +25,13 @@ clone the [repository](https://github.com/brendanzab/codespan)
 and run the following shell command:
 
 ```sh
-cargo run --example=term
-cargo run --example=term -- --color never
+cargo run --example term
 ```
 
 We're still working on improving the output - stay tuned for updates!
+
+More examples of using `codespan-reporting` can be found in the
+[examples directory](./codespan-reporting/examples).
 
 ## Projects using codespan-reporting
 

@@ -1,6 +1,7 @@
 //! Renders the preview SVG for the README.
 //!
-//! To update the preview run the following command from the top level of the repository:
+//! To update the preview, execute the following command from the top level of
+//! the repository:
 //!
 //! ```sh
 //! cargo run --example readme_preview svg > codespan-reporting/assets/readme_preview.svg

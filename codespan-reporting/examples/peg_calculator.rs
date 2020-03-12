@@ -1,6 +1,7 @@
 //! An example of using `peg` with `codespan_reporting`.
 //!
-//! To run this example execute the following command from the top level of this repository:
+//! To run this example, execute the following command from the top level of
+//! this repository:
 //!
 //! ```sh
 //! cargo run --example peg_calculator
