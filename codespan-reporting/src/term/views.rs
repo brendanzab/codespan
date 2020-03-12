@@ -193,18 +193,45 @@ where
                     let mark_start = label.range.start - start_line_range.start;
                     let mark_end = label.range.end - start_line_range.start;
 
-                    let mark = || (severity, Mark::Single(mark_start..mark_end, &label.message));
-                    let multi_marks = [None, Some(mark())];
-                    let single_marks = [Some(mark())];
+                    let mark = Mark::Single(mark_start..mark_end, &label.message);
+                    let mut marks = match seen_multiline {
+                        true => vec![None, Some((severity, mark))],
+                        false => vec![Some((severity, mark))],
+                    };
+
+                    // Accumulate consecutive single marks
+                    // TODO: it feels like this could be merged with the check
+                    // of `previous_end_index` above?
+                    while let Some(next_label) = labels.peek() {
+                        let severity = match next_label.style {
+                            LabelStyle::Primary => Some(self.diagnostic.severity),
+                            LabelStyle::Secondary => None,
+                        };
+
+                        let range = next_label.range.clone();
+                        let next_start_line_index = files.line_index(file_id, range.start).unwrap();
+                        let next_end_line_index = files.line_index(file_id, range.end).unwrap();
+
+                        if start_line_index == next_start_line_index
+                            && next_start_line_index == next_end_line_index
+                        {
+                            let mark_start = next_label.range.start - start_line_range.start;
+                            let mark_end = next_label.range.end - start_line_range.start;
+                            let next_mark = Mark::Single(mark_start..mark_end, &next_label.message);
+
+                            marks.push(Some((severity, next_mark)));
+                        } else {
+                            break;
+                        }
+
+                        labels.next();
+                    }
 
                     renderer.render_source_line(
                         outer_padding,
                         start_line_number,
                         &source[start_line_range],
-                        match seen_multiline {
-                            true => &multi_marks,
-                            false => &single_marks,
-                        },
+                        &marks,
                     )?;
                 } else {
                     // Multiple lines
