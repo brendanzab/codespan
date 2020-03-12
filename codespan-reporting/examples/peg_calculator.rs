@@ -1,6 +1,7 @@
 //! An example of using `peg` with `codespan_reporting`.
 //!
-//! To run this example execute the following command from the top level of this repository:
+//! To run this example, execute the following command from the top level of
+//! this repository:
 //!
 //! ```sh
 //! cargo run --example peg_calculator
@@ -50,7 +51,7 @@ fn main() -> anyhow::Result<()> {
         match arithmetic::calculate(&line) {
             Ok(number) => println!("{}", number),
             Err(error) => {
-                let file = SimpleFile::new("input", line);
+                let file = SimpleFile::new("<repl>", line);
 
                 let start = error.location.offset;
                 let diagnostic = Diagnostic::error()

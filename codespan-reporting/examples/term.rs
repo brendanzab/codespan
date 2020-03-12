@@ -1,3 +1,10 @@
+//! To run this example, execute the following command from the top level of
+//! this repository:
+//!
+//! ```sh
+//! cargo run --example term
+//! ```
+
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::StandardStream;

@@ -1,7 +1,13 @@
-//! This example shows how to implement a simple custom file database for use
-//! with `codespan_reporting`.
+//! An example that shows how to implement a simple custom file database.
+//! The database uses 32-bit file-ids, which could be useful for optimizing
+//! memory usage.
 //!
-//! This implements a custom database that uses 32-bit file-ids.
+//! To run this example, execute the following command from the top level of
+//! this repository:
+//!
+//! ```sh
+//! cargo run --example custom_files
+//! ```
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::term;
