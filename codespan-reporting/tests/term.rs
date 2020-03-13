@@ -23,7 +23,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("rich_color", TEST_DATA.emit_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
     (short_color) => {
@@ -34,7 +34,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("short_color", TEST_DATA.emit_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
     (rich_no_color) => {
@@ -45,7 +45,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("rich_no_color", TEST_DATA.emit_no_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
         }
     };
     (short_no_color) => {
@@ -56,7 +56,7 @@ macro_rules! test_emit {
                 ..TEST_CONFIG.clone()
             };
 
-            insta::assert_snapshot!("short_no_color", TEST_DATA.emit_no_color(&config));
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
         }
     };
 }
@@ -78,6 +78,51 @@ mod empty {
             ];
 
             TestData { files, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
+
+/// Based on: https://github.com/rust-lang/rust/blob/c20d7eecbc0928b57da8fe30b2ef8528e2bdd5be/src/test/ui/codemap_tests/one_line.stderr
+mod one_line {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "one_line.rs",
+                unindent::unindent(r#"
+                    fn main() {
+                        let mut v = vec![Some("foo"), Some("bar")];
+                        v.push(v.pop().unwrap());
+                    }
+                "#)
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_code("E0499")
+                    .with_message("cannot borrow `v` as mutable more than once at a time")
+                    .with_labels(vec![
+                        Label::primary((), 71..72)
+                            .with_message("second mutable borrow occurs here"),
+                        Label::secondary((), 64..65)
+                            .with_message("first borrow later used by call"),
+                        Label::secondary((), 66..70)
+                            .with_message("first mutable borrow occurs here"),
+                    ]),
+                Diagnostic::error()
+                    .with_message("aborting due to previous error")
+                    .with_notes(vec![
+                        "For more information about this error, try `rustc --explain E0499`.".to_owned(),
+                    ]),
+            ];
+
+            TestData { files: file, diagnostics }
         };
     }
 
@@ -372,7 +417,7 @@ mod tabbed {
             ..TEST_CONFIG.clone()
         };
 
-        insta::assert_snapshot!("tab_width_3_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -382,6 +427,69 @@ mod tabbed {
             ..TEST_CONFIG.clone()
         };
 
-        insta::assert_snapshot!("tab_width_6_no_color", TEST_DATA.emit_no_color(&config));
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
+}
+
+/// Based on: https://github.com/TheSamsa/rust/blob/75cf41afb468152611212271bae026948cd3ba46/src/test/ui/codemap_tests/unicode.stderr
+mod unicode {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let prefix = r#"extern "#;
+            let abi = r#""路濫狼á́́""#;
+            let suffix = r#" fn foo() {}"#;
+
+            let file = SimpleFile::new(
+                "unicode.rs",
+                format!("{}{}{}", prefix, abi, suffix),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_code("E0703")
+                    .with_message("invalid ABI: found `路濫狼á́́`")
+                    .with_labels(vec![
+                        Label::primary((), prefix.len()..(prefix.len() + abi.len()))
+                            .with_message("invalid ABI"),
+                    ])
+                    .with_notes(vec![unindent::unindent(
+                        "
+                            valid ABIs:
+                              - aapcs
+                              - amdgpu-kernel
+                              - C
+                              - cdecl
+                              - efiapi
+                              - fastcall
+                              - msp430-interrupt
+                              - platform-intrinsic
+                              - ptx-kernel
+                              - Rust
+                              - rust-call
+                              - rust-intrinsic
+                              - stdcall
+                              - system
+                              - sysv64
+                              - thiscall
+                              - unadjusted
+                              - vectorcall
+                              - win64
+                              - x86-interrupt
+                        ",
+                    )]),
+                Diagnostic::error()
+                    .with_message("aborting due to previous error")
+                    .with_notes(vec![
+                        "For more information about this error, try `rustc --explain E0703`.".to_owned(),
+                    ]),
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
 }
