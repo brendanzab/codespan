@@ -41,15 +41,15 @@ where
 
         // Group marks by file
         for label in &self.diagnostic.labels {
-            let start_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let end_index = files.line_index(label.file_id, label.range.end).unwrap();
-            let end_number = files.line_number(label.file_id, end_index).unwrap();
+            let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
+            let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
+            let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
 
             // The label spans over multiple lines if if the line indices of the
             // start and end differ.
-            let is_multiline = start_index != end_index;
+            let is_multiline = start_line_index != end_line_index;
             // Update the outer padding based on the last line number
-            outer_padding = std::cmp::max(outer_padding, count_digits(end_number));
+            outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
 
             // TODO(#100): Group contiguous line index ranges using some sort of interval set algorithm.
             // TODO(#100): Flatten mark groups to overlapping underlines that can be easily rendered.
@@ -129,7 +129,7 @@ where
             }
 
             let mut labels = labels.into_iter().peekable();
-            let mut previous_end_index = None;
+            let mut previous_end_line_index = None;
 
             while let Some(label) = labels.next() {
                 let severity = match label.style {
@@ -137,17 +137,17 @@ where
                     LabelStyle::Secondary => None,
                 };
 
-                let start_index = files.line_index(file_id, label.range.start).unwrap();
-                let start_number = files.line_number(file_id, start_index).unwrap();
-                let start_range = files.line_range(file_id, start_index).unwrap();
-                let end_index = files.line_index(file_id, label.range.end).unwrap();
-                let end_number = files.line_number(file_id, end_index).unwrap();
-                let end_range = files.line_range(file_id, end_index).unwrap();
+                let start_line_index = files.line_index(file_id, label.range.start).unwrap();
+                let start_line_number = files.line_number(file_id, start_line_index).unwrap();
+                let start_line_range = files.line_range(file_id, start_line_index).unwrap();
+                let end_line_index = files.line_index(file_id, label.range.end).unwrap();
+                let end_line_number = files.line_number(file_id, end_line_index).unwrap();
+                let end_line_range = files.line_range(file_id, end_line_index).unwrap();
 
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the current mark.
-                if let Some(previous_end_index) = previous_end_index {
-                    match start_index.checked_sub(previous_end_index) {
+                if let Some(previous_end_line_index) = previous_end_line_index {
+                    match start_line_index.checked_sub(previous_end_line_index) {
                         // Current mark is on the same line as the previous mark
                         Some(0) => {
                             // TODO: Accumulate marks here
@@ -158,7 +158,7 @@ where
                         // One line between the current mark and the previous mark
                         Some(2) => {
                             // Write a source line
-                            let next_index = previous_end_index + 1;
+                            let next_index = previous_end_line_index + 1;
                             renderer.render_source_line(
                                 outer_padding,
                                 files.line_number(file_id, next_index).unwrap(),
@@ -183,15 +183,15 @@ where
                 }
 
                 // Render the current label.
-                if start_index == end_index {
+                if start_line_index == end_line_index {
                     // Single line
                     //
                     // ```text
                     // 2 │ (+ test "")
                     //   │         ^^ expected `Int` but found `String`
                     // ```
-                    let mark_start = label.range.start - start_range.start;
-                    let mark_end = label.range.end - start_range.start;
+                    let mark_start = label.range.start - start_line_range.start;
+                    let mark_end = label.range.end - start_line_range.start;
 
                     let mark = || (severity, Mark::Single(mark_start..mark_end, &label.message));
                     let multi_marks = [None, Some(mark())];
@@ -199,8 +199,8 @@ where
 
                     renderer.render_source_line(
                         outer_padding,
-                        start_number,
-                        &source[start_range],
+                        start_line_number,
+                        &source[start_line_range],
                         match seen_multiline {
                             true => &multi_marks,
                             false => &single_marks,
@@ -218,8 +218,8 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_start = label.range.start - start_range.start;
-                    let prefix_source = &source[start_range.start..label.range.start];
+                    let mark_start = label.range.start - start_line_range.start;
+                    let prefix_source = &source[start_line_range.start..label.range.start];
 
                     if prefix_source.trim().is_empty() {
                         // Section is prefixed by empty space, so we don't need to take
@@ -230,8 +230,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_number,
-                            &source[start_range],
+                            start_line_number,
+                            &source[start_line_range],
                             &[Some((severity, Mark::MultiTopLeft))],
                         )?;
                     } else {
@@ -244,8 +244,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_number,
-                            &source[start_range],
+                            start_line_number,
+                            &source[start_line_range],
                             &[Some((severity, Mark::MultiTop(..mark_start)))],
                         )?;
                     }
@@ -257,11 +257,11 @@ where
                     // 6 │ │     0 _ => "Fizz"
                     // 7 │ │     _ 0 => "Buzz"
                     // ```
-                    for marked_index in (start_index + 1)..end_index {
+                    for marked_line_index in (start_line_index + 1)..end_line_index {
                         renderer.render_source_line(
                             outer_padding,
-                            files.line_number(file_id, marked_index).unwrap(),
-                            &source[files.line_range(file_id, marked_index).unwrap()],
+                            files.line_number(file_id, marked_line_index).unwrap(),
+                            &source[files.line_range(file_id, marked_line_index).unwrap()],
                             &[Some((severity, Mark::MultiLeft))],
                         )?;
                     }
@@ -272,12 +272,12 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_end = label.range.end - end_range.start;
+                    let mark_end = label.range.end - end_line_range.start;
 
                     renderer.render_source_line(
                         outer_padding,
-                        end_number,
-                        &source[end_range],
+                        end_line_number,
+                        &source[end_line_range],
                         &[Some((
                             severity,
                             Mark::MultiBottom(..mark_end, &label.message),
@@ -285,7 +285,7 @@ where
                     )?;
                 }
 
-                previous_end_index = Some(end_index);
+                previous_end_line_index = Some(end_line_index);
             }
             renderer.render_source_empty(outer_padding, &[])?;
         }
