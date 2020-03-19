@@ -112,7 +112,7 @@ impl<FileId> Label<FileId> {
 
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {
     /// The overall severity of the diagnostic
