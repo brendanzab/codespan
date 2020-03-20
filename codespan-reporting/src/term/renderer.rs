@@ -245,7 +245,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                         self.mark_multi_left(*severity, None)?;
                     }
                     // Write a space
-                    Some(Mark::MultiTop(..)) | None => write!(self, "  ")?,
+                    Some(Mark::MultiTop(..)) | None => self.mark_inner_gutter_space(None)?,
                 }
             }
 
@@ -310,7 +310,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.border_left()?;
         for left_severity in left_marks {
             match left_severity {
-                None => write!(self, "  ")?,
+                None => self.mark_inner_gutter_space(None)?,
                 Some(severity) => self.mark_multi_left(*severity, None)?,
             }
         }
@@ -333,7 +333,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.border_left_break()?;
         for left_severity in left_marks {
             match left_severity {
-                None => write!(self, "  ")?,
+                None => self.mark_inner_gutter_space(None)?,
                 Some(severity) => self.mark_multi_left(*severity, None)?,
             }
         }
