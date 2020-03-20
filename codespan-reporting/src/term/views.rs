@@ -193,10 +193,10 @@ where
                     let mark_start = label.range.start - start_line_range.start;
                     let mark_end = label.range.end - start_line_range.start;
 
-                    let mark = Mark::Single(mark_start..mark_end, &label.message);
+                    let mark = Mark::Single(severity, mark_start..mark_end, &label.message);
                     let mut marks = match seen_multiline {
-                        true => vec![None, Some((severity, mark))],
-                        false => vec![Some((severity, mark))],
+                        true => vec![None, Some(mark)],
+                        false => vec![Some(mark)],
                     };
 
                     // Accumulate consecutive single marks
@@ -217,9 +217,12 @@ where
                         {
                             let mark_start = next_label.range.start - start_line_range.start;
                             let mark_end = next_label.range.end - start_line_range.start;
-                            let next_mark = Mark::Single(mark_start..mark_end, &next_label.message);
 
-                            marks.push(Some((severity, next_mark)));
+                            marks.push(Some(Mark::Single(
+                                severity,
+                                mark_start..mark_end,
+                                &next_label.message,
+                            )));
                         } else {
                             break;
                         }
@@ -259,7 +262,7 @@ where
                             outer_padding,
                             start_line_number,
                             &source[start_line_range],
-                            &[Some((severity, Mark::MultiTopLeft))],
+                            &[Some(Mark::MultiTopLeft(severity))],
                         )?;
                     } else {
                         // There's source code in the prefix, so run an underline
@@ -273,7 +276,7 @@ where
                             outer_padding,
                             start_line_number,
                             &source[start_line_range],
-                            &[Some((severity, Mark::MultiTop(..mark_start)))],
+                            &[Some(Mark::MultiTop(severity, ..mark_start))],
                         )?;
                     }
 
@@ -289,7 +292,7 @@ where
                             outer_padding,
                             files.line_number(file_id, marked_line_index).unwrap(),
                             &source[files.line_range(file_id, marked_line_index).unwrap()],
-                            &[Some((severity, Mark::MultiLeft))],
+                            &[Some(Mark::MultiLeft(severity))],
                         )?;
                     }
 
@@ -305,9 +308,10 @@ where
                         outer_padding,
                         end_line_number,
                         &source[end_line_range],
-                        &[Some((
+                        &[Some(Mark::MultiBottom(
                             severity,
-                            Mark::MultiBottom(..mark_end, &label.message),
+                            ..mark_end,
+                            &label.message,
                         ))],
                     )?;
                 }
