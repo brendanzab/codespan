@@ -41,15 +41,15 @@ where
 
         // Group marks by file
         for label in &self.diagnostic.labels {
-            let start_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let end_index = files.line_index(label.file_id, label.range.end).unwrap();
-            let end_number = files.line_number(label.file_id, end_index).unwrap();
+            let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
+            let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
+            let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
 
             // The label spans over multiple lines if if the line indices of the
             // start and end differ.
-            let is_multiline = start_index != end_index;
+            let is_multiline = start_line_index != end_line_index;
             // Update the outer padding based on the last line number
-            outer_padding = std::cmp::max(outer_padding, count_digits(end_number));
+            outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
 
             // TODO(#100): Group contiguous line index ranges using some sort of interval set algorithm.
             // TODO(#100): Flatten mark groups to overlapping underlines that can be easily rendered.
@@ -111,14 +111,13 @@ where
         for (file_id, seen_multiline, labels) in file_ids_to_labels {
             let source = files.source(file_id).unwrap();
             let source = source.as_ref();
-            let mut labels = labels.into_iter().peekable();
 
             // Top left border and locus.
             //
             // ```text
             // ┌── test:2:9 ───
             // ```
-            if let Some(label) = labels.peek() {
+            if let Some(label) = labels.first() {
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
@@ -129,41 +128,110 @@ where
                 renderer.render_source_empty(outer_padding, &[])?;
             }
 
+            let mut labels = labels.into_iter().peekable();
+            let mut previous_end_line_index = None;
+
             while let Some(label) = labels.next() {
                 let severity = match label.style {
                     LabelStyle::Primary => Some(self.diagnostic.severity),
                     LabelStyle::Secondary => None,
                 };
 
-                let start_index = files.line_index(file_id, label.range.start).unwrap();
-                let start_number = files.line_number(file_id, start_index).unwrap();
-                let start_range = files.line_range(file_id, start_index).unwrap();
-                let end_index = files.line_index(file_id, label.range.end).unwrap();
-                let end_number = files.line_number(file_id, end_index).unwrap();
-                let end_range = files.line_range(file_id, end_index).unwrap();
+                let start_line_index = files.line_index(file_id, label.range.start).unwrap();
+                let start_line_number = files.line_number(file_id, start_line_index).unwrap();
+                let start_line_range = files.line_range(file_id, start_line_index).unwrap();
+                let end_line_index = files.line_index(file_id, label.range.end).unwrap();
+                let end_line_number = files.line_number(file_id, end_line_index).unwrap();
+                let end_line_range = files.line_range(file_id, end_line_index).unwrap();
 
-                if start_index == end_index {
+                // Check to see if we need to render any intermediate stuff
+                // before rendering the current mark.
+                if let Some(previous_end_line_index) = previous_end_line_index {
+                    match start_line_index.checked_sub(previous_end_line_index) {
+                        // Current mark is on the same line as the previous mark
+                        Some(0) => {
+                            // TODO: Accumulate marks here
+                            renderer.render_source_break(outer_padding, &[])?;
+                        }
+                        // Current mark is on the next consecutive line
+                        Some(1) => {}
+                        // One line between the current mark and the previous mark
+                        Some(2) => {
+                            // Write a source line
+                            let next_index = previous_end_line_index + 1;
+                            renderer.render_source_line(
+                                outer_padding,
+                                files.line_number(file_id, next_index).unwrap(),
+                                &source[files.line_range(file_id, next_index).unwrap()],
+                                match seen_multiline {
+                                    true => &[None],
+                                    false => &[],
+                                },
+                            )?;
+                        }
+                        // More than one line between the current mark and the
+                        // previous mark - or the marks are out of order.
+                        Some(_) | None => {
+                            // Source break
+                            //
+                            // ```text
+                            // ·
+                            // ```
+                            renderer.render_source_break(outer_padding, &[])?;
+                        }
+                    }
+                }
+
+                // Render the current label.
+                if start_line_index == end_line_index {
                     // Single line
                     //
                     // ```text
                     // 2 │ (+ test "")
                     //   │         ^^ expected `Int` but found `String`
                     // ```
-                    let mark_start = label.range.start - start_range.start;
-                    let mark_end = label.range.end - start_range.start;
+                    let mark_start = label.range.start - start_line_range.start;
+                    let mark_end = label.range.end - start_line_range.start;
 
-                    let mark = || (severity, Mark::Single(mark_start..mark_end, &label.message));
-                    let multi_marks = [None, Some(mark())];
-                    let single_marks = [Some(mark())];
+                    let mark = Mark::Single(mark_start..mark_end, &label.message);
+                    let mut marks = match seen_multiline {
+                        true => vec![None, Some((severity, mark))],
+                        false => vec![Some((severity, mark))],
+                    };
+
+                    // Accumulate consecutive single marks
+                    // TODO: it feels like this could be merged with the check
+                    // of `previous_end_index` above?
+                    while let Some(next_label) = labels.peek() {
+                        let severity = match next_label.style {
+                            LabelStyle::Primary => Some(self.diagnostic.severity),
+                            LabelStyle::Secondary => None,
+                        };
+
+                        let range = next_label.range.clone();
+                        let next_start_line_index = files.line_index(file_id, range.start).unwrap();
+                        let next_end_line_index = files.line_index(file_id, range.end).unwrap();
+
+                        if start_line_index == next_start_line_index
+                            && next_start_line_index == next_end_line_index
+                        {
+                            let mark_start = next_label.range.start - start_line_range.start;
+                            let mark_end = next_label.range.end - start_line_range.start;
+                            let next_mark = Mark::Single(mark_start..mark_end, &next_label.message);
+
+                            marks.push(Some((severity, next_mark)));
+                        } else {
+                            break;
+                        }
+
+                        labels.next();
+                    }
 
                     renderer.render_source_line(
                         outer_padding,
-                        start_number,
-                        &source[start_range],
-                        match seen_multiline {
-                            true => &multi_marks,
-                            false => &single_marks,
-                        },
+                        start_line_number,
+                        &source[start_line_range],
+                        &marks,
                     )?;
                 } else {
                     // Multiple lines
@@ -177,8 +245,8 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_start = label.range.start - start_range.start;
-                    let prefix_source = &source[start_range.start..label.range.start];
+                    let mark_start = label.range.start - start_line_range.start;
+                    let prefix_source = &source[start_line_range.start..label.range.start];
 
                     if prefix_source.trim().is_empty() {
                         // Section is prefixed by empty space, so we don't need to take
@@ -189,8 +257,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_number,
-                            &source[start_range],
+                            start_line_number,
+                            &source[start_line_range],
                             &[Some((severity, Mark::MultiTopLeft))],
                         )?;
                     } else {
@@ -203,8 +271,8 @@ where
                         // ```
                         renderer.render_source_line(
                             outer_padding,
-                            start_number,
-                            &source[start_range],
+                            start_line_number,
+                            &source[start_line_range],
                             &[Some((severity, Mark::MultiTop(..mark_start)))],
                         )?;
                     }
@@ -216,11 +284,11 @@ where
                     // 6 │ │     0 _ => "Fizz"
                     // 7 │ │     _ 0 => "Buzz"
                     // ```
-                    for marked_index in (start_index + 1)..end_index {
+                    for marked_line_index in (start_line_index + 1)..end_line_index {
                         renderer.render_source_line(
                             outer_padding,
-                            files.line_number(file_id, marked_index).unwrap(),
-                            &source[files.line_range(file_id, marked_index).unwrap()],
+                            files.line_number(file_id, marked_line_index).unwrap(),
+                            &source[files.line_range(file_id, marked_line_index).unwrap()],
                             &[Some((severity, Mark::MultiLeft))],
                         )?;
                     }
@@ -231,12 +299,12 @@ where
                     // 8 │ │     _ _ => num
                     //   │ ╰──────────────^ `case` clauses have incompatible types
                     // ```
-                    let mark_end = label.range.end - end_range.start;
+                    let mark_end = label.range.end - end_line_range.start;
 
                     renderer.render_source_line(
                         outer_padding,
-                        end_number,
-                        &source[end_range],
+                        end_line_number,
+                        &source[end_line_range],
                         &[Some((
                             severity,
                             Mark::MultiBottom(..mark_end, &label.message),
@@ -244,43 +312,7 @@ where
                     )?;
                 }
 
-                if let Some(label) = labels.peek() {
-                    let next_start_index = files.line_index(file_id, label.range.start).unwrap();
-                    match next_start_index.checked_sub(end_index) {
-                        // Same line
-                        Some(0) => {
-                            // TODO: Accumulate marks!
-                            renderer.render_source_break(outer_padding, &[])?;
-                        }
-                        // Consecutive lines
-                        Some(1) => {}
-                        // Only one line between us and the next label
-                        Some(2) => {
-                            // Write a source line
-                            let next_index = end_index + 1;
-                            renderer.render_source_line(
-                                outer_padding,
-                                files.line_number(file_id, next_index).unwrap(),
-                                &source[files.line_range(file_id, next_index).unwrap()],
-                                match seen_multiline {
-                                    true => &[None],
-                                    false => &[],
-                                },
-                            )?;
-                        }
-                        // Either:
-                        // - one line between us and the next label
-                        // - labels are out of order
-                        Some(_) | None => {
-                            // Source break
-                            //
-                            // ```text
-                            // ·
-                            // ```
-                            renderer.render_source_break(outer_padding, &[])?;
-                        }
-                    }
-                }
+                previous_end_line_index = Some(end_line_index);
             }
             renderer.render_source_empty(outer_padding, &[])?;
         }

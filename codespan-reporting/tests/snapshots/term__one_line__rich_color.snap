@@ -8,11 +8,7 @@ expression: TEST_DATA.emit_color(&config)
    {fg:Blue}│{/}
  {fg:Blue}3{/} {fg:Blue}│{/}     v.push(v.pop().unwrap());
    {fg:Blue}│{/}     {fg:Blue}- first borrow later used by call{/}
-   {fg:Blue}·{/}
- {fg:Blue}3{/} {fg:Blue}│{/}     v.push(v.pop().unwrap());
    {fg:Blue}│{/}       {fg:Blue}---- first mutable borrow occurs here{/}
-   {fg:Blue}·{/}
- {fg:Blue}3{/} {fg:Blue}│{/}     v.push(v.pop().unwrap());
    {fg:Blue}│{/}            {fg:Red}^ second mutable borrow occurs here{/}
    {fg:Blue}│{/}
 

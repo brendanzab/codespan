@@ -8,11 +8,7 @@ error[E0499]: cannot borrow `v` as mutable more than once at a time
    │
  3 │     v.push(v.pop().unwrap());
    │     - first borrow later used by call
-   ·
- 3 │     v.push(v.pop().unwrap());
    │       ---- first mutable borrow occurs here
-   ·
- 3 │     v.push(v.pop().unwrap());
    │            ^ second mutable borrow occurs here
    │
 
