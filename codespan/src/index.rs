@@ -332,6 +332,34 @@ macro_rules! impl_index {
             }
         }
 
+        impl From<$Index> for RawIndex {
+            #[inline]
+            fn from(index: $Index) -> RawIndex {
+                index.0
+            }
+        }
+
+        impl From<$Offset> for RawOffset {
+            #[inline]
+            fn from(offset: $Offset) -> RawOffset {
+                offset.0
+            }
+        }
+
+        impl From<$Index> for usize {
+            #[inline]
+            fn from(index: $Index) -> usize {
+                index.0 as usize
+            }
+        }
+
+        impl From<$Offset> for usize {
+            #[inline]
+            fn from(offset: $Offset) -> usize {
+                offset.0 as usize
+            }
+        }
+
         impl Offset for $Offset {
             const ZERO: $Offset = $Offset(0);
         }

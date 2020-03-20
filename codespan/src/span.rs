@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::Range;
 
-use crate::ByteIndex;
+use crate::{ByteIndex, RawIndex};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -134,6 +134,18 @@ where
 {
     fn from(range: Range<I>) -> Span {
         Span::new(range.start, range.end)
+    }
+}
+
+impl From<Span> for Range<usize> {
+    fn from(span: Span) -> Range<usize> {
+        span.start.into()..span.end.into()
+    }
+}
+
+impl From<Span> for Range<RawIndex> {
+    fn from(span: Span) -> Range<RawIndex> {
+        span.start.0..span.end.0
     }
 }
 
