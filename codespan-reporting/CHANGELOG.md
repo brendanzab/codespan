@@ -7,11 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2020-03-23
+
+### Added
+
+-   `codespan_reporting::diagnostic::Diagnostic` now implements `Debug`.
+
+### Changed
+
+-   Single-line labels are now rendered together, under the same source line.
+
+    For example:
+    ```
+       ┌── one_line.rs:3:5 ───
+       │
+     3 │     v.push(v.pop().unwrap());
+       │     - first borrow later used by call
+       ·
+     3 │     v.push(v.pop().unwrap());
+       │       ---- first mutable borrow occurs here
+       ·
+     3 │     v.push(v.pop().unwrap());
+       │            ^ second mutable borrow occurs here
+       │
+    ```
+    …is now rendered as:
+    ```
+       ┌── one_line.rs:3:5 ───
+       │
+     3 │     v.push(v.pop().unwrap());
+       │     - first borrow later used by call
+       │       ---- first mutable borrow occurs here
+       │            ^ second mutable borrow occurs here
+       │
+    ```
+
 ## [0.9.0] - 2020-03-11
 
 ### Added
 
--   The `codespan_reporting::files` was added as a way to decouple
+-   The `codespan_reporting::files` module was added as a way to decouple
     `codespan_reporting` from `codespan`.
     -   `codespan_reporting::files::Files` allows users to implement custom file
         databases that work with `codespan_reporting`. This should make it
@@ -55,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/brendanzab/codespan/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/brendanzab/codespan/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/brendanzab/codespan/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/brendanzab/codespan/compare/v0.6.0...v0.7.0

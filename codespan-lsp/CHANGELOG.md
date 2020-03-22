@@ -7,19 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2020-03-23
+
 ## [0.9.0] - 2020-03-11
 
 ### Changed
 
--  The `lsp-types` dependency was updated to use a version range: `>=0.70,<0.74`,
-   which includes the latest updates in `0.73.0`.
+-   The `lsp-types` dependency was updated to use a version range: `>=0.70,<0.74`,
+    which includes the latest updates in `0.73.0`.
 
 ### Removed
 
-- `codespan_lsp` no longer depends on `codespan_reporting`.
-- `make_lsp_severity` and `make_lsp_diagnostic` were removed.
-  It's pretty hard to map the diagnostic structure to LSP diagnostics - we
-  recommend implementing this as an application-specific concern.
+-   `codespan_lsp` no longer depends on `codespan_reporting`.
+-   `make_lsp_severity` and `make_lsp_diagnostic` were removed.
+    It's pretty hard to map the diagnostic structure to LSP diagnostics - we
+    recommend implementing this as an application-specific concern.
 
 ## [0.8.0] - 2020-02-24
 ## [0.7.0] - 2020-01-06
@@ -31,7 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/brendanzab/codespan/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/brendanzab/codespan/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/brendanzab/codespan/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/brendanzab/codespan/compare/v0.6.0...v0.7.0
