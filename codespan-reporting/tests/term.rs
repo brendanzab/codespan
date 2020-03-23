@@ -365,6 +365,53 @@ mod fizz_buzz {
     test_emit!(short_no_color);
 }
 
+mod multiline_overlapping {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "codespan/src/file.rs",
+                [
+                    "        match line_index.compare(self.last_line_index()) {",
+                    "            Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),",
+                    "            Ordering::Equal => Ok(self.source_span().end()),",
+                    "            Ordering::Greater => LineIndexOutOfBoundsError {",
+                    "                given: line_index,",
+                    "                max: self.last_line_index(),",
+                    "            },",
+                    "        }",
+                ].join("\n")
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("match arms have incompatible types")
+                    .with_code("E0308")
+                    .with_labels(vec![
+                        Label::primary((), 230..351).with_message("expected enum `Result`, found struct `LineIndexOutOfBoundsError`"),
+                        Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
+                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
+                        Label::secondary((), 167..195).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
+                    ])
+                    .with_notes(vec![unindent::unindent(
+                        "
+                            expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+                               found type `LineIndexOutOfBoundsError`
+                        "
+                    )]),
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
+
 mod tabbed {
     use super::*;
 
