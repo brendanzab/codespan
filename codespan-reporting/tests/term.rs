@@ -381,7 +381,7 @@ mod multiline_overlapping {
                     "                max: self.last_line_index(),",
                     "            },",
                     "        }",
-                ].join("\n")
+                ].join("\n"),
             );
 
             let diagnostics = vec![
@@ -398,7 +398,7 @@ mod multiline_overlapping {
                         "
                             expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
                                found type `LineIndexOutOfBoundsError`
-                        "
+                        ",
                     )]),
             ];
 
