@@ -52,6 +52,14 @@ pub enum Mark<'diagnostic> {
 
 pub type MarkSeverity = Option<Severity>;
 
+#[derive(Copy, Clone)]
+enum VerticalBound {
+    Top,
+    Bottom,
+}
+
+type Underline = (MarkSeverity, VerticalBound);
+
 /// A renderer of display list entries.
 ///
 /// The following diagram gives an overview of each of the parts of the renderer's output:
@@ -245,7 +253,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                         self.mark_multi_left(*severity, None)?;
                     }
                     // Write a space
-                    Some(Mark::MultiTop(..)) | None => self.mark_inner_gutter_space(None)?,
+                    Some(Mark::MultiTop(..)) | None => self.inner_gutter_space()?,
                 }
             }
 
@@ -310,7 +318,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.border_left()?;
         for left_severity in left_marks {
             match left_severity {
-                None => self.mark_inner_gutter_space(None)?,
+                None => self.inner_gutter_space()?,
                 Some(severity) => self.mark_multi_left(*severity, None)?,
             }
         }
@@ -333,7 +341,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.border_left_break()?;
         for left_severity in left_marks {
             match left_severity {
-                None => self.mark_inner_gutter_space(None)?,
+                None => self.inner_gutter_space()?,
                 Some(severity) => self.mark_multi_left(*severity, None)?,
             }
         }
@@ -453,11 +461,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     fn mark_multi_left(
         &mut self,
         severity: MarkSeverity,
-        current_severity: Option<MarkSeverity>,
+        underline: Option<MarkSeverity>,
     ) -> io::Result<()> {
-        match current_severity {
+        match underline {
             None => write!(self, " ")?,
-            // Continue a projected mark horizontally
+            // Continue an underline horizontally
             Some(severity) => {
                 self.set_color(self.styles().label(severity))?;
                 write!(self, "{}", self.chars().multi_top)?;
@@ -541,20 +549,28 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(self, "\n")?;
         Ok(())
     }
-    /// Writes an empty gutter space, or continues a projected mark horizontally.
-    fn mark_inner_gutter_space(
-        &mut self,
-        current_severity: Option<MarkSeverity>,
-    ) -> io::Result<()> {
-        match current_severity {
-            None => write!(self, "  ")?,
-            // Continue a projected mark horizontally
-            Some(severity) => {
-                self.set_color(self.styles().label(severity))?;
-                write!(self, "{0}{0}", self.chars().multi_top)?;
-                self.reset()?;
-            }
+
+    /// Writes an empty gutter space, or continues an underline horizontally.
+    fn inner_gutter_column(&mut self, underline: Option<Underline>) -> io::Result<()> {
+        match underline {
+            None => self.inner_gutter_space(),
+            Some(underline) => self.inner_gutter_underline(underline),
         }
+    }
+
+    /// Writes an empty gutter space.
+    fn inner_gutter_space(&mut self) -> io::Result<()> {
+        write!(self, "  ")
+    }
+
+    /// Writes an inner gutter underline.
+    fn inner_gutter_underline(&mut self, (severity, vertical_bound): Underline) -> io::Result<()> {
+        self.set_color(self.styles().label(severity))?;
+        match vertical_bound {
+            VerticalBound::Top => write!(self, "{0}{0}", self.config.chars.multi_top)?,
+            VerticalBound::Bottom => write!(self, "{0}{0}", self.config.chars.multi_bottom)?,
+        }
+        self.reset()?;
         Ok(())
     }
 
@@ -568,32 +584,32 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         current_mark_index: usize,
         marks: &[Option<Mark<'_>>],
     ) -> io::Result<()> {
-        let mut current_severity = None;
+        let mut underline = None;
 
         for (i, mark) in marks.iter().enumerate() {
             match mark {
-                None => self.mark_inner_gutter_space(current_severity)?,
+                None => self.inner_gutter_column(underline)?,
                 Some(mark) => match mark {
                     Mark::Single(..) => {}
                     Mark::MultiTopLeft(severity) | Mark::MultiLeft(severity) => {
-                        self.mark_multi_left(*severity, current_severity)?;
+                        self.mark_multi_left(*severity, underline.map(|(severity, _)| severity))?;
                     }
                     Mark::MultiTop(severity, ..) if current_mark_index > i => {
-                        self.mark_multi_left(*severity, current_severity)?;
+                        self.mark_multi_left(*severity, underline.map(|(severity, _)| severity))?;
                     }
                     Mark::MultiBottom(severity, ..) if current_mark_index < i => {
-                        self.mark_multi_left(*severity, current_severity)?;
+                        self.mark_multi_left(*severity, underline.map(|(severity, _)| severity))?;
                     }
                     Mark::MultiTop(severity, ..) if current_mark_index == i => {
-                        current_severity = Some(*severity);
+                        underline = Some((*severity, VerticalBound::Top));
                         self.mark_multi_top_left(*severity)?
                     }
                     Mark::MultiBottom(severity, ..) if current_mark_index == i => {
-                        current_severity = Some(*severity);
+                        underline = Some((*severity, VerticalBound::Bottom));
                         self.mark_multi_bottom_left(*severity)?;
                     }
                     Mark::MultiTop(..) | Mark::MultiBottom(..) => {
-                        self.mark_inner_gutter_space(current_severity)?;
+                        self.inner_gutter_column(underline)?;
                     }
                 },
             }
