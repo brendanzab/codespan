@@ -16,7 +16,85 @@
 
 Beautiful diagnostic reporting for text-based programming languages.
 
-![Preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)
+![Example preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)]
+
+Languages like Rust and Elm already support beautiful error reporting output,
+but it can take a significant amount work to implement this for new programming
+languages! The `codespan-reporting` crate aims to make beautiful error
+diagnostics easy and relatively painless for everyone!
+
+We're still working on improving the crate to help it support broader use cases,
+and improving the quality of the diagnostic rendering, so stay tuned for
+updates and please give us feedback if you have it. Contributions are also very
+welcome!
+
+## Example
+
+```rust
+use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::files::SimpleFiles;
+use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+
+// `files::SimpleFile` and `files::SimpleFiles` help you get up and running with
+// `codespan-reporting` quickly! More complicated use cases can be supported
+// by creating custom implementations of the `files::Files` trait.
+
+let mut files = SimpleFiles::new();
+
+let file_id = files.add(
+    "FizzBuzz.fun",
+    unindent::unindent(
+        r#"
+            module FizzBuzz where
+
+            fizz₁ : Nat → String
+            fizz₁ num = case (mod num 5) (mod num 3) of
+                0 0 => "FizzBuzz"
+                0 _ => "Fizz"
+                _ 0 => "Buzz"
+                _ _ => num
+
+            fizz₂ : Nat → String
+            fizz₂ num =
+                case (mod num 5) (mod num 3) of
+                    0 0 => "FizzBuzz"
+                    0 _ => "Fizz"
+                    _ 0 => "Buzz"
+                    _ _ => num
+        "#,
+    ),
+);
+
+// We normally recommend creating a custom diagnostic data type for your
+// application, and then converting that to `codespan-reporting`'s diagnostic
+// type, but for the sake of this example we construct it directly.
+
+let diagnostic = Diagnostic::error()
+    .with_message("`case` clauses have incompatible types")
+    .with_code("E0308")
+    .with_labels(vec![
+        Label::primary(file_id, 328..331).with_message("expected `String`, found `Nat`"),
+        Label::secondary(file_id, 211..331).with_message("`case` clauses have incompatible types"),
+        Label::secondary(file_id, 258..268).with_message("this is found to be of type `String`"),
+        Label::secondary(file_id, 284..290).with_message("this is found to be of type `String`"),
+        Label::secondary(file_id, 306..312).with_message("this is found to be of type `String`"),
+        Label::secondary(file_id, 186..192).with_message("expected type `String` found here"),
+    ])
+    .with_notes(vec![unindent::unindent(
+        "
+            expected type `String`
+                found type `Nat`
+        ",
+    )]);
+
+// We now set up the writer and configuration, and then finally render the
+// diagnostic to standard error.
+
+let writer = StandardStream::stderr(ColorChoice::Always);
+let config = codespan_reporting::term::Config::default();
+
+term::emit(&mut writer.lock(), &config, &files, &diagnostic)?;
+```
 
 ## Running the CLI example
 
@@ -27,8 +105,6 @@ and run the following shell command:
 ```sh
 cargo run --example term
 ```
-
-We're still working on improving the output - stay tuned for updates!
 
 More examples of using `codespan-reporting` can be found in the
 [examples directory](./codespan-reporting/examples).
@@ -41,6 +117,7 @@ More examples of using `codespan-reporting` can be found in the
 - [Gleam](https://github.com/lpil/gleam/)
 - [Gluon](https://github.com/gluon-lang/gluon)
 - [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
+- [cxx](https://github.com/dtolnay/cxx)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 
 ## Alternatives to codespan-reporting
