@@ -3,7 +3,7 @@ use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Files, Location};
-use crate::term::renderer::{Locus, MultiMark, Renderer, SingleMark};
+use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -38,16 +38,16 @@ where
     {
         use std::collections::BTreeMap;
 
-        struct MarkedFile<'diagnostic, FileId> {
+        struct LabeledFile<'diagnostic, FileId> {
             file_id: FileId,
             start: usize,
             name: String,
             location: Location,
-            num_multi_marks: usize,
+            num_multi_labels: usize,
             lines: BTreeMap<usize, Line<'diagnostic>>,
         }
 
-        impl<'diagnostic, FileId> MarkedFile<'diagnostic, FileId> {
+        impl<'diagnostic, FileId> LabeledFile<'diagnostic, FileId> {
             fn get_or_insert_line(
                 &mut self,
                 line_index: usize,
@@ -57,8 +57,8 @@ where
                 self.lines.entry(line_index).or_insert_with(|| Line {
                     range: line_range,
                     number: line_number,
-                    single_marks: vec![],
-                    multi_marks: vec![],
+                    single_labels: vec![],
+                    multi_labels: vec![],
                 })
             }
         }
@@ -67,17 +67,17 @@ where
             number: usize,
             range: std::ops::Range<usize>,
             // TODO: How do we reuse these allocations?
-            single_marks: Vec<SingleMark<'diagnostic>>,
-            multi_marks: Vec<(usize, MultiMark<'diagnostic>)>,
+            single_labels: Vec<SingleLabel<'diagnostic>>,
+            multi_labels: Vec<(usize, MultiLabel<'diagnostic>)>,
         }
 
         // TODO: Make this data structure external, to allow for allocation reuse
-        let mut marked_files = Vec::<MarkedFile<'_, _>>::new();
+        let mut labeled_files = Vec::<LabeledFile<'_, _>>::new();
         // Keep track of the outer padding to use when rendering the
         // snippets of source code.
         let mut outer_padding = 0;
 
-        // Group marks by file
+        // Group labels by file
         for label in &self.diagnostic.labels {
             let severity = match label.style {
                 LabelStyle::Primary => Some(self.diagnostic.severity),
@@ -100,28 +100,28 @@ where
             // NOTE: This could be made more efficient by using an associative
             // data structure like a hashmap or B-tree,  but we use a vector to
             // preserve the order that unique files appear in the list of labels.
-            let marked_file = match marked_files
+            let labeled_file = match labeled_files
                 .iter_mut()
-                .find(|marked_file| label.file_id == marked_file.file_id)
+                .find(|labeled_file| label.file_id == labeled_file.file_id)
             {
-                Some(marked_file) => {
-                    if marked_file.start > label.range.start {
-                        marked_file.start = label.range.start;
-                        marked_file.location =
+                Some(labeled_file) => {
+                    if labeled_file.start > label.range.start {
+                        labeled_file.start = label.range.start;
+                        labeled_file.location =
                             files.location(label.file_id, label.range.start).unwrap();
                     }
-                    marked_file
+                    labeled_file
                 }
                 None => {
-                    marked_files.push(MarkedFile {
+                    labeled_files.push(LabeledFile {
                         file_id: label.file_id,
                         start: label.range.start,
                         name: files.name(label.file_id).unwrap().to_string(),
                         location: files.location(label.file_id, label.range.start).unwrap(),
-                        num_multi_marks: 0,
+                        num_multi_labels: 0,
                         lines: BTreeMap::new(),
                     });
-                    marked_files.last_mut().unwrap()
+                    labeled_files.last_mut().unwrap()
                 }
             };
 
@@ -132,10 +132,10 @@ where
                 // 2 │ (+ test "")
                 //   │         ^^ expected `Int` but found `String`
                 // ```
-                let mark_start = label.range.start - start_line_range.start;
-                let mark_end = label.range.end - start_line_range.start;
+                let label_start = label.range.start - start_line_range.start;
+                let label_end = label.range.end - start_line_range.start;
 
-                let line = marked_file.get_or_insert_line(
+                let line = labeled_file.get_or_insert_line(
                     start_line_index,
                     start_line_range,
                     start_line_number,
@@ -143,16 +143,16 @@ where
 
                 // Ensure that the single line labels are lexicographically
                 // sorted by the range of source code that they cover.
-                let index = match line.single_marks.binary_search_by(|(_, range, _)| {
+                let index = match line.single_labels.binary_search_by(|(_, range, _)| {
                     // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
                     // to piggyback off its lexicographic comparison implementation.
-                    (range.start, range.end).cmp(&(mark_start, mark_end))
+                    (range.start, range.end).cmp(&(label_start, label_end))
                 }) {
                     Ok(index) | Err(index) => index,
                 };
 
-                line.single_marks
-                    .insert(index, (severity, mark_start..mark_end, &label.message));
+                line.single_labels
+                    .insert(index, (severity, label_start..label_end, &label.message));
             } else {
                 // Multiple lines
                 //
@@ -166,16 +166,16 @@ where
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
 
-                let mark_index = marked_file.num_multi_marks;
-                marked_file.num_multi_marks += 1;
+                let label_index = labeled_file.num_multi_labels;
+                labeled_file.num_multi_labels += 1;
 
-                // First marked line
-                let mark_start = label.range.start - start_line_range.start;
+                // First labeled line
+                let label_start = label.range.start - start_line_range.start;
                 let prefix_source = &source[start_line_range.start..label.range.start];
 
-                marked_file
+                labeled_file
                     .get_or_insert_line(start_line_index, start_line_range, start_line_number)
-                    .multi_marks
+                    .multi_labels
                     // TODO: Do this in the `Renderer`?
                     .push(match prefix_source.trim() {
                         // Section is prefixed by empty space, so we don't need to take
@@ -184,15 +184,15 @@ where
                         // ```text
                         // 4 │ ╭     case (mod num 5) (mod num 3) of
                         // ```
-                        "" => (mark_index, MultiMark::TopLeft(severity)),
-                        // There's source code in the prefix, so run a mark
+                        "" => (label_index, MultiLabel::TopLeft(severity)),
+                        // There's source code in the prefix, so run a label
                         // underneath it to get to the start of the range.
                         //
                         // ```text
                         // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
                         //   │ ╭─────────────^
                         // ```
-                        _ => (mark_index, MultiMark::Top(severity, ..mark_start)),
+                        _ => (label_index, MultiLabel::Top(severity, ..label_start)),
                     });
 
                 // Marked lines
@@ -209,31 +209,31 @@ where
 
                     outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
 
-                    marked_file
+                    labeled_file
                         .get_or_insert_line(line_index, line_range, line_number)
-                        .multi_marks
-                        .push((mark_index, MultiMark::Left(severity)));
+                        .multi_labels
+                        .push((label_index, MultiLabel::Left(severity)));
                 }
 
-                // Last marked line
+                // Last labeled line
                 //
                 // ```text
                 // 8 │ │     _ _ => num
                 //   │ ╰──────────────^ `case` clauses have incompatible types
                 // ```
-                let mark_end = label.range.end - end_line_range.start;
+                let label_end = label.range.end - end_line_range.start;
 
-                marked_file
+                labeled_file
                     .get_or_insert_line(end_line_index, end_line_range, end_line_number)
-                    .multi_marks
+                    .multi_labels
                     .push((
-                        mark_index,
-                        MultiMark::Bottom(severity, ..mark_end, &label.message),
+                        label_index,
+                        MultiLabel::Bottom(severity, ..label_end, &label.message),
                     ));
             }
         }
 
-        // TODO: Insert `None` spaces in `marked_files`
+        // TODO: Insert `None` spaces in `labeled_files`
 
         // Header and message
         //
@@ -246,7 +246,7 @@ where
             self.diagnostic.code.as_ref().map(String::as_str),
             self.diagnostic.message.as_str(),
         )?;
-        if !marked_files.is_empty() {
+        if !labeled_files.is_empty() {
             renderer.render_empty()?;
         }
 
@@ -260,8 +260,8 @@ where
         //   │         ^^ expected `Int` but found `String`
         //   │
         // ```
-        for marked_file in marked_files {
-            let source = files.source(marked_file.file_id).unwrap();
+        for labeled_file in labeled_files {
+            let source = files.source(labeled_file.file_id).unwrap();
             let source = source.as_ref();
 
             // Top left border and locus.
@@ -269,28 +269,28 @@ where
             // ```text
             // ┌── test:2:9 ───
             // ```
-            if !marked_file.lines.is_empty() {
+            if !labeled_file.lines.is_empty() {
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
-                        name: marked_file.name,
-                        location: marked_file.location,
+                        name: labeled_file.name,
+                        location: labeled_file.location,
                     },
                 )?;
-                renderer.render_source_empty(outer_padding, marked_file.num_multi_marks, &[])?;
+                renderer.render_source_empty(outer_padding, labeled_file.num_multi_labels, &[])?;
             }
 
-            let mut lines = marked_file.lines.into_iter().peekable();
-            let current_marks = Vec::new();
+            let mut lines = labeled_file.lines.into_iter().peekable();
+            let current_labels = Vec::new();
 
             while let Some((line_index, line)) = lines.next() {
                 renderer.render_source_line(
                     outer_padding,
                     line.number,
                     &source[line.range.clone()],
-                    &line.single_marks,
-                    marked_file.num_multi_marks,
-                    &line.multi_marks,
+                    &line.single_labels,
+                    labeled_file.num_multi_labels,
+                    &line.multi_labels,
                 )?;
 
                 // Check to see if we need to render any intermediate stuff
@@ -302,14 +302,14 @@ where
                         // One line between the current line and the next line
                         Some(2) => {
                             // Write a source line
-                            let file_id = marked_file.file_id;
+                            let file_id = labeled_file.file_id;
                             renderer.render_source_line(
                                 outer_padding,
                                 files.line_number(file_id, line_index + 1).unwrap(),
                                 &source[files.line_range(file_id, line_index + 1).unwrap()],
                                 &[],
-                                marked_file.num_multi_marks,
-                                &current_marks,
+                                labeled_file.num_multi_labels,
+                                &current_labels,
                             )?;
                         }
                         // More than one line between the current line and the next line.
@@ -321,8 +321,8 @@ where
                             // ```
                             renderer.render_source_break(
                                 outer_padding,
-                                marked_file.num_multi_marks,
-                                &current_marks,
+                                labeled_file.num_multi_labels,
+                                &current_labels,
                             )?;
                         }
                     }
@@ -330,8 +330,8 @@ where
             }
             renderer.render_source_empty(
                 outer_padding,
-                marked_file.num_multi_marks,
-                &current_marks,
+                labeled_file.num_multi_labels,
+                &current_labels,
             )?;
         }
 

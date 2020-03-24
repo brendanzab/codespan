@@ -14,44 +14,44 @@ pub struct Locus {
     pub location: Location,
 }
 
-/// Single-line mark, with an optional message.
+/// Single-line label, with an optional message.
 ///
 /// ```text
 /// ^^^^^^^^^ blah blah
 /// ```
-pub type SingleMark<'diagnostic> = (MarkSeverity, Range<usize>, &'diagnostic str);
+pub type SingleLabel<'diagnostic> = (LabelSeverity, Range<usize>, &'diagnostic str);
 
-/// A mark to render.
+/// A multi-line label to render.
 ///
 /// Locations are relative to the start of where the source cord is rendered.
-pub enum MultiMark<'diagnostic> {
-    /// Left top corner for multi-line marks.
+pub enum MultiLabel<'diagnostic> {
+    /// Left top corner for multi-line labels.
     ///
     /// ```text
     /// ╭
     /// ```
-    TopLeft(MarkSeverity),
-    /// Multi-line mark top.
+    TopLeft(LabelSeverity),
+    /// Multi-line label top.
     ///
     /// ```text
     /// ╭────────────^
     /// ```
-    Top(MarkSeverity, RangeTo<usize>),
-    /// Left vertical marks for multi-line marks.
+    Top(LabelSeverity, RangeTo<usize>),
+    /// Left vertical labels for multi-line labels.
     ///
     /// ```text
     /// │
     /// ```
-    Left(MarkSeverity),
-    /// Multi-line mark bottom, with an optional message.
+    Left(LabelSeverity),
+    /// Multi-line label bottom, with an optional message.
     ///
     /// ```text
     /// ╰────────────^ blah blah
     /// ```
-    Bottom(MarkSeverity, RangeTo<usize>, &'diagnostic str),
+    Bottom(LabelSeverity, RangeTo<usize>, &'diagnostic str),
 }
 
-pub type MarkSeverity = Option<Severity>;
+pub type LabelSeverity = Option<Severity>;
 
 #[derive(Copy, Clone)]
 enum VerticalBound {
@@ -59,7 +59,7 @@ enum VerticalBound {
     Bottom,
 }
 
-type Underline = (MarkSeverity, VerticalBound);
+type Underline = (LabelSeverity, VerticalBound);
 
 /// A renderer of display list entries.
 ///
@@ -229,9 +229,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         outer_padding: usize,
         line_number: usize,
         source: &str,
-        single_marks: &[SingleMark<'_>],
-        num_multi_marks: usize,
-        multi_marks: &[(usize, MultiMark<'_>)],
+        single_labels: &[SingleLabel<'_>],
+        num_multi_labels: usize,
+        multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
         // Write source line
         //
@@ -244,18 +244,20 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             self.border_left()?;
 
             // Write inner gutter (with multi-line continuations on the left if necessary)
-            let mut multi_marks_iter = multi_marks.iter().peekable();
-            for mark_column in 0..num_multi_marks {
-                match multi_marks_iter.peek() {
-                    Some((mark_index, mark)) if *mark_index == mark_column => {
-                        match mark {
-                            MultiMark::TopLeft(severity) => self.mark_multi_top_left(*severity)?,
-                            MultiMark::Top(..) => self.inner_gutter_space()?,
-                            MultiMark::Left(severity) | MultiMark::Bottom(severity, ..) => {
-                                self.mark_multi_left(*severity, None)?
+            let mut multi_labels_iter = multi_labels.iter().peekable();
+            for label_column in 0..num_multi_labels {
+                match multi_labels_iter.peek() {
+                    Some((label_index, label)) if *label_index == label_column => {
+                        match label {
+                            MultiLabel::TopLeft(severity) => {
+                                self.label_multi_top_left(*severity)?
+                            }
+                            MultiLabel::Top(..) => self.inner_gutter_space()?,
+                            MultiLabel::Left(severity) | MultiLabel::Bottom(severity, ..) => {
+                                self.label_multi_left(*severity, None)?
                             }
                         }
-                        multi_marks_iter.next();
+                        multi_labels_iter.next();
                     }
                     Some((_, _)) | None => self.inner_gutter_space()?,
                 }
@@ -266,58 +268,58 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             write!(self, "\n")?;
         }
 
-        // Write single marks underneath source
+        // Write single labels underneath source
         //
         // ```text
         //     │ │   │    ^^^^ oh noes
         // ```
-        for (severity, range, message) in single_marks.iter() {
+        for (severity, range, message) in single_labels.iter() {
             self.outer_gutter(outer_padding)?;
             self.border_left()?;
 
-            let mut multi_marks_iter = multi_marks.iter().peekable();
-            for mark_column in 0..num_multi_marks {
-                match multi_marks_iter.peek() {
-                    Some((mark_index, mark)) if *mark_index == mark_column => {
-                        match mark {
-                            MultiMark::TopLeft(severity)
-                            | MultiMark::Left(severity)
-                            | MultiMark::Bottom(severity, ..) => {
-                                self.mark_multi_left(*severity, None)?
+            let mut multi_labels_iter = multi_labels.iter().peekable();
+            for label_column in 0..num_multi_labels {
+                match multi_labels_iter.peek() {
+                    Some((label_index, label)) if *label_index == label_column => {
+                        match label {
+                            MultiLabel::TopLeft(severity)
+                            | MultiLabel::Left(severity)
+                            | MultiLabel::Bottom(severity, ..) => {
+                                self.label_multi_left(*severity, None)?
                             }
-                            MultiMark::Top(..) => self.inner_gutter_space()?,
+                            MultiLabel::Top(..) => self.inner_gutter_space()?,
                         }
-                        multi_marks_iter.next();
+                        multi_labels_iter.next();
                     }
                     Some((_, _)) | None => self.inner_gutter_space()?,
                 }
             }
 
-            self.mark_single(*severity, source, range.clone(), message)?;
+            self.label_single(*severity, source, range.clone(), message)?;
         }
 
-        // Write multi marks underneath source
+        // Write multi labels underneath source
         //
         // ```text
         //     │ ╰───│──────────────────^ woops
         //     │   ╭─│─────────^
         // ```
-        for (i, (_, mark)) in multi_marks.iter().enumerate() {
-            match mark {
-                MultiMark::TopLeft(_) => {} // SKIP: no mark needed
-                MultiMark::Top(severity, range) => {
+        for (i, (_, label)) in multi_labels.iter().enumerate() {
+            match label {
+                MultiLabel::TopLeft(_) => {} // SKIP: no label needed
+                MultiLabel::Top(severity, range) => {
                     self.outer_gutter(outer_padding)?;
                     self.border_left()?;
-                    self.mark_inner_gutter(i, num_multi_marks, multi_marks)?;
-                    self.mark_multi_top_caret(*severity, source, range.clone())?;
+                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
+                    self.label_multi_top_caret(*severity, source, range.clone())?;
                 }
-                MultiMark::Left(_) => {} // SKIP: no mark needed
-                MultiMark::Bottom(severity, range, message) => {
+                MultiLabel::Left(_) => {} // SKIP: no label needed
+                MultiLabel::Bottom(severity, range, message) => {
                     let range = range.clone();
                     self.outer_gutter(outer_padding)?;
                     self.border_left()?;
-                    self.mark_inner_gutter(i, num_multi_marks, multi_marks)?;
-                    self.mark_multi_bottom_caret(*severity, source, range, message)?;
+                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
+                    self.label_multi_bottom_caret(*severity, source, range, message)?;
                 }
             }
         }
@@ -333,17 +335,17 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     pub fn render_source_empty(
         &mut self,
         outer_padding: usize,
-        num_multi_marks: usize,
-        multi_marks: &[(usize, MultiMark<'_>)],
+        num_multi_labels: usize,
+        multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
 
-        let mut multi_marks_iter = multi_marks.iter();
-        for mark_column in 0..num_multi_marks {
-            match multi_marks_iter.next() {
-                Some((mark_index, MultiMark::Left(severity))) if *mark_index == mark_column => {
-                    self.mark_multi_left(*severity, None)?
+        let mut multi_labels_iter = multi_labels.iter();
+        for label_column in 0..num_multi_labels {
+            match multi_labels_iter.next() {
+                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
+                    self.label_multi_left(*severity, None)?
                 }
                 Some((_, _)) | None => self.inner_gutter_space()?,
             }
@@ -354,7 +356,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// A broken source line, for marking skipped sections of source.
+    /// A broken source line, for labeling skipped sections of source.
     ///
     /// ```text
     /// · │ │
@@ -362,17 +364,17 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     pub fn render_source_break(
         &mut self,
         outer_padding: usize,
-        num_multi_marks: usize,
-        multi_marks: &[(usize, MultiMark<'_>)],
+        num_multi_labels: usize,
+        multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
 
-        let mut multi_marks_iter = multi_marks.iter();
-        for mark_column in 0..num_multi_marks {
-            match multi_marks_iter.next() {
-                Some((mark_index, MultiMark::Left(severity))) if *mark_index == mark_column => {
-                    self.mark_multi_left(*severity, None)?;
+        let mut multi_labels_iter = multi_labels.iter();
+        for label_column in 0..num_multi_labels {
+            match multi_labels_iter.next() {
+                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
+                    self.label_multi_left(*severity, None)?;
                 }
                 Some((_, _)) | None => self.inner_gutter_space()?,
             }
@@ -458,14 +460,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Single-line mark with a message.
+    // Single-line label with a message.
     //
     // ```text
     // ^^ expected `Int` but found `String`
     // ```
-    fn mark_single(
+    fn label_single(
         &mut self,
-        severity: MarkSeverity,
+        severity: LabelSeverity,
         source: &str,
         range: Range<usize>,
         message: &str,
@@ -474,7 +476,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(self, " {space: >width$}", space = "", width = space_len)?;
         self.set_color(self.styles().label(severity))?;
         // We use `usize::max` here to ensure that we print at least one
-        // mark character - even when we have a zero-length span.
+        // label character - even when we have a zero-length span.
         for _ in 0..usize::max(self.config.width(&source[range.clone()]), 1) {
             write!(self, "{}", self.chars().single_caret_char(severity))?;
         }
@@ -486,15 +488,15 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The left of a multi-line mark.
+    /// The left of a multi-line label.
     ///
     /// ```text
     ///  │
     /// ```
-    fn mark_multi_left(
+    fn label_multi_left(
         &mut self,
-        severity: MarkSeverity,
-        underline: Option<MarkSeverity>,
+        severity: LabelSeverity,
+        underline: Option<LabelSeverity>,
     ) -> io::Result<()> {
         match underline {
             None => write!(self, " ")?,
@@ -511,8 +513,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The top of a multi-line mark.
-    fn mark_multi_top_line(&mut self, severity: MarkSeverity, len: usize) -> io::Result<()> {
+    /// The top of a multi-line label.
+    fn label_multi_top_line(&mut self, severity: LabelSeverity, len: usize) -> io::Result<()> {
         self.set_color(self.styles().label(severity))?;
         for _ in 0..len {
             write!(self, "{}", self.config.chars.multi_top)?;
@@ -521,8 +523,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The top of a multi-line mark.
-    fn mark_multi_bottom_line(&mut self, severity: MarkSeverity, len: usize) -> io::Result<()> {
+    /// The top of a multi-line label.
+    fn label_multi_bottom_line(&mut self, severity: LabelSeverity, len: usize) -> io::Result<()> {
         self.set_color(self.styles().label(severity))?;
         for _ in 0..len {
             write!(self, "{}", self.config.chars.multi_bottom)?;
@@ -531,12 +533,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The top-left of a multi-line mark.
+    /// The top-left of a multi-line label.
     ///
     /// ```text
     ///  ╭
     /// ```
-    fn mark_multi_top_left(&mut self, severity: MarkSeverity) -> io::Result<()> {
+    fn label_multi_top_left(&mut self, severity: LabelSeverity) -> io::Result<()> {
         write!(self, " ")?;
         self.set_color(self.styles().label(severity))?;
         write!(self, "{}", self.chars().multi_top_left)?;
@@ -544,12 +546,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The bottom left of a multi-line mark.
+    /// The bottom left of a multi-line label.
     ///
     /// ```text
     ///  ╰
     /// ```
-    fn mark_multi_bottom_left(&mut self, severity: MarkSeverity) -> io::Result<()> {
+    fn label_multi_bottom_left(&mut self, severity: LabelSeverity) -> io::Result<()> {
         write!(self, " ")?;
         self.set_color(self.styles().label(severity))?;
         write!(self, "{}", self.chars().multi_bottom_left)?;
@@ -557,14 +559,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Multi-line mark top.
+    // Multi-line label top.
     //
     // ```text
     // ─────────────^
     // ```
-    fn mark_multi_top_caret(
+    fn label_multi_top_caret(
         &mut self,
-        severity: MarkSeverity,
+        severity: LabelSeverity,
         source: &str,
         range: RangeTo<usize>,
     ) -> io::Result<()> {
@@ -578,14 +580,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Multi-line mark bottom, with a message.
+    // Multi-line label bottom, with a message.
     //
     // ```text
     // ─────────────^ expected `Int` but found `String`
     // ```
-    fn mark_multi_bottom_caret(
+    fn label_multi_bottom_caret(
         &mut self,
-        severity: MarkSeverity,
+        severity: LabelSeverity,
         source: &str,
         range: RangeTo<usize>,
         message: &str,
@@ -607,8 +609,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     fn inner_gutter_column(&mut self, underline: Option<Underline>) -> io::Result<()> {
         match underline {
             None => self.inner_gutter_space(),
-            Some((severity, VerticalBound::Top)) => self.mark_multi_top_line(severity, 2),
-            Some((severity, VerticalBound::Bottom)) => self.mark_multi_bottom_line(severity, 2),
+            Some((severity, VerticalBound::Top)) => self.label_multi_top_line(severity, 2),
+            Some((severity, VerticalBound::Bottom)) => self.label_multi_bottom_line(severity, 2),
         }
     }
 
@@ -622,41 +624,41 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```text
     ///  │ ╭─│───│
     /// ```
-    fn mark_inner_gutter(
+    fn label_inner_gutter(
         &mut self,
-        current_mark_index: usize,
-        num_multi_marks: usize,
-        multi_marks: &[(usize, MultiMark<'_>)],
+        current_label_index: usize,
+        num_multi_labels: usize,
+        multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
         let mut underline = None;
 
-        let mut multi_marks_iter = multi_marks.iter().enumerate().peekable();
-        for mark_column in 0..num_multi_marks {
-            match multi_marks_iter.peek() {
-                Some((i, (mark_index, mark))) if *mark_index == mark_column => {
-                    match mark {
-                        MultiMark::TopLeft(severity) | MultiMark::Left(severity) => {
-                            self.mark_multi_left(*severity, underline.map(|(s, _)| s))?;
+        let mut multi_labels_iter = multi_labels.iter().enumerate().peekable();
+        for label_column in 0..num_multi_labels {
+            match multi_labels_iter.peek() {
+                Some((i, (label_index, label))) if *label_index == label_column => {
+                    match label {
+                        MultiLabel::TopLeft(severity) | MultiLabel::Left(severity) => {
+                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiMark::Top(severity, ..) if current_mark_index > *i => {
-                            self.mark_multi_left(*severity, underline.map(|(s, _)| s))?;
+                        MultiLabel::Top(severity, ..) if current_label_index > *i => {
+                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiMark::Bottom(severity, ..) if current_mark_index < *i => {
-                            self.mark_multi_left(*severity, underline.map(|(s, _)| s))?;
+                        MultiLabel::Bottom(severity, ..) if current_label_index < *i => {
+                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiMark::Top(severity, ..) if current_mark_index == *i => {
+                        MultiLabel::Top(severity, ..) if current_label_index == *i => {
                             underline = Some((*severity, VerticalBound::Top));
-                            self.mark_multi_top_left(*severity)?
+                            self.label_multi_top_left(*severity)?
                         }
-                        MultiMark::Bottom(severity, ..) if current_mark_index == *i => {
+                        MultiLabel::Bottom(severity, ..) if current_label_index == *i => {
                             underline = Some((*severity, VerticalBound::Bottom));
-                            self.mark_multi_bottom_left(*severity)?;
+                            self.label_multi_bottom_left(*severity)?;
                         }
-                        MultiMark::Top(..) | MultiMark::Bottom(..) => {
+                        MultiLabel::Top(..) | MultiLabel::Bottom(..) => {
                             self.inner_gutter_column(underline)?;
                         }
                     }
-                    multi_marks_iter.next();
+                    multi_labels_iter.next();
                 }
                 Some((_, _)) | None => self.inner_gutter_column(underline)?,
             }
