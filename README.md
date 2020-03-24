@@ -41,6 +41,7 @@ More examples of using `codespan-reporting` can be found in the
 - [Gleam](https://github.com/lpil/gleam/)
 - [Gluon](https://github.com/gluon-lang/gluon)
 - [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
+- [cxx](https://github.com/dtolnay/cxx)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 
 ## Alternatives to codespan-reporting
