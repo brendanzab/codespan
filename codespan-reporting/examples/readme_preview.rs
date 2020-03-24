@@ -71,9 +71,9 @@ fn main() -> anyhow::Result<()> {
         ])
         .with_notes(vec![unindent::unindent(
             "
-                    expected type `String`
-                       found type `Nat`
-                ",
+                expected type `String`
+                   found type `Nat`
+            ",
         )])];
 
     // let mut files = SimpleFiles::new();
