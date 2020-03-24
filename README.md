@@ -16,7 +16,7 @@
 
 Beautiful diagnostic reporting for text-based programming languages.
 
-![Example preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)]
+![Example preview](./codespan-reporting/assets/readme_preview.svg?sanitize=true)
 
 Languages like Rust and Elm already support beautiful error reporting output,
 but it can take a significant amount work to implement this for new programming
