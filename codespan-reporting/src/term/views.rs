@@ -1,8 +1,9 @@
 use std::io;
+use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
-use crate::files::Files;
-use crate::term::renderer::{Locus, Mark, Renderer};
+use crate::files::{Files, Location};
+use crate::term::renderer::{Locus, MultiMark, Renderer, SingleMark};
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -35,53 +36,204 @@ where
     where
         FileId: 'files,
     {
+        use std::collections::BTreeMap;
+
+        struct MarkedFile<'diagnostic, FileId> {
+            file_id: FileId,
+            start: usize,
+            name: String,
+            location: Location,
+            num_multi_marks: usize,
+            lines: BTreeMap<usize, Line<'diagnostic>>,
+        }
+
+        impl<'diagnostic, FileId> MarkedFile<'diagnostic, FileId> {
+            fn get_or_insert_line(
+                &mut self,
+                line_index: usize,
+                line_range: Range<usize>,
+                line_number: usize,
+            ) -> &mut Line<'diagnostic> {
+                self.lines.entry(line_index).or_insert_with(|| Line {
+                    range: line_range,
+                    number: line_number,
+                    single_marks: vec![],
+                    multi_marks: vec![],
+                })
+            }
+        }
+
+        struct Line<'diagnostic> {
+            number: usize,
+            range: std::ops::Range<usize>,
+            // TODO: How do we reuse these allocations?
+            single_marks: Vec<SingleMark<'diagnostic>>,
+            multi_marks: Vec<(usize, MultiMark<'diagnostic>)>,
+        }
+
         // TODO: Make this data structure external, to allow for allocation reuse
-        let mut file_ids_to_labels = Vec::new();
+        let mut marked_files = Vec::<MarkedFile<'_, _>>::new();
+        // Keep track of the outer padding to use when rendering the
+        // snippets of source code.
         let mut outer_padding = 0;
 
         // Group marks by file
         for label in &self.diagnostic.labels {
+            let severity = match label.style {
+                LabelStyle::Primary => Some(self.diagnostic.severity),
+                LabelStyle::Secondary => None,
+            };
+
+            let source = files.source(label.file_id).unwrap();
+            let source = source.as_ref();
+
             let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
+            let start_line_number = files.line_number(label.file_id, start_line_index).unwrap();
+            let start_line_range = files.line_range(label.file_id, start_line_index).unwrap();
             let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
             let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
+            let end_line_range = files.line_range(label.file_id, end_line_index).unwrap();
 
-            // The label spans over multiple lines if if the line indices of the
-            // start and end differ.
-            let is_multiline = start_line_index != end_line_index;
-            // Update the outer padding based on the last line number
+            outer_padding = std::cmp::max(outer_padding, count_digits(start_line_number));
             outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
-
-            // TODO(#100): Group contiguous line index ranges using some sort of interval set algorithm.
-            // TODO(#100): Flatten mark groups to overlapping underlines that can be easily rendered.
-            // TODO(#125): If start line and end line are too far apart, we should add a source break.
 
             // NOTE: This could be made more efficient by using an associative
             // data structure like a hashmap or B-tree,  but we use a vector to
             // preserve the order that unique files appear in the list of labels.
-            match file_ids_to_labels
+            let marked_file = match marked_files
                 .iter_mut()
-                .find(|(file_id, _, _)| label.file_id == *file_id)
+                .find(|marked_file| label.file_id == marked_file.file_id)
             {
-                None => file_ids_to_labels.push((label.file_id, is_multiline, vec![label])),
-                Some((_, seen_multiline, labels)) => {
-                    // Keep track of if we've sen a multiline label. This helps
-                    // us to figure out the inner padding of the source snippet.
-                    // TODO: This will need to be more complicated once we allow multiline labels to overlap.
-                    *seen_multiline |= is_multiline;
-                    // Ensure that the vector of labels is sorted
-                    // lexicographically by the range of source code they cover.
-                    // This should make our job easier later on.
-                    match labels.binary_search_by(|other| {
-                        // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
-                        // to piggyback off its lexicographic comparison implementation.
-                        (other.range.start, other.range.end)
-                            .cmp(&(label.range.start, label.range.end))
-                    }) {
-                        Ok(index) | Err(index) => labels.insert(index, label),
+                Some(marked_file) => {
+                    if marked_file.start > label.range.start {
+                        marked_file.start = label.range.start;
+                        marked_file.location =
+                            files.location(label.file_id, label.range.start).unwrap();
                     }
+                    marked_file
                 }
+                None => {
+                    marked_files.push(MarkedFile {
+                        file_id: label.file_id,
+                        start: label.range.start,
+                        name: files.name(label.file_id).unwrap().to_string(),
+                        location: files.location(label.file_id, label.range.start).unwrap(),
+                        num_multi_marks: 0,
+                        lines: BTreeMap::new(),
+                    });
+                    marked_files.last_mut().unwrap()
+                }
+            };
+
+            if start_line_index == end_line_index {
+                // Single line
+                //
+                // ```text
+                // 2 │ (+ test "")
+                //   │         ^^ expected `Int` but found `String`
+                // ```
+                let mark_start = label.range.start - start_line_range.start;
+                let mark_end = label.range.end - start_line_range.start;
+
+                let line = marked_file.get_or_insert_line(
+                    start_line_index,
+                    start_line_range,
+                    start_line_number,
+                );
+
+                // Ensure that the single line labels are lexicographically
+                // sorted by the range of source code that they cover.
+                let index = match line.single_marks.binary_search_by(|(_, range, _)| {
+                    // `Range<usize>` doesn't implement `Ord`, so convert to `(usize, usize)`
+                    // to piggyback off its lexicographic comparison implementation.
+                    (range.start, range.end).cmp(&(mark_start, mark_end))
+                }) {
+                    Ok(index) | Err(index) => index,
+                };
+
+                line.single_marks
+                    .insert(index, (severity, mark_start..mark_end, &label.message));
+            } else {
+                // Multiple lines
+                //
+                // ```text
+                // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
+                //   │ ╭─────────────^
+                // 5 │ │     0 0 => "FizzBuzz"
+                // 6 │ │     0 _ => "Fizz"
+                // 7 │ │     _ 0 => "Buzz"
+                // 8 │ │     _ _ => num
+                //   │ ╰──────────────^ `case` clauses have incompatible types
+                // ```
+
+                let mark_index = marked_file.num_multi_marks;
+                marked_file.num_multi_marks += 1;
+
+                // First marked line
+                let mark_start = label.range.start - start_line_range.start;
+                let prefix_source = &source[start_line_range.start..label.range.start];
+
+                marked_file
+                    .get_or_insert_line(start_line_index, start_line_range, start_line_number)
+                    .multi_marks
+                    // TODO: Do this in the `Renderer`?
+                    .push(match prefix_source.trim() {
+                        // Section is prefixed by empty space, so we don't need to take
+                        // up a new line.
+                        //
+                        // ```text
+                        // 4 │ ╭     case (mod num 5) (mod num 3) of
+                        // ```
+                        "" => (mark_index, MultiMark::TopLeft(severity)),
+                        // There's source code in the prefix, so run a mark
+                        // underneath it to get to the start of the range.
+                        //
+                        // ```text
+                        // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
+                        //   │ ╭─────────────^
+                        // ```
+                        _ => (mark_index, MultiMark::Top(severity, ..mark_start)),
+                    });
+
+                // Marked lines
+                //
+                // ```text
+                // 5 │ │     0 0 => "FizzBuzz"
+                // 6 │ │     0 _ => "Fizz"
+                // 7 │ │     _ 0 => "Buzz"
+                // ```
+                // TODO(#125): If start line and end line are too far apart, add a source break.
+                for line_index in (start_line_index + 1)..end_line_index {
+                    let line_range = files.line_range(label.file_id, line_index).unwrap();
+                    let line_number = files.line_number(label.file_id, line_index).unwrap();
+
+                    outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
+
+                    marked_file
+                        .get_or_insert_line(line_index, line_range, line_number)
+                        .multi_marks
+                        .push((mark_index, MultiMark::Left(severity)));
+                }
+
+                // Last marked line
+                //
+                // ```text
+                // 8 │ │     _ _ => num
+                //   │ ╰──────────────^ `case` clauses have incompatible types
+                // ```
+                let mark_end = label.range.end - end_line_range.start;
+
+                marked_file
+                    .get_or_insert_line(end_line_index, end_line_range, end_line_number)
+                    .multi_marks
+                    .push((
+                        mark_index,
+                        MultiMark::Bottom(severity, ..mark_end, &label.message),
+                    ));
             }
         }
+
+        // TODO: Insert `None` spaces in `marked_files`
 
         // Header and message
         //
@@ -94,7 +246,7 @@ where
             self.diagnostic.code.as_ref().map(String::as_str),
             self.diagnostic.message.as_str(),
         )?;
-        if !file_ids_to_labels.is_empty() {
+        if !marked_files.is_empty() {
             renderer.render_empty()?;
         }
 
@@ -108,8 +260,8 @@ where
         //   │         ^^ expected `Int` but found `String`
         //   │
         // ```
-        for (file_id, seen_multiline, labels) in file_ids_to_labels {
-            let source = files.source(file_id).unwrap();
+        for marked_file in marked_files {
+            let source = files.source(marked_file.file_id).unwrap();
             let source = source.as_ref();
 
             // Top left border and locus.
@@ -117,208 +269,70 @@ where
             // ```text
             // ┌── test:2:9 ───
             // ```
-            if let Some(label) = labels.first() {
+            if !marked_file.lines.is_empty() {
                 renderer.render_source_start(
                     outer_padding,
                     &Locus {
-                        name: files.name(file_id).unwrap().to_string(),
-                        location: files.location(file_id, label.range.start).unwrap(),
+                        name: marked_file.name,
+                        location: marked_file.location,
                     },
                 )?;
-                renderer.render_source_empty(outer_padding, &[])?;
+                renderer.render_source_empty(outer_padding, marked_file.num_multi_marks, &[])?;
             }
 
-            let mut labels = labels.into_iter().peekable();
-            let mut previous_end_line_index = None;
+            let mut lines = marked_file.lines.into_iter().peekable();
+            let current_marks = Vec::new();
 
-            while let Some(label) = labels.next() {
-                let severity = match label.style {
-                    LabelStyle::Primary => Some(self.diagnostic.severity),
-                    LabelStyle::Secondary => None,
-                };
-
-                let start_line_index = files.line_index(file_id, label.range.start).unwrap();
-                let start_line_number = files.line_number(file_id, start_line_index).unwrap();
-                let start_line_range = files.line_range(file_id, start_line_index).unwrap();
-                let end_line_index = files.line_index(file_id, label.range.end).unwrap();
-                let end_line_number = files.line_number(file_id, end_line_index).unwrap();
-                let end_line_range = files.line_range(file_id, end_line_index).unwrap();
+            while let Some((line_index, line)) = lines.next() {
+                renderer.render_source_line(
+                    outer_padding,
+                    line.number,
+                    &source[line.range.clone()],
+                    &line.single_marks,
+                    marked_file.num_multi_marks,
+                    &line.multi_marks,
+                )?;
 
                 // Check to see if we need to render any intermediate stuff
-                // before rendering the current mark.
-                if let Some(previous_end_line_index) = previous_end_line_index {
-                    match start_line_index.checked_sub(previous_end_line_index) {
-                        // Current mark is on the same line as the previous mark
-                        Some(0) => {
-                            // TODO: Accumulate marks here
-                            renderer.render_source_break(outer_padding, &[])?;
-                        }
-                        // Current mark is on the next consecutive line
+                // before rendering the next line.
+                if let Some((next_line_index, _)) = lines.peek() {
+                    match next_line_index.checked_sub(line_index) {
+                        // Consecutive lines
                         Some(1) => {}
-                        // One line between the current mark and the previous mark
+                        // One line between the current line and the next line
                         Some(2) => {
                             // Write a source line
-                            let next_index = previous_end_line_index + 1;
+                            let file_id = marked_file.file_id;
                             renderer.render_source_line(
                                 outer_padding,
-                                files.line_number(file_id, next_index).unwrap(),
-                                &source[files.line_range(file_id, next_index).unwrap()],
-                                match seen_multiline {
-                                    true => &[None],
-                                    false => &[],
-                                },
+                                files.line_number(file_id, line_index + 1).unwrap(),
+                                &source[files.line_range(file_id, line_index + 1).unwrap()],
+                                &[],
+                                marked_file.num_multi_marks,
+                                &current_marks,
                             )?;
                         }
-                        // More than one line between the current mark and the
-                        // previous mark - or the marks are out of order.
+                        // More than one line between the current line and the next line.
                         Some(_) | None => {
                             // Source break
                             //
                             // ```text
                             // ·
                             // ```
-                            renderer.render_source_break(outer_padding, &[])?;
+                            renderer.render_source_break(
+                                outer_padding,
+                                marked_file.num_multi_marks,
+                                &current_marks,
+                            )?;
                         }
                     }
                 }
-
-                // Render the current label.
-                if start_line_index == end_line_index {
-                    // Single line
-                    //
-                    // ```text
-                    // 2 │ (+ test "")
-                    //   │         ^^ expected `Int` but found `String`
-                    // ```
-                    let mark_start = label.range.start - start_line_range.start;
-                    let mark_end = label.range.end - start_line_range.start;
-
-                    let mark = Mark::Single(severity, mark_start..mark_end, &label.message);
-                    let mut marks = match seen_multiline {
-                        true => vec![None, Some(mark)],
-                        false => vec![Some(mark)],
-                    };
-
-                    // Accumulate consecutive single marks
-                    // TODO: it feels like this could be merged with the check
-                    // of `previous_end_index` above?
-                    while let Some(next_label) = labels.peek() {
-                        let severity = match next_label.style {
-                            LabelStyle::Primary => Some(self.diagnostic.severity),
-                            LabelStyle::Secondary => None,
-                        };
-
-                        let range = next_label.range.clone();
-                        let next_start_line_index = files.line_index(file_id, range.start).unwrap();
-                        let next_end_line_index = files.line_index(file_id, range.end).unwrap();
-
-                        if start_line_index == next_start_line_index
-                            && next_start_line_index == next_end_line_index
-                        {
-                            let mark_start = next_label.range.start - start_line_range.start;
-                            let mark_end = next_label.range.end - start_line_range.start;
-
-                            marks.push(Some(Mark::Single(
-                                severity,
-                                mark_start..mark_end,
-                                &next_label.message,
-                            )));
-                        } else {
-                            break;
-                        }
-
-                        labels.next();
-                    }
-
-                    renderer.render_source_line(
-                        outer_padding,
-                        start_line_number,
-                        &source[start_line_range],
-                        &marks,
-                    )?;
-                } else {
-                    // Multiple lines
-                    //
-                    // ```text
-                    // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
-                    //   │ ╭─────────────^
-                    // 5 │ │     0 0 => "FizzBuzz"
-                    // 6 │ │     0 _ => "Fizz"
-                    // 7 │ │     _ 0 => "Buzz"
-                    // 8 │ │     _ _ => num
-                    //   │ ╰──────────────^ `case` clauses have incompatible types
-                    // ```
-                    let mark_start = label.range.start - start_line_range.start;
-                    let prefix_source = &source[start_line_range.start..label.range.start];
-
-                    if prefix_source.trim().is_empty() {
-                        // Section is prefixed by empty space, so we don't need to take
-                        // up a new line.
-                        //
-                        // ```text
-                        // 4 │ ╭     case (mod num 5) (mod num 3) of
-                        // ```
-                        renderer.render_source_line(
-                            outer_padding,
-                            start_line_number,
-                            &source[start_line_range],
-                            &[Some(Mark::MultiTopLeft(severity))],
-                        )?;
-                    } else {
-                        // There's source code in the prefix, so run an underline
-                        // underneath it to get to the start of the range.
-                        //
-                        // ```text
-                        // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
-                        //   │ ╭─────────────^
-                        // ```
-                        renderer.render_source_line(
-                            outer_padding,
-                            start_line_number,
-                            &source[start_line_range],
-                            &[Some(Mark::MultiTop(severity, ..mark_start))],
-                        )?;
-                    }
-
-                    // Write marked lines
-                    //
-                    // ```text
-                    // 5 │ │     0 0 => "FizzBuzz"
-                    // 6 │ │     0 _ => "Fizz"
-                    // 7 │ │     _ 0 => "Buzz"
-                    // ```
-                    for marked_line_index in (start_line_index + 1)..end_line_index {
-                        renderer.render_source_line(
-                            outer_padding,
-                            files.line_number(file_id, marked_line_index).unwrap(),
-                            &source[files.line_range(file_id, marked_line_index).unwrap()],
-                            &[Some(Mark::MultiLeft(severity))],
-                        )?;
-                    }
-
-                    // Write last marked line
-                    //
-                    // ```text
-                    // 8 │ │     _ _ => num
-                    //   │ ╰──────────────^ `case` clauses have incompatible types
-                    // ```
-                    let mark_end = label.range.end - end_line_range.start;
-
-                    renderer.render_source_line(
-                        outer_padding,
-                        end_line_number,
-                        &source[end_line_range],
-                        &[Some(Mark::MultiBottom(
-                            severity,
-                            ..mark_end,
-                            &label.message,
-                        ))],
-                    )?;
-                }
-
-                previous_end_line_index = Some(end_line_index);
             }
-            renderer.render_source_empty(outer_padding, &[])?;
+            renderer.render_source_empty(
+                outer_padding,
+                marked_file.num_multi_marks,
+                &current_marks,
+            )?;
         }
 
         // Additional notes
