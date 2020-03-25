@@ -80,14 +80,14 @@ fn main() -> anyhow::Result<()> {
     match Opts::from_args() {
         Opts::Svg => {
             let stdout = std::io::stdout();
-            let mut writer = SvgWriter::new(stdout.lock());
+            let mut writer = HtmlEscapeWriter::new(SvgWriter::new(stdout.lock()));
             let config = codespan_reporting::term::Config::default();
 
-            write!(writer, "{}", SVG_START)?;
+            write!(&mut writer.upstream, "{}", SVG_START)?;
             for diagnostic in &diagnostics {
                 term::emit(&mut writer, &config, &file, &diagnostic)?;
             }
-            write!(writer, "{}", SVG_END)?;
+            write!(&mut writer.upstream, "{}", SVG_END)?;
         }
         Opts::Stderr { color } => {
             let writer = StandardStream::stderr(color.into());
@@ -160,6 +160,58 @@ const SVG_END: &str = "</pre>
   </foreignObject>
 </svg>
 ";
+
+/// Rudimentary HTML escaper which performs the following conversions:
+///
+/// - `<` ⇒ `&lt;`
+/// - `>` ⇒ `&gt;`
+/// - `&` ⇒ `&amp;`
+pub struct HtmlEscapeWriter<W> {
+    upstream: W,
+}
+
+impl<W> HtmlEscapeWriter<W> {
+    pub fn new(upstream: W) -> HtmlEscapeWriter<W> {
+        HtmlEscapeWriter { upstream }
+    }
+}
+
+impl<W: Write> Write for HtmlEscapeWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let mut last_term = 0usize;
+        for (i, byte) in buf.iter().enumerate() {
+            let escape = match byte {
+                b'<' => &b"&lt;"[..],
+                b'>' => &b"&gt;"[..],
+                b'&' => &b"&amp;"[..],
+                _ => continue,
+            };
+            self.upstream.write_all(&buf[last_term..i])?;
+            last_term = i + 1;
+            self.upstream.write_all(escape)?;
+        }
+        self.upstream.write_all(&buf[last_term..])?;
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.upstream.flush()
+    }
+}
+
+impl<W: WriteColor> WriteColor for HtmlEscapeWriter<W> {
+    fn supports_color(&self) -> bool {
+        self.upstream.supports_color()
+    }
+
+    fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
+        self.upstream.set_color(spec)
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
+        self.upstream.reset()
+    }
+}
 
 pub struct SvgWriter<W> {
     upstream: W,
