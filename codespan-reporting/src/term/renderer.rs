@@ -341,11 +341,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
 
-        let mut multi_labels_iter = multi_labels.iter();
+        let mut multi_labels_iter = multi_labels.iter().peekable();
         for label_column in 0..num_multi_labels {
-            match multi_labels_iter.next() {
+            match multi_labels_iter.peek() {
                 Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
-                    self.label_multi_left(*severity, None)?
+                    self.label_multi_left(*severity, None)?;
+                    multi_labels_iter.next();
                 }
                 Some((_, _)) | None => self.inner_gutter_space()?,
             }
@@ -370,11 +371,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
 
-        let mut multi_labels_iter = multi_labels.iter();
+        let mut multi_labels_iter = multi_labels.iter().peekable();
         for label_column in 0..num_multi_labels {
-            match multi_labels_iter.next() {
+            match multi_labels_iter.peek() {
                 Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
                     self.label_multi_left(*severity, None)?;
+                    multi_labels_iter.next();
                 }
                 Some((_, _)) | None => self.inner_gutter_space()?,
             }
