@@ -231,8 +231,6 @@ where
             }
         }
 
-        // TODO: Insert `None` spaces in `labeled_files`
-
         // Header and message
         //
         // ```text
