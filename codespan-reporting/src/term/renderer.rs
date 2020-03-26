@@ -304,13 +304,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         //     │ ╰───│──────────────────^ woops
         //     │   ╭─│─────────^
         // ```
-        for (i, (_, label)) in multi_labels.iter().enumerate() {
+        for (multi_label_index, (_, label)) in multi_labels.iter().enumerate() {
             match label {
                 MultiLabel::TopLeft(_) => {} // SKIP: no label needed
                 MultiLabel::Top(severity, range) => {
                     self.outer_gutter(outer_padding)?;
                     self.border_left()?;
-                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
+                    self.label_inner_gutter(multi_label_index, num_multi_labels, multi_labels)?;
                     self.label_multi_top_caret(*severity, source, range.clone())?;
                 }
                 MultiLabel::Left(_) => {} // SKIP: no label needed
@@ -318,7 +318,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     let range = range.clone();
                     self.outer_gutter(outer_padding)?;
                     self.border_left()?;
-                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
+                    self.label_inner_gutter(multi_label_index, num_multi_labels, multi_labels)?;
                     self.label_multi_bottom_caret(*severity, source, range, message)?;
                 }
             }
@@ -394,9 +394,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ///      found type `String`
     /// ```
     pub fn render_source_note(&mut self, outer_padding: usize, message: &str) -> io::Result<()> {
-        for (i, line) in message.lines().enumerate() {
+        for (note_line_index, line) in message.lines().enumerate() {
             self.outer_gutter(outer_padding)?;
-            match i {
+            match note_line_index {
                 0 => {
                     self.set_color(&self.styles().note_bullet)?;
                     write!(self, "{}", self.chars().note_bullet)?;
@@ -628,7 +628,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```
     fn label_inner_gutter(
         &mut self,
-        current_label_index: usize,
+        multi_label_index: usize,
         num_multi_labels: usize,
         multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
@@ -642,17 +642,17 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                         MultiLabel::TopLeft(severity) | MultiLabel::Left(severity) => {
                             self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiLabel::Top(severity, ..) if current_label_index > *i => {
+                        MultiLabel::Top(severity, ..) if multi_label_index > *i => {
                             self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiLabel::Bottom(severity, ..) if current_label_index < *i => {
+                        MultiLabel::Bottom(severity, ..) if multi_label_index < *i => {
                             self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
                         }
-                        MultiLabel::Top(severity, ..) if current_label_index == *i => {
+                        MultiLabel::Top(severity, ..) if multi_label_index == *i => {
                             underline = Some((*severity, VerticalBound::Top));
                             self.label_multi_top_left(*severity)?
                         }
-                        MultiLabel::Bottom(severity, ..) if current_label_index == *i => {
+                        MultiLabel::Bottom(severity, ..) if multi_label_index == *i => {
                             underline = Some((*severity, VerticalBound::Bottom));
                             self.label_multi_bottom_left(*severity)?;
                         }
