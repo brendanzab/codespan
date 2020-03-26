@@ -1,7 +1,7 @@
 use std::io;
 use termcolor::{Color, ColorSpec};
 
-use crate::diagnostic::Severity;
+use crate::diagnostic::{LabelStyle, Severity};
 
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
@@ -176,15 +176,15 @@ impl Styles {
         }
     }
 
-    /// The style used to mark a primary label at a given severity.
-    pub fn label(&self, severity: Option<Severity>) -> &ColorSpec {
-        match severity {
-            Some(Severity::Bug) => &self.primary_label_bug,
-            Some(Severity::Error) => &self.primary_label_error,
-            Some(Severity::Warning) => &self.primary_label_warning,
-            Some(Severity::Note) => &self.primary_label_note,
-            Some(Severity::Help) => &self.primary_label_help,
-            None => &self.secondary_label,
+    /// The style used to mark a primary or secondary label at a given severity.
+    pub fn label(&self, severity: Severity, label_style: LabelStyle) -> &ColorSpec {
+        match (label_style, severity) {
+            (LabelStyle::Primary, Severity::Bug) => &self.primary_label_bug,
+            (LabelStyle::Primary, Severity::Error) => &self.primary_label_error,
+            (LabelStyle::Primary, Severity::Warning) => &self.primary_label_warning,
+            (LabelStyle::Primary, Severity::Note) => &self.primary_label_note,
+            (LabelStyle::Primary, Severity::Help) => &self.primary_label_help,
+            (LabelStyle::Secondary, _) => &self.secondary_label,
         }
     }
 
@@ -283,24 +283,24 @@ pub struct Chars {
 }
 
 impl Chars {
-    pub fn single_caret_char(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.single_primary_caret,
-            None => self.single_secondary_caret,
+    pub fn single_caret_char(&self, label_style: LabelStyle) -> char {
+        match label_style {
+            LabelStyle::Primary => self.single_primary_caret,
+            LabelStyle::Secondary => self.single_secondary_caret,
         }
     }
 
-    pub fn multi_caret_char_start(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.multi_primary_caret_start,
-            None => self.multi_secondary_caret_start,
+    pub fn multi_caret_char_start(&self, label_style: LabelStyle) -> char {
+        match label_style {
+            LabelStyle::Primary => self.multi_primary_caret_start,
+            LabelStyle::Secondary => self.multi_secondary_caret_start,
         }
     }
 
-    pub fn multi_caret_char_end(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.multi_primary_caret_end,
-            None => self.multi_secondary_caret_end,
+    pub fn multi_caret_char_end(&self, label_style: LabelStyle) -> char {
+        match label_style {
+            LabelStyle::Primary => self.multi_primary_caret_end,
+            LabelStyle::Secondary => self.multi_secondary_caret_end,
         }
     }
 }
