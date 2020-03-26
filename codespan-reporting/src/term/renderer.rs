@@ -459,11 +459,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Single-line label with a message.
-    //
-    // ```text
-    // ^^ expected `Int` but found `String`
-    // ```
+    /// Single-line label with a message.
+    ///
+    /// ```text
+    /// ^^ expected `Int` but found `String`
+    /// ```
     fn label_single(
         &mut self,
         severity: Severity,
@@ -578,11 +578,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Multi-line label top.
-    //
-    // ```text
-    // ─────────────^
-    // ```
+    /// Multi-line label top.
+    ///
+    /// ```text
+    /// ─────────────^
+    /// ```
     fn label_multi_top_caret(
         &mut self,
         severity: Severity,
@@ -600,11 +600,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    // Multi-line label bottom, with a message.
-    //
-    // ```text
-    // ─────────────^ expected `Int` but found `String`
-    // ```
+    /// Multi-line label bottom, with a message.
+    ///
+    /// ```text
+    /// ─────────────^ expected `Int` but found `String`
+    /// ```
     fn label_multi_bottom_caret(
         &mut self,
         severity: Severity,
