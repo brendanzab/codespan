@@ -38,13 +38,10 @@ fn main() -> anyhow::Result<()> {
         Error::MutatingImmutable(Item::new(20..23, "foo"), Item::new(51..59, "foo += 1")),
     ];
 
-    // Map all errors into `Diagnostic`
-    let diagnostics: Vec<Diagnostic<()>> = errors.iter().map(Error::report).collect();
-
     let opts = Opts::from_args();
     let writer = StandardStream::stderr(opts.color.into());
     let config = codespan_reporting::term::Config::default();
-    for diagnostic in &diagnostics {
+    for diagnostic in &errors.iter().map(Error::report) {
         term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
     }
 
@@ -66,7 +63,7 @@ impl Error {
                 .with_labels(vec![
                     Label::primary((), right.range.clone()).with_message(format!(
                         "Expected `{}`, found: `{}`",
-                        left.content, right.content
+                        left.content, right.content,
                     )),
                     Label::secondary((), left.range.clone()).with_message("expected due to this"),
                 ]),
@@ -74,16 +71,16 @@ impl Error {
                 .with_code("E0384")
                 .with_message(format!(
                     "cannot mutate immutable variable `{}`",
-                    original.content
+                    original.content,
                 ))
                 .with_labels(vec![
                     Label::secondary((), original.range.clone()).with_message(unindent::unindent(
                         &format!(
                             r#"
-                                    first assignment to `{0}`
-                                    help: make this binding mutable: `mut {0}`
-                                "#,
-                            original.content
+                                first assignment to `{0}`
+                                help: make this binding mutable: `mut {0}`
+                            "#,
+                            original.content,
                         ),
                     )),
                     Label::primary((), mutating.range.clone())
