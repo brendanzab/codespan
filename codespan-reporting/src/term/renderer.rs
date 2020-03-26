@@ -250,11 +250,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     Some((label_index, label)) if *label_index == label_column => {
                         match label {
                             MultiLabel::TopLeft(severity) => {
-                                self.label_multi_top_left(*severity)?
+                                self.label_multi_top_left(*severity)?;
                             }
                             MultiLabel::Top(..) => self.inner_gutter_space()?,
                             MultiLabel::Left(severity) | MultiLabel::Bottom(severity, ..) => {
-                                self.label_multi_left(*severity, None)?
+                                self.label_multi_left(*severity, None)?;
                             }
                         }
                         multi_labels_iter.next();
@@ -276,51 +276,69 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         for (severity, range, message) in single_labels.iter() {
             self.outer_gutter(outer_padding)?;
             self.border_left()?;
-
-            let mut multi_labels_iter = multi_labels.iter().peekable();
-            for label_column in 0..num_multi_labels {
-                match multi_labels_iter.peek() {
-                    Some((label_index, label)) if *label_index == label_column => {
-                        match label {
-                            MultiLabel::TopLeft(severity)
-                            | MultiLabel::Left(severity)
-                            | MultiLabel::Bottom(severity, ..) => {
-                                self.label_multi_left(*severity, None)?
-                            }
-                            MultiLabel::Top(..) => self.inner_gutter_space()?,
-                        }
-                        multi_labels_iter.next();
-                    }
-                    Some((_, _)) | None => self.inner_gutter_space()?,
-                }
-            }
-
+            self.inner_gutter(num_multi_labels, multi_labels)?;
             self.label_single(*severity, source, range.clone(), message)?;
         }
 
-        // Write multi labels underneath source
+        // Write top or bottom label carets underneath source
         //
         // ```text
         //     │ ╰───│──────────────────^ woops
         //     │   ╭─│─────────^
         // ```
-        for (i, (_, label)) in multi_labels.iter().enumerate() {
-            match label {
-                MultiLabel::TopLeft(_) => {} // SKIP: no label needed
-                MultiLabel::Top(severity, range) => {
-                    self.outer_gutter(outer_padding)?;
-                    self.border_left()?;
-                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
-                    self.label_multi_top_caret(*severity, source, range.clone())?;
+        for (multi_label_index, (_, label)) in multi_labels.iter().enumerate() {
+            let (severity, range, bottom_message) = match label {
+                MultiLabel::TopLeft(_) | MultiLabel::Left(_) => continue, // no label caret needed
+                MultiLabel::Top(severity, range) => (*severity, range, None),
+                MultiLabel::Bottom(severity, range, message) => (*severity, range, Some(message)),
+            };
+
+            self.outer_gutter(outer_padding)?;
+            self.border_left()?;
+
+            // Write inner gutter.
+            //
+            // ```text
+            //  │ ╭─│───│
+            // ```
+            let mut underline = None;
+            let mut multi_labels_iter = multi_labels.iter().enumerate().peekable();
+            for label_column in 0..num_multi_labels {
+                match multi_labels_iter.peek() {
+                    Some((i, (label_index, label))) if *label_index == label_column => {
+                        match label {
+                            MultiLabel::TopLeft(severity) | MultiLabel::Left(severity) => {
+                                self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
+                            }
+                            MultiLabel::Top(severity, ..) if multi_label_index > *i => {
+                                self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
+                            }
+                            MultiLabel::Bottom(severity, ..) if multi_label_index < *i => {
+                                self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
+                            }
+                            MultiLabel::Top(severity, ..) if multi_label_index == *i => {
+                                underline = Some((*severity, VerticalBound::Top));
+                                self.label_multi_top_left(*severity)?
+                            }
+                            MultiLabel::Bottom(severity, ..) if multi_label_index == *i => {
+                                underline = Some((*severity, VerticalBound::Bottom));
+                                self.label_multi_bottom_left(*severity)?;
+                            }
+                            MultiLabel::Top(..) | MultiLabel::Bottom(..) => {
+                                self.inner_gutter_column(underline)?;
+                            }
+                        }
+                        multi_labels_iter.next();
+                    }
+                    Some((_, _)) | None => self.inner_gutter_column(underline)?,
                 }
-                MultiLabel::Left(_) => {} // SKIP: no label needed
-                MultiLabel::Bottom(severity, range, message) => {
-                    let range = range.clone();
-                    self.outer_gutter(outer_padding)?;
-                    self.border_left()?;
-                    self.label_inner_gutter(i, num_multi_labels, multi_labels)?;
-                    self.label_multi_bottom_caret(*severity, source, range, message)?;
-                }
+            }
+
+            // Finish the top or bottom caret
+            let range = range.clone();
+            match bottom_message {
+                None => self.label_multi_top_caret(severity, source, range)?,
+                Some(message) => self.label_multi_bottom_caret(severity, source, range, message)?,
             }
         }
 
@@ -340,19 +358,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
-
-        let mut multi_labels_iter = multi_labels.iter();
-        for label_column in 0..num_multi_labels {
-            match multi_labels_iter.next() {
-                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
-                    self.label_multi_left(*severity, None)?
-                }
-                Some((_, _)) | None => self.inner_gutter_space()?,
-            }
-        }
-
+        self.inner_gutter(num_multi_labels, multi_labels)?;
         write!(self, "\n")?;
-
         Ok(())
     }
 
@@ -369,19 +376,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
-
-        let mut multi_labels_iter = multi_labels.iter();
-        for label_column in 0..num_multi_labels {
-            match multi_labels_iter.next() {
-                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
-                    self.label_multi_left(*severity, None)?;
-                }
-                Some((_, _)) | None => self.inner_gutter_space()?,
-            }
-        }
-
+        self.inner_gutter(num_multi_labels, multi_labels)?;
         write!(self, "\n")?;
-
         Ok(())
     }
 
@@ -392,9 +388,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ///      found type `String`
     /// ```
     pub fn render_source_note(&mut self, outer_padding: usize, message: &str) -> io::Result<()> {
-        for (i, line) in message.lines().enumerate() {
+        for (note_line_index, line) in message.lines().enumerate() {
             self.outer_gutter(outer_padding)?;
-            match i {
+            match note_line_index {
                 0 => {
                     self.set_color(&self.styles().note_bullet)?;
                     write!(self, "{}", self.chars().note_bullet)?;
@@ -619,48 +615,28 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(self, "  ")
     }
 
-    /// Writes an inner gutter.
-    ///
-    /// ```text
-    ///  │ ╭─│───│
-    /// ```
-    fn label_inner_gutter(
+    /// Writes an inner gutter, with the left lines if necessary.
+    fn inner_gutter(
         &mut self,
-        current_label_index: usize,
         num_multi_labels: usize,
         multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
-        let mut underline = None;
-
-        let mut multi_labels_iter = multi_labels.iter().enumerate().peekable();
+        let mut multi_labels_iter = multi_labels.iter().peekable();
         for label_column in 0..num_multi_labels {
             match multi_labels_iter.peek() {
-                Some((i, (label_index, label))) if *label_index == label_column => {
-                    match label {
-                        MultiLabel::TopLeft(severity) | MultiLabel::Left(severity) => {
-                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
-                        }
-                        MultiLabel::Top(severity, ..) if current_label_index > *i => {
-                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
-                        }
-                        MultiLabel::Bottom(severity, ..) if current_label_index < *i => {
-                            self.label_multi_left(*severity, underline.map(|(s, _)| s))?;
-                        }
-                        MultiLabel::Top(severity, ..) if current_label_index == *i => {
-                            underline = Some((*severity, VerticalBound::Top));
-                            self.label_multi_top_left(*severity)?
-                        }
-                        MultiLabel::Bottom(severity, ..) if current_label_index == *i => {
-                            underline = Some((*severity, VerticalBound::Bottom));
-                            self.label_multi_bottom_left(*severity)?;
-                        }
-                        MultiLabel::Top(..) | MultiLabel::Bottom(..) => {
-                            self.inner_gutter_column(underline)?;
-                        }
+                Some((label_index, label)) if *label_index == label_column => match label {
+                    MultiLabel::TopLeft(severity)
+                    | MultiLabel::Left(severity)
+                    | MultiLabel::Bottom(severity, ..) => {
+                        self.label_multi_left(*severity, None)?;
+                        multi_labels_iter.next();
                     }
-                    multi_labels_iter.next();
-                }
-                Some((_, _)) | None => self.inner_gutter_column(underline)?,
+                    MultiLabel::Top(..) => {
+                        self.inner_gutter_space()?;
+                        multi_labels_iter.next();
+                    }
+                },
+                Some((_, _)) | None => self.inner_gutter_space()?,
             }
         }
 
