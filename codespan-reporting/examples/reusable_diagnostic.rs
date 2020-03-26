@@ -93,8 +93,8 @@ impl Error {
     }
 }
 
-/// Representing a single error point in `Error` enum
-/// In a more complex program it could also contain `FileId` to handle error that occurs inside multiple files
+/// An item in the source code to be used in the `Error` enum.
+/// In a more complex program it could also contain a `files::FileId` to handle errors that occur inside multiple files.
 struct Item {
     range: Range<usize>,
     content: String,
