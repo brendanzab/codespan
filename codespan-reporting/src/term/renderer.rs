@@ -250,11 +250,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     Some((label_index, label)) if *label_index == label_column => {
                         match label {
                             MultiLabel::TopLeft(severity) => {
-                                self.label_multi_top_left(*severity)?
+                                self.label_multi_top_left(*severity)?;
                             }
                             MultiLabel::Top(..) => self.inner_gutter_space()?,
                             MultiLabel::Left(severity) | MultiLabel::Bottom(severity, ..) => {
-                                self.label_multi_left(*severity, None)?
+                                self.label_multi_left(*severity, None)?;
                             }
                         }
                         multi_labels_iter.next();
@@ -276,25 +276,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         for (severity, range, message) in single_labels.iter() {
             self.outer_gutter(outer_padding)?;
             self.border_left()?;
-
-            let mut multi_labels_iter = multi_labels.iter().peekable();
-            for label_column in 0..num_multi_labels {
-                match multi_labels_iter.peek() {
-                    Some((label_index, label)) if *label_index == label_column => {
-                        match label {
-                            MultiLabel::TopLeft(severity)
-                            | MultiLabel::Left(severity)
-                            | MultiLabel::Bottom(severity, ..) => {
-                                self.label_multi_left(*severity, None)?
-                            }
-                            MultiLabel::Top(..) => self.inner_gutter_space()?,
-                        }
-                        multi_labels_iter.next();
-                    }
-                    Some((_, _)) | None => self.inner_gutter_space()?,
-                }
-            }
-
+            self.inner_gutter(num_multi_labels, multi_labels)?;
             self.label_single(*severity, source, range.clone(), message)?;
         }
 
@@ -376,20 +358,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
-
-        let mut multi_labels_iter = multi_labels.iter().peekable();
-        for label_column in 0..num_multi_labels {
-            match multi_labels_iter.peek() {
-                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
-                    self.label_multi_left(*severity, None)?;
-                    multi_labels_iter.next();
-                }
-                Some((_, _)) | None => self.inner_gutter_space()?,
-            }
-        }
-
+        self.inner_gutter(num_multi_labels, multi_labels)?;
         write!(self, "\n")?;
-
         Ok(())
     }
 
@@ -406,20 +376,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
-
-        let mut multi_labels_iter = multi_labels.iter().peekable();
-        for label_column in 0..num_multi_labels {
-            match multi_labels_iter.peek() {
-                Some((label_index, MultiLabel::Left(severity))) if *label_index == label_column => {
-                    self.label_multi_left(*severity, None)?;
-                    multi_labels_iter.next();
-                }
-                Some((_, _)) | None => self.inner_gutter_space()?,
-            }
-        }
-
+        self.inner_gutter(num_multi_labels, multi_labels)?;
         write!(self, "\n")?;
-
         Ok(())
     }
 
@@ -655,6 +613,34 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// Writes an empty gutter space.
     fn inner_gutter_space(&mut self) -> io::Result<()> {
         write!(self, "  ")
+    }
+
+    /// Writes an inner gutter, with the left lines if necessary.
+    fn inner_gutter(
+        &mut self,
+        num_multi_labels: usize,
+        multi_labels: &[(usize, MultiLabel<'_>)],
+    ) -> io::Result<()> {
+        let mut multi_labels_iter = multi_labels.iter().peekable();
+        for label_column in 0..num_multi_labels {
+            match multi_labels_iter.peek() {
+                Some((label_index, label)) if *label_index == label_column => match label {
+                    MultiLabel::TopLeft(severity)
+                    | MultiLabel::Left(severity)
+                    | MultiLabel::Bottom(severity, ..) => {
+                        self.label_multi_left(*severity, None)?;
+                        multi_labels_iter.next();
+                    }
+                    MultiLabel::Top(..) => {
+                        self.inner_gutter_space()?;
+                        multi_labels_iter.next();
+                    }
+                },
+                Some((_, _)) | None => self.inner_gutter_space()?,
+            }
+        }
+
+        Ok(())
     }
 }
 
