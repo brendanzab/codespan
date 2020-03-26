@@ -265,14 +265,14 @@ where
             // ┌── test:2:9 ───
             // ```
             if !labeled_file.lines.is_empty() {
-                renderer.render_source_start(
+                renderer.render_snippet_start(
                     outer_padding,
                     &Locus {
                         name: labeled_file.name,
                         location: labeled_file.location,
                     },
                 )?;
-                renderer.render_source_empty(
+                renderer.render_snippet_empty(
                     outer_padding,
                     self.diagnostic.severity,
                     labeled_file.num_multi_labels,
@@ -284,7 +284,7 @@ where
             let current_labels = Vec::new();
 
             while let Some((line_index, line)) = lines.next() {
-                renderer.render_source_line(
+                renderer.render_snippet_source(
                     outer_padding,
                     line.number,
                     &source[line.range.clone()],
@@ -304,7 +304,7 @@ where
                         Some(2) => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
-                            renderer.render_source_line(
+                            renderer.render_snippet_source(
                                 outer_padding,
                                 files.line_number(file_id, line_index + 1).unwrap(),
                                 &source[files.line_range(file_id, line_index + 1).unwrap()],
@@ -321,7 +321,7 @@ where
                             // ```text
                             // ·
                             // ```
-                            renderer.render_source_break(
+                            renderer.render_snippet_break(
                                 outer_padding,
                                 self.diagnostic.severity,
                                 labeled_file.num_multi_labels,
@@ -331,7 +331,7 @@ where
                     }
                 }
             }
-            renderer.render_source_empty(
+            renderer.render_snippet_empty(
                 outer_padding,
                 self.diagnostic.severity,
                 labeled_file.num_multi_labels,
@@ -346,7 +346,7 @@ where
         //      found type `String`
         // ```
         for note in &self.diagnostic.notes {
-            renderer.render_source_note(outer_padding, note)?;
+            renderer.render_snippet_note(outer_padding, note)?;
         }
         renderer.render_empty()?;
 

@@ -64,42 +64,42 @@ type Underline = (LabelStyle, VerticalBound);
 /// The following diagram gives an overview of each of the parts of the renderer's output:
 ///
 /// ```text
-///                    ┌ outer gutter
-///                    │ ┌ left border
-///                    │ │ ┌ inner gutter
-///                    │ │ │   ┌─────────────────────────── source ─────────────────────────────┐
-///                    │ │ │   │                                                                │
-///                 ┌────────────────────────────────────────────────────────────────────────────
-///       header ── │ error[0001]: oh noes, a cupcake has occurred!
-///        empty ── │
-/// source start ── │    ┌── test:9:0 ───
-/// source break ── │    ·
-///  source line ── │  9 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
-///  source line ── │ 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
-///                 │    │ ╭─│─────────^
-/// source break ── │    · │ │
-///  source line ── │ 33 │ │ │ Muffin danish chocolate soufflé pastry icing bonbon oat cake.
-///  source line ── │ 34 │ │ │ Powder cake jujubes oat cake. Lemon drops tootsie roll marshmallow
-///                 │    │ │ ╰─────────────────────────────^ blah blah
-/// source break ── │    · │
-///  source line ── │ 38 │ │   Brownie lemon drops chocolate jelly-o candy canes. Danish marzipan
-///  source line ── │ 39 │ │   jujubes soufflé carrot cake marshmallow tiramisu caramels candy canes.
-///                 │    │ │           ^^^^^^^^^^^^^^^^^^ blah blah
-///                 │    │ │                               -------------------- blah blah
-///  source line ── │ 40 │ │   Fruitcake jelly-o danish toffee. Tootsie roll pastry cheesecake
-///  source line ── │ 41 │ │   soufflé marzipan. Chocolate bar oat cake jujubes lollipop pastry
-///  source line ── │ 42 │ │   cupcake. Candy canes cupcake toffee gingerbread candy canes muffin
-///                 │    │ │                                ^^^^^^^^^^^^^^^^^^ blah blah
-///                 │    │ ╰──────────^ blah blah
-/// source break ── │    ·
-///  source line ── │ 82 │     gingerbread toffee chupa chups chupa chups jelly-o cotton candy.
-///                 │    │                 ^^^^^^                         ------- blah blah
-/// source break ── │    ·
-///  source note ── │    = blah blah
-///  source note ── │    = blah blah blah
-///                 │      blah blah
-///  source note ── │    = blah blah blah
-///                 │      blah blah
+///                     ┌ outer gutter
+///                     │ ┌ left border
+///                     │ │ ┌ inner gutter
+///                     │ │ │   ┌─────────────────────────── source ─────────────────────────────┐
+///                     │ │ │   │                                                                │
+///                  ┌────────────────────────────────────────────────────────────────────────────
+///        header ── │ error[0001]: oh noes, a cupcake has occurred!
+///         empty ── │
+/// snippet start ── │    ┌── test:9:0 ───
+/// snippet empty ── │    │
+///  snippet line ── │  9 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
+///  snippet line ── │ 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
+///                  │    │ ╭─│─────────^
+/// snippet break ── │    · │ │
+///  snippet line ── │ 33 │ │ │ Muffin danish chocolate soufflé pastry icing bonbon oat cake.
+///  snippet line ── │ 34 │ │ │ Powder cake jujubes oat cake. Lemon drops tootsie roll marshmallow
+///                  │    │ │ ╰─────────────────────────────^ blah blah
+/// snippet break ── │    · │
+///  snippet line ── │ 38 │ │   Brownie lemon drops chocolate jelly-o candy canes. Danish marzipan
+///  snippet line ── │ 39 │ │   jujubes soufflé carrot cake marshmallow tiramisu caramels candy canes.
+///                  │    │ │           ^^^^^^^^^^^^^^^^^^ blah blah
+///                  │    │ │                               -------------------- blah blah
+///  snippet line ── │ 40 │ │   Fruitcake jelly-o danish toffee. Tootsie roll pastry cheesecake
+///  snippet line ── │ 41 │ │   soufflé marzipan. Chocolate bar oat cake jujubes lollipop pastry
+///  snippet line ── │ 42 │ │   cupcake. Candy canes cupcake toffee gingerbread candy canes muffin
+///                  │    │ │                                ^^^^^^^^^^^^^^^^^^ blah blah
+///                  │    │ ╰──────────^ blah blah
+/// snippet break ── │    ·
+///  snippet line ── │ 82 │     gingerbread toffee chupa chups chupa chups jelly-o cotton candy.
+///                  │    │                 ^^^^^^                         ------- blah blah
+/// snippet empty ── │    │
+///  snippet note ── │    = blah blah
+///  snippet note ── │    = blah blah blah
+///                  │      blah blah
+///  snippet note ── │    = blah blah blah
+///                  │      blah blah
 /// ```
 ///
 /// Filler text from http://www.cupcakeipsum.com
@@ -143,7 +143,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // test:2:9:
         // ```
         if let Some(locus) = locus {
-            self.source_locus(locus)?;
+            self.snippet_locus(locus)?;
             write!(self, ": ")?;
         }
 
@@ -196,7 +196,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```text
     /// ┌── test:2:9 ───
     /// ```
-    pub fn render_source_start(&mut self, outer_padding: usize, locus: &Locus) -> io::Result<()> {
+    pub fn render_snippet_start(&mut self, outer_padding: usize, locus: &Locus) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
 
         self.set_color(&self.styles().source_border)?;
@@ -205,7 +205,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.reset()?;
 
         write!(self, " ")?;
-        self.source_locus(&locus)?;
+        self.snippet_locus(&locus)?;
         write!(self, " ")?;
 
         self.set_color(&self.styles().source_border)?;
@@ -222,7 +222,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
     ///    │ ╭─│─────────^
     /// ```
-    pub fn render_source_line(
+    pub fn render_snippet_source(
         &mut self,
         outer_padding: usize,
         line_number: usize,
@@ -351,7 +351,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```text
     /// │ │ │
     /// ```
-    pub fn render_source_empty(
+    pub fn render_snippet_empty(
         &mut self,
         outer_padding: usize,
         severity: Severity,
@@ -370,7 +370,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```text
     /// · │ │
     /// ```
-    pub fn render_source_break(
+    pub fn render_snippet_break(
         &mut self,
         outer_padding: usize,
         severity: Severity,
@@ -390,7 +390,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// = expected type `Int`
     ///      found type `String`
     /// ```
-    pub fn render_source_note(&mut self, outer_padding: usize, message: &str) -> io::Result<()> {
+    pub fn render_snippet_note(&mut self, outer_padding: usize, message: &str) -> io::Result<()> {
         for (note_line_index, line) in message.lines().enumerate() {
             self.outer_gutter(outer_padding)?;
             match note_line_index {
@@ -410,7 +410,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 
     /// Location focus.
-    fn source_locus(&mut self, locus: &Locus) -> io::Result<()> {
+    fn snippet_locus(&mut self, locus: &Locus) -> io::Result<()> {
         write!(
             self,
             "{origin}:{line_number}:{column_number}",
