@@ -79,11 +79,6 @@ where
 
         // Group labels by file
         for label in &self.diagnostic.labels {
-            let severity = match label.style {
-                LabelStyle::Primary => Some(self.diagnostic.severity),
-                LabelStyle::Secondary => None,
-            };
-
             let source = files.source(label.file_id).unwrap();
             let source = source.as_ref();
 
@@ -152,7 +147,7 @@ where
                 };
 
                 line.single_labels
-                    .insert(index, (severity, label_start..label_end, &label.message));
+                    .insert(index, (label.style, label_start..label_end, &label.message));
             } else {
                 // Multiple lines
                 //
@@ -184,7 +179,7 @@ where
                         // ```text
                         // 4 │ ╭     case (mod num 5) (mod num 3) of
                         // ```
-                        "" => (label_index, MultiLabel::TopLeft(severity)),
+                        "" => (label_index, MultiLabel::TopLeft(label.style)),
                         // There's source code in the prefix, so run a label
                         // underneath it to get to the start of the range.
                         //
@@ -192,7 +187,7 @@ where
                         // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
                         //   │ ╭─────────────^
                         // ```
-                        _ => (label_index, MultiLabel::Top(severity, ..label_start)),
+                        _ => (label_index, MultiLabel::Top(label.style, ..label_start)),
                     });
 
                 // Marked lines
@@ -212,7 +207,7 @@ where
                     labeled_file
                         .get_or_insert_line(line_index, line_range, line_number)
                         .multi_labels
-                        .push((label_index, MultiLabel::Left(severity)));
+                        .push((label_index, MultiLabel::Left(label.style)));
                 }
 
                 // Last labeled line
@@ -228,7 +223,7 @@ where
                     .multi_labels
                     .push((
                         label_index,
-                        MultiLabel::Bottom(severity, ..label_end, &label.message),
+                        MultiLabel::Bottom(label.style, ..label_end, &label.message),
                     ));
             }
         }
@@ -270,24 +265,30 @@ where
             // ┌── test:2:9 ───
             // ```
             if !labeled_file.lines.is_empty() {
-                renderer.render_source_start(
+                renderer.render_snippet_start(
                     outer_padding,
                     &Locus {
                         name: labeled_file.name,
                         location: labeled_file.location,
                     },
                 )?;
-                renderer.render_source_empty(outer_padding, labeled_file.num_multi_labels, &[])?;
+                renderer.render_snippet_empty(
+                    outer_padding,
+                    self.diagnostic.severity,
+                    labeled_file.num_multi_labels,
+                    &[],
+                )?;
             }
 
             let mut lines = labeled_file.lines.into_iter().peekable();
             let current_labels = Vec::new();
 
             while let Some((line_index, line)) = lines.next() {
-                renderer.render_source_line(
+                renderer.render_snippet_source(
                     outer_padding,
                     line.number,
                     &source[line.range.clone()],
+                    self.diagnostic.severity,
                     &line.single_labels,
                     labeled_file.num_multi_labels,
                     &line.multi_labels,
@@ -303,10 +304,11 @@ where
                         Some(2) => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
-                            renderer.render_source_line(
+                            renderer.render_snippet_source(
                                 outer_padding,
                                 files.line_number(file_id, line_index + 1).unwrap(),
                                 &source[files.line_range(file_id, line_index + 1).unwrap()],
+                                self.diagnostic.severity,
                                 &[],
                                 labeled_file.num_multi_labels,
                                 &current_labels,
@@ -319,8 +321,9 @@ where
                             // ```text
                             // ·
                             // ```
-                            renderer.render_source_break(
+                            renderer.render_snippet_break(
                                 outer_padding,
+                                self.diagnostic.severity,
                                 labeled_file.num_multi_labels,
                                 &current_labels,
                             )?;
@@ -328,8 +331,9 @@ where
                     }
                 }
             }
-            renderer.render_source_empty(
+            renderer.render_snippet_empty(
                 outer_padding,
+                self.diagnostic.severity,
                 labeled_file.num_multi_labels,
                 &current_labels,
             )?;
@@ -342,7 +346,7 @@ where
         //      found type `String`
         // ```
         for note in &self.diagnostic.notes {
-            renderer.render_source_note(outer_padding, note)?;
+            renderer.render_snippet_note(outer_padding, note)?;
         }
         renderer.render_empty()?;
 
