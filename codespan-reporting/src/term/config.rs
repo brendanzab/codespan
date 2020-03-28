@@ -47,7 +47,7 @@ impl Config {
     /// Construct a source writer using the current config.
     pub fn source<'a, W: ?Sized>(&self, writer: &'a mut W) -> SourceWriter<&'a mut W> {
         SourceWriter {
-            writer,
+            upstream: writer,
             tab_width: self.tab_width,
         }
     }
@@ -55,7 +55,7 @@ impl Config {
 
 /// Writer that replaces tab characters with the configured number of spaces.
 pub struct SourceWriter<W> {
-    writer: W,
+    upstream: W,
     tab_width: usize,
 }
 
@@ -64,22 +64,22 @@ impl<W: io::Write> io::Write for SourceWriter<W> {
         let mut last_term = 0usize;
         for (i, ch) in buf.iter().enumerate() {
             if *ch == b'\t' {
-                self.writer.write_all(&buf[last_term..i])?;
+                self.upstream.write_all(&buf[last_term..i])?;
                 last_term = i + 1;
                 write!(
-                    self.writer,
+                    self.upstream,
                     "{space: >width$}",
                     space = "",
                     width = self.tab_width,
                 )?;
             }
         }
-        self.writer.write_all(&buf[last_term..])?;
+        self.upstream.write_all(&buf[last_term..])?;
         Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
+        self.upstream.flush()
     }
 }
 
