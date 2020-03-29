@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2020-03-29
+
+### Changed
+
+-   Render overlapping multiline marks on the same lines of source code.
+
+    For example:
+    ```
+    error[E0308]: match arms have incompatible types
+
+       ┌── codespan/src/file.rs:1:9 ───
+       │
+     1 │ ╭         match line_index.compare(self.last_line_index()) {
+     2 │ │             Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
+     3 │ │             Ordering::Equal => Ok(self.source_span().end()),
+     4 │ │             Ordering::Greater => LineIndexOutOfBoundsError {
+     5 │ │                 given: line_index,
+     6 │ │                 max: self.last_line_index(),
+     7 │ │             },
+     8 │ │         }
+       │ ╰─────────' `match` arms have incompatible types
+       ·
+     2 │               Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
+       │                                 --------------------------------------------- this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+     3 │               Ordering::Equal => Ok(self.source_span().end()),
+       │                                  ---------------------------- this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+     4 │               Ordering::Greater => LineIndexOutOfBoundsError {
+       │ ╭──────────────────────────────────^
+     5 │ │                 given: line_index,
+     6 │ │                 max: self.last_line_index(),
+     7 │ │             },
+       │ ╰─────────────^ expected enum `Result`, found struct `LineIndexOutOfBoundsError`
+       │
+       = expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+            found type `LineIndexOutOfBoundsError`
+    ```
+    …is now rendered as:
+    ```
+    error[E0308]: match arms have incompatible types
+
+       ┌── codespan/src/file.rs:1:9 ───
+       │
+     1 │   ╭         match line_index.compare(self.last_line_index()) {
+     2 │   │             Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
+       │   │                               --------------------------------------------- this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+     3 │   │             Ordering::Equal => Ok(self.source_span().end()),
+       │   │                                ---------------------------- this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+     4 │   │             Ordering::Greater => LineIndexOutOfBoundsError {
+       │ ╭─│──────────────────────────────────^
+     5 │ │ │                 given: line_index,
+     6 │ │ │                 max: self.last_line_index(),
+     7 │ │ │             },
+       │ ╰─│─────────────^ expected enum `Result`, found struct `LineIndexOutOfBoundsError`
+     8 │   │         }
+       │   ╰─────────' `match` arms have incompatible types
+       │
+       = expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
+            found type `LineIndexOutOfBoundsError`
+    ```
+
 ## [0.9.1] - 2020-03-23
 
 ### Added
@@ -90,7 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/brendanzab/codespan/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/brendanzab/codespan/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/brendanzab/codespan/compare/v0.7.0...v0.8.0
