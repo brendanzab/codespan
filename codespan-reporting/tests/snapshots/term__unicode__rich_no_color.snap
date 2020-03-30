@@ -4,7 +4,7 @@ expression: TEST_DATA.emit_no_color(&config)
 ---
 error[E0703]: invalid ABI: found `路濫狼á́́`
 
-   ┌── unicode.rs:1:8 ───
+   ┌─ unicode.rs:1:8
    │
  1 │ extern "路濫狼á́́" fn foo() {}
    │        ^^^^^^^^^ invalid ABI

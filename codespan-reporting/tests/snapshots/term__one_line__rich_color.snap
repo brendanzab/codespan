@@ -4,7 +4,7 @@ expression: TEST_DATA.emit_color(&config)
 ---
 {fg:Red bold bright}error[E0499]{bold bright}: cannot borrow `v` as mutable more than once at a time{/}
 
-   {fg:Blue}┌──{/} one_line.rs:3:5 {fg:Blue}───{/}
+   {fg:Blue}┌─{/} one_line.rs:3:5
    {fg:Blue}│{/}
  {fg:Blue}3{/} {fg:Blue}│{/}     v.push(v.pop().unwrap());
    {fg:Blue}│{/}     {fg:Blue}- first borrow later used by call{/}

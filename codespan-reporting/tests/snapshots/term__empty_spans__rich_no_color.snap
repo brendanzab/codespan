@@ -4,7 +4,7 @@ expression: TEST_DATA.emit_no_color(&config)
 ---
 note: middle
 
-   ┌── hello:1:7 ───
+   ┌─ hello:1:7
    │
  1 │ Hello world!
    │       ^ middle
@@ -12,7 +12,7 @@ note: middle
 
 note: end of line
 
-   ┌── hello:1:13 ───
+   ┌─ hello:1:13
    │
  1 │ Hello world!
    │             ^ end of line
@@ -20,7 +20,7 @@ note: end of line
 
 note: end of file
 
-   ┌── hello:2:11 ───
+   ┌─ hello:2:11
    │
  2 │ Bye world!
    │           ^ end of file

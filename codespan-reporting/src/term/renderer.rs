@@ -72,7 +72,7 @@ type Underline = (LabelStyle, VerticalBound);
 ///                  ┌────────────────────────────────────────────────────────────────────────────
 ///        header ── │ error[0001]: oh noes, a cupcake has occurred!
 ///         empty ── │
-/// snippet start ── │    ┌── test:9:0 ───
+/// snippet start ── │    ┌─ test:9:0
 /// snippet empty ── │    │
 ///  snippet line ── │  9 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
 ///  snippet line ── │ 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
@@ -100,6 +100,7 @@ type Underline = (LabelStyle, VerticalBound);
 ///                  │      blah blah
 ///  snippet note ── │    = blah blah blah
 ///                  │      blah blah
+///         empty ── │
 /// ```
 ///
 /// Filler text from http://www.cupcakeipsum.com
@@ -194,23 +195,19 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// Top left border and locus.
     ///
     /// ```text
-    /// ┌── test:2:9 ───
+    /// ┌─ test:2:9
     /// ```
     pub fn render_snippet_start(&mut self, outer_padding: usize, locus: &Locus) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
 
         self.set_color(&self.styles().source_border)?;
         write!(self, "{}", self.chars().source_border_top_left)?;
-        write!(self, "{0}{0}", self.chars().source_border_top)?;
+        write!(self, "{0}", self.chars().source_border_top)?;
         self.reset()?;
 
         write!(self, " ")?;
         self.snippet_locus(&locus)?;
-        write!(self, " ")?;
 
-        self.set_color(&self.styles().source_border)?;
-        write!(self, "{0}{0}{0}", self.chars().source_border_top)?;
-        self.reset()?;
         write!(self, "\n")?;
 
         Ok(())
