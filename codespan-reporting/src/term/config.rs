@@ -91,7 +91,7 @@ pub enum DisplayStyle {
     /// ```text
     /// error[E0001]: unexpected type in `+` application
     ///
-    ///    ┌── test:2:9 ───
+    ///    ┌─ test:2:9
     ///    │
     ///  2 │ (+ test "")
     ///    │         ^^ expected `Int` but found `String`

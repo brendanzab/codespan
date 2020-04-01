@@ -53,7 +53,7 @@
     <div xmlns="http://www.w3.org/1999/xhtml">
       <pre><span class="fg red bold bright">error[E0308]</span><span class="bold bright">: `case` clauses have incompatible types</span>
 
-    <span class="fg blue">┌──</span> FizzBuzz.fun:10:15 <span class="fg blue">───</span>
+    <span class="fg blue">┌─</span> FizzBuzz.fun:10:15
     <span class="fg blue">│</span>  
  <span class="fg blue">10</span> <span class="fg blue">│</span>   fizz₂ : Nat → String
     <span class="fg blue">│</span>                 <span class="fg blue">------ expected type `String` found here</span>

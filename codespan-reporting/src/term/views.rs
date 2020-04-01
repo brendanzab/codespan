@@ -248,8 +248,7 @@ where
         // Source snippets
         //
         // ```text
-        //
-        //   ┌── test:2:9 ───
+        //   ┌─ test:2:9
         //   │
         // 2 │ (+ test "")
         //   │         ^^ expected `Int` but found `String`
@@ -262,7 +261,7 @@ where
             // Top left border and locus.
             //
             // ```text
-            // ┌── test:2:9 ───
+            // ┌─ test:2:9
             // ```
             if !labeled_file.lines.is_empty() {
                 renderer.render_snippet_start(
