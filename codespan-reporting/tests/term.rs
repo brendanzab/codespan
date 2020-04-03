@@ -275,7 +275,13 @@ mod multifile {
                     .with_labels(vec![
                         Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
                         Label::secondary(file_id1, 130..155).with_message("based on the definition of `_+_`"),
-                    ]),
+                    ])
+                    .with_notes(vec![unindent::unindent(
+                        "
+                            expected type `Nat`
+                               found type `String`
+                        ",
+                    )]),
             ];
 
             TestData { files, diagnostics }
