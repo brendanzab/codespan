@@ -418,7 +418,7 @@ mod multiline_overlapping {
     test_emit!(short_no_color);
 }
 
-mod tabbed {
+mod tab_width {
     use super::*;
 
     lazy_static::lazy_static! {
@@ -454,14 +454,14 @@ mod tabbed {
     }
 
     #[test]
-    fn tab_width_default_no_color() {
+    fn default() {
         let config = TEST_CONFIG.clone();
 
         insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
-    fn tab_width_3_no_color() {
+    fn value_3() {
         let config = Config {
             tab_width: 3,
             ..TEST_CONFIG.clone()
@@ -471,7 +471,7 @@ mod tabbed {
     }
 
     #[test]
-    fn tab_width_6_no_color() {
+    fn value_6() {
         let config = Config {
             tab_width: 6,
             ..TEST_CONFIG.clone()
@@ -555,14 +555,14 @@ mod spacing {
     }
 
     #[test]
-    fn tab_width_default_no_color() {
+    fn default() {
         let config = TEST_CONFIG.clone();
 
         insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
-    fn tab_width_cozy_no_color() {
+    fn cozy() {
         let config = Config {
             spacing: Spacing::Cozy,
             ..TEST_CONFIG.clone()
@@ -572,7 +572,7 @@ mod spacing {
     }
 
     #[test]
-    fn tab_width_compact_no_color() {
+    fn compact() {
         let config = Config {
             spacing: Spacing::Compact,
             ..TEST_CONFIG.clone()
@@ -582,7 +582,7 @@ mod spacing {
     }
 
     #[test]
-    fn tab_width_compressed_no_color() {
+    fn compressed() {
         let config = Config {
             spacing: Spacing::Compressed,
             ..TEST_CONFIG.clone()
