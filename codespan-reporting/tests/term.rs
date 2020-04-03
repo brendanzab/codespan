@@ -457,10 +457,7 @@ mod tabbed {
     fn tab_width_default_no_color() {
         let config = TEST_CONFIG.clone();
 
-        insta::assert_snapshot!(
-            "tab_width_default_no_color",
-            TEST_DATA.emit_no_color(&config)
-        );
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
@@ -477,6 +474,117 @@ mod tabbed {
     fn tab_width_6_no_color() {
         let config = Config {
             tab_width: 6,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+}
+
+mod spacing {
+    use codespan_reporting::term::Spacing;
+
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
+
+            let file_id1 = files.add(
+                "Data/Nat.fun",
+                unindent::unindent(
+                    "
+                        module Data.Nat where
+
+                        data Nat : Type where
+                            zero : Nat
+                            succ : Nat → Nat
+
+                        {-# BUILTIN NATRAL Nat #-}
+
+                        infixl 6 _+_ _-_
+
+                        _+_ : Nat → Nat → Nat
+                        zero    + n₂ = n₂
+                        succ n₁ + n₂ = succ (n₁ + n₂)
+
+                        _-_ : Nat → Nat → Nat
+                        n₁      - zero    = n₁
+                        zero    - succ n₂ = zero
+                        succ n₁ - succ n₂ = n₁ - n₂
+                    ",
+                ),
+            );
+
+            let file_id2 = files.add(
+                "Test.fun",
+                unindent::unindent(
+                    r#"
+                        module Test where
+
+                        _ : Nat
+                        _ = 123 + "hello"
+                    "#,
+                ),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("unknown builtin: `NATRAL`")
+                    .with_labels(vec![Label::primary(file_id1, 96..102).with_message("unknown builtin")])
+                    .with_notes(vec![
+                        "there is a builtin with a similar name: `NATURAL`".to_owned(),
+                    ]),
+                Diagnostic::error()
+                    .with_message("unexpected type in application of `_+_`")
+                    .with_code("E0001")
+                    .with_labels(vec![
+                        Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
+                        Label::secondary(file_id1, 130..155).with_message("based on the definition of `_+_`"),
+                    ])
+                    .with_notes(vec![unindent::unindent(
+                        "
+                            expected type `Nat`
+                               found type `String`
+                        ",
+                    )]),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
+    #[test]
+    fn tab_width_default_no_color() {
+        let config = TEST_CONFIG.clone();
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_cozy_no_color() {
+        let config = Config {
+            spacing: Spacing::Cozy,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_compact_no_color() {
+        let config = Config {
+            spacing: Spacing::Compact,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_compressed_no_color() {
+        let config = Config {
+            spacing: Spacing::Compressed,
             ..TEST_CONFIG.clone()
         };
 

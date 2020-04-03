@@ -4,7 +4,7 @@ use termcolor::{ColorSpec, WriteColor};
 
 use crate::diagnostic::{LabelStyle, Severity};
 use crate::files::Location;
-use crate::term::{Chars, Config, Styles};
+use crate::term::{Chars, Config, Spacing, Styles};
 
 /// The 'location focus' of a source code snippet.
 pub struct Locus {
@@ -186,8 +186,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 
     /// Empty line.
-    pub fn render_empty(&mut self) -> io::Result<()> {
-        write!(self, "\n")?;
+    pub fn render_empty(&mut self, spacing: Spacing) -> io::Result<()> {
+        if self.config.spacing <= spacing {
+            write!(self, "\n")?;
+        }
 
         Ok(())
     }
@@ -350,15 +352,18 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// ```
     pub fn render_snippet_empty(
         &mut self,
+        spacing: Spacing,
         outer_padding: usize,
         severity: Severity,
         num_multi_labels: usize,
         multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
-        self.outer_gutter(outer_padding)?;
-        self.border_left()?;
-        self.inner_gutter(severity, num_multi_labels, multi_labels)?;
-        write!(self, "\n")?;
+        if self.config.spacing <= spacing {
+            self.outer_gutter(outer_padding)?;
+            self.border_left()?;
+            self.inner_gutter(severity, num_multi_labels, multi_labels)?;
+            write!(self, "\n")?;
+        }
         Ok(())
     }
 
@@ -419,7 +424,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// The outer gutter of a source line.
     fn outer_gutter(&mut self, outer_padding: usize) -> io::Result<()> {
-        write!(self, " ")?;
+        if self.config.spacing <= Spacing::Cozy {
+            write!(self, " ")?;
+        }
         write!(self, "{space: >width$}", space = "", width = outer_padding,)?;
         write!(self, " ")?;
         Ok(())
@@ -427,7 +434,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// The outer gutter of a source line, with line number.
     fn outer_gutter_number(&mut self, line_number: usize, outer_padding: usize) -> io::Result<()> {
-        write!(self, " ")?;
+        if self.config.spacing <= Spacing::Cozy {
+            write!(self, " ")?;
+        }
         self.set_color(&self.styles().line_number)?;
         write!(
             self,

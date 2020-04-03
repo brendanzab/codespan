@@ -14,6 +14,8 @@ pub struct Config {
     /// Column width of tabs.
     /// Defaults to: `4`.
     pub tab_width: usize,
+    /// Spacing to show around diagnostics.
+    pub spacing: Spacing,
     /// Styles to use when rendering the diagnostic.
     pub styles: Styles,
     /// Characters to use when rendering the diagnostic.
@@ -25,6 +27,7 @@ impl Default for Config {
         Config {
             display_style: DisplayStyle::Rich,
             tab_width: 4,
+            spacing: Spacing::default(),
             styles: Styles::default(),
             chars: Chars::default(),
         }
@@ -110,6 +113,23 @@ pub enum DisplayStyle {
     /// error[E0002]: Bad config found
     /// ```
     Short,
+}
+
+/// The amount of spacing to show around snippets
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Spacing {
+    /// Generously spaced to be easy-on-the eyes.
+    Cozy,
+    /// Fit more diagnostics on the terminal at once.
+    Compact,
+    /// Fit the most diagnostics on the terminal at once.
+    Compressed,
+}
+
+impl Default for Spacing {
+    fn default() -> Spacing {
+        Spacing::Cozy
+    }
 }
 
 /// Styles to use when rendering the diagnostic.

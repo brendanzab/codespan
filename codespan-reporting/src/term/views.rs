@@ -4,6 +4,7 @@ use std::ops::Range;
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
+use crate::term::Spacing;
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -242,7 +243,7 @@ where
             self.diagnostic.message.as_str(),
         )?;
         if !labeled_files.is_empty() {
-            renderer.render_empty()?;
+            renderer.render_empty(Spacing::Cozy)?;
         }
 
         // Source snippets
@@ -272,6 +273,7 @@ where
                     },
                 )?;
                 renderer.render_snippet_empty(
+                    Spacing::Compact,
                     outer_padding,
                     self.diagnostic.severity,
                     labeled_file.num_multi_labels,
@@ -331,6 +333,7 @@ where
                 }
             }
             renderer.render_snippet_empty(
+                Spacing::Compact,
                 outer_padding,
                 self.diagnostic.severity,
                 labeled_file.num_multi_labels,
@@ -347,7 +350,7 @@ where
         for note in &self.diagnostic.notes {
             renderer.render_snippet_note(outer_padding, note)?;
         }
-        renderer.render_empty()?;
+        renderer.render_empty(Spacing::Compact)?;
 
         Ok(())
     }
