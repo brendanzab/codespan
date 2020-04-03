@@ -32,5 +32,7 @@ error[E0001]: unexpected type in application of `_+_`
  11 │ _+_ : Nat → Nat → Nat
     │ --------------------- based on the definition of `_+_`
     │
+    = expected type `Nat`
+         found type `String`
 
 

@@ -32,5 +32,7 @@ expression: TEST_DATA.emit_color(&config)
  {fg:Blue}11{/} {fg:Blue}│{/} _+_ : Nat → Nat → Nat
     {fg:Blue}│{/} {fg:Blue}--------------------- based on the definition of `_+_`{/}
     {fg:Blue}│{/}
+    {fg:Blue}={/} expected type `Nat`
+         found type `String`
 
 
