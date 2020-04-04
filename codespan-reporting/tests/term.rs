@@ -540,3 +540,41 @@ mod unicode {
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
 }
+
+mod unicode_spans {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let moon_phases = format!("{}", r#"🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄"#);
+            let invalid_start = 1;
+            let invalid_end = "🐄".len() - 1;
+            assert_eq!(moon_phases.is_char_boundary(invalid_start), false);
+            assert_eq!(moon_phases.is_char_boundary(invalid_end), false);
+            assert_eq!("🐄".len(), 4);
+            let file = SimpleFile::new(
+                "moon_jump.rs",
+                moon_phases,
+            );
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_code("E01")
+                    .with_message("cow may not jump during new moon.")
+                    .with_labels(vec![
+                        Label::primary((), invalid_start..invalid_end)
+                            .with_message("Invalid jump"),
+                        Label::secondary((), invalid_start.."🐄".len())
+                            .with_message("Cow range does not start at boundary."),
+                        Label::secondary((), "🐄🌑".len().."🐄🌑🐄".len() - 1)
+                            .with_message("Cow range does not end at boundary."),
+                        Label::secondary((), invalid_start.."🐄🌑🐄".len() - 1)
+                            .with_message("Cow does not start or end at boundary."),
+
+                    ])];
+            TestData{files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
