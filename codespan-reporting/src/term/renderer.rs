@@ -469,12 +469,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         range: Range<usize>,
         message: &str,
     ) -> io::Result<()> {
-        let space_len = self.config.width(&source[..range.start]);
+        let space_source = slice_at_char_boundaries(source, 0..range.start);
+        let space_len = self.config.width(space_source);
         write!(self, " {space: >width$}", space = "", width = space_len)?;
         self.set_color(self.styles().label(severity, label_style))?;
+        let source = slice_at_char_boundaries(source, range);
         // We use `usize::max` here to ensure that we print at least one
         // label character - even when we have a zero-length span.
-        for _ in 0..usize::max(self.config.width(&source[range.clone()]), 1) {
+        for _ in 0..usize::max(self.config.width(source), 1) {
             write!(self, "{}", self.chars().single_caret_char(label_style))?;
         }
         if !message.is_empty() {
@@ -696,5 +698,86 @@ impl<'writer, 'config> WriteColor for Renderer<'writer, 'config> {
 
     fn is_synchronous(&self) -> bool {
         self.writer.is_synchronous()
+    }
+}
+
+/// Searches for character boundary from byte_index towards the end of the string.
+fn closest_char_boundary(s: &str, byte_index: usize) -> usize {
+    let length = s.len();
+    for index in byte_index..=length {
+        if s.is_char_boundary(index) {
+            return index;
+        }
+    }
+    length
+}
+
+/// Searches for character boundary from byte_index towards the start of the string.
+fn closest_char_boundary_rev(s: &str, byte_index: usize) -> usize {
+    for index in (0..=byte_index).rev() {
+        if s.is_char_boundary(index) {
+            return index;
+        }
+    }
+    0
+}
+
+/// Finds a valid unicode boundaries looking from `range.start` towards the beginning of the string.
+/// From `range.end` towards the end of the string. Returning a `&str` of all characters
+/// that overlapping the range.
+fn slice_at_char_boundaries<'a>(s: &'a str, range: Range<usize>) -> &'a str {
+    let start = closest_char_boundary_rev(s, range.start);
+    let end = closest_char_boundary(s, range.end);
+    &s[start..end]
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::iter::repeat;
+
+    #[test]
+    fn test_boundary() {
+        let s = "🌞";
+        assert_eq!(closest_char_boundary(s, 0), 0);
+        assert_eq!(closest_char_boundary_rev(s, 0), 0);
+        for i in 1..s.len() {
+            assert_eq!(closest_char_boundary_rev(s, i), 0);
+            assert_eq!(closest_char_boundary(s, i), s.len());
+        }
+    }
+
+    #[test]
+    fn test_boundaries() {
+        let s = "🌑🌒🌓🌔";
+        let individually = ["🌑", "🌒", "🌓", "🌔"];
+
+        let mut expect = Vec::new();
+        // [(0, 0, "", ""),
+        //  (0, 4, "🌑", "🌑"), repeated 4 times,
+        //  (4, 4, "", ""), once
+        //  (4, 8, "🌒", "🌒"), repeated 4 times, and so on (+4, +4)
+        //  ...
+        //  (16, 16, "", ""); 21]
+        expect.push((0, 0, "", ""));
+        for (idx, &char) in individually.iter().enumerate() {
+            let n = char.len();
+            assert_eq!(n, 4);
+            let expected_start = (idx % n) * n;
+            let expected_end = (idx % n) * n + n;
+            expect.extend(repeat((expected_start, expected_end, char, char)).take(n - 1));
+            expect.push((expected_end, expected_end, "", ""));
+        }
+
+        // drop mut.
+        let expect = expect;
+        let mut found = Vec::new();
+        for i in 0..=s.len() {
+            let sliced = slice_at_char_boundaries(s, i..i);
+            let prev = closest_char_boundary_rev(s, i);
+            let next = closest_char_boundary(s, i);
+            found.push((prev, next, &s[prev..next], sliced));
+        }
+        assert_eq!(found, expect);
     }
 }
