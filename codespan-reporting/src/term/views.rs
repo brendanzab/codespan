@@ -143,7 +143,10 @@ where
                     // to piggyback off its lexicographic comparison implementation.
                     (range.start, range.end).cmp(&(label_start, label_end))
                 }) {
-                    Ok(index) | Err(index) => index,
+                    // If the ranges are the same, order the labels as they
+                    // originally were specified in the diagnostic.
+                    Ok(index) => index + 1,
+                    Err(index) => index,
                 };
 
                 line.single_labels

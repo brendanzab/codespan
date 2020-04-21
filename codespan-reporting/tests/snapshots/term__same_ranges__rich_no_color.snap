@@ -7,8 +7,8 @@ error: Unexpected token
    ┌─ same_range:1:5
    │
  1 │ ::S { }
-   │     - Expected '('
    │     ^ Unexpected '{'
+   │     - Expected '('
    │
 
 
