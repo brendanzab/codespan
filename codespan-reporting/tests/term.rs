@@ -180,7 +180,7 @@ mod message_and_notes {
     test_emit!(short_no_color);
 }
 
-mod empty_spans {
+mod empty_ranges {
     use super::*;
 
     lazy_static::lazy_static! {
