@@ -180,7 +180,7 @@ mod message_and_notes {
     test_emit!(short_no_color);
 }
 
-mod empty_spans {
+mod empty_ranges {
     use super::*;
 
     lazy_static::lazy_static! {
@@ -198,6 +198,32 @@ mod empty_spans {
                 Diagnostic::note()
                     .with_message("end of file")
                     .with_labels(vec![Label::primary((), eof..eof).with_message("end of file")]),
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
+
+mod same_ranges {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, &'static str>> = {
+            let file = SimpleFile::new("same_range", "::S { }");
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("Unexpected token")
+                    .with_labels(vec![
+                        Label::primary((), 4..4).with_message("Unexpected '{'"),
+                        Label::secondary((), 4..4).with_message("Expected '('"),
+                    ]),
             ];
 
             TestData { files: file, diagnostics }
