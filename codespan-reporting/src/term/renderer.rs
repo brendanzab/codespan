@@ -232,7 +232,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // Write source line
         //
         // ```text
-        //  10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
+        // 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
         // ```
         {
             // Write outer gutter (with line number) and border
@@ -419,7 +419,6 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// The outer gutter of a source line.
     fn outer_gutter(&mut self, outer_padding: usize) -> io::Result<()> {
-        write!(self, " ")?;
         write!(self, "{space: >width$}", space = "", width = outer_padding,)?;
         write!(self, " ")?;
         Ok(())
@@ -427,7 +426,6 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// The outer gutter of a source line, with line number.
     fn outer_gutter_number(&mut self, line_number: usize, outer_padding: usize) -> io::Result<()> {
-        write!(self, " ")?;
         self.set_color(&self.styles().line_number)?;
         write!(
             self,
