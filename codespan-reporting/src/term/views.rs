@@ -244,9 +244,6 @@ where
             self.diagnostic.code.as_ref().map(String::as_str),
             self.diagnostic.message.as_str(),
         )?;
-        if !labeled_files.is_empty() {
-            renderer.render_empty()?;
-        }
 
         // Source snippets
         //

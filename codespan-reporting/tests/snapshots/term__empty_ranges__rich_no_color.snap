@@ -3,27 +3,24 @@ source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
 ---
 note: middle
-
-   ┌─ hello:1:7
-   │
- 1 │ Hello world!
-   │       ^ middle
-   │
+  ┌─ hello:1:7
+  │
+1 │ Hello world!
+  │       ^ middle
+  │
 
 note: end of line
-
-   ┌─ hello:1:13
-   │
- 1 │ Hello world!
-   │             ^ end of line
-   │
+  ┌─ hello:1:13
+  │
+1 │ Hello world!
+  │             ^ end of line
+  │
 
 note: end of file
-
-   ┌─ hello:2:11
-   │
- 2 │ Bye world!
-   │           ^ end of file
-   │
+  ┌─ hello:2:11
+  │
+2 │ Bye world!
+  │           ^ end of file
+  │
 
 
