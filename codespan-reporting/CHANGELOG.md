@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2020-04-29
+
+### Changed
+
+-   Some panics were fixed when invalid unicode boundaries are supplied.
+-   Labels that marked the same span were originally rendered in reverse order.
+    This was a mistake! We've now fixed this.
+
+    For example, this diagnostic:
+    ```
+       ┌─ same_range:1:7
+       │
+     1 │ ::S { }
+       │     - Expected '('
+       │     ^ Unexpected '{'
+       │
+    ```
+    …will now be rendered as:
+    ```
+       ┌─ same_range:1:7
+       │
+     1 │ ::S { }
+       │     ^ Unexpected '{'
+       │     - Expected '('
+       │
+    ```
+
+-   We've reduced the prominence of the 'locus' on source snippets by
+    simplifying the border and reducing the spacing around it. This is to help
+    focus attention on the underlined source snippet and error messages, rather
+    than the location, which should be a secondary focus.
+
+    For example we originally rendered this:
+    ```
+    error: unknown builtin: `NATRAL`
+
+       ┌── Data/Nat.fun:7:13 ───
+       │
+     7 │ {-# BUILTIN NATRAL Nat #-}
+       │             ^^^^^^ unknown builtin
+       │
+       = there is a builtin with a similar name: `NATURAL`
+
+    ```
+    …and now we render this:
+    ```
+    error: unknown builtin: `NATRAL`
+      ┌─ Data/Nat.fun:7:13
+      │
+    7 │ {-# BUILTIN NATRAL Nat #-}
+      │             ^^^^^^ unknown builtin
+      │
+      = there is a builtin with a similar name: `NATURAL`
+
+    ```
+
 ## [0.9.2] - 2020-03-29
 
 ### Changed
@@ -150,7 +206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/brendanzab/codespan/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/brendanzab/codespan/compare/v0.8.0...v0.9.0
