@@ -8,6 +8,5 @@ expression: TEST_DATA.emit_color(&config)
 {fg:Blue}1{/} {fg:Blue}│{/} ::S { }
   {fg:Blue}│{/}     {fg:Red}^ Unexpected '{'{/}
   {fg:Blue}│{/}     {fg:Blue}- Expected '('{/}
-  {fg:Blue}│{/}
 
 

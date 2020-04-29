@@ -254,7 +254,8 @@ where
         //   │         ^^ expected `Int` but found `String`
         //   │
         // ```
-        for labeled_file in labeled_files {
+        let mut labeled_files = labeled_files.into_iter().peekable();
+        while let Some(labeled_file) = labeled_files.next() {
             let source = files.source(labeled_file.file_id).unwrap();
             let source = source.as_ref();
 
@@ -330,12 +331,22 @@ where
                     }
                 }
             }
-            renderer.render_snippet_empty(
-                outer_padding,
-                self.diagnostic.severity,
-                labeled_file.num_multi_labels,
-                &current_labels,
-            )?;
+
+            // Check to see if we should render a trailing border after the
+            // final line of the snippet.
+            if labeled_files.peek().is_none() && self.diagnostic.notes.is_empty() {
+                // We don't render a border if we are at the final newline
+                // without trailing notes, because it would end up looking too
+                // spaced-out in combination with the final new line.
+            } else {
+                // Render the trailing snippet border.
+                renderer.render_snippet_empty(
+                    outer_padding,
+                    self.diagnostic.severity,
+                    labeled_file.num_multi_labels,
+                    &current_labels,
+                )?;
+            }
         }
 
         // Additional notes

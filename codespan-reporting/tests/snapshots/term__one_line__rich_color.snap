@@ -9,7 +9,6 @@ expression: TEST_DATA.emit_color(&config)
   {fg:Blue}│{/}     {fg:Blue}- first borrow later used by call{/}
   {fg:Blue}│{/}       {fg:Blue}---- first mutable borrow occurs here{/}
   {fg:Blue}│{/}            {fg:Red}^ second mutable borrow occurs here{/}
-  {fg:Blue}│{/}
 
 {fg:Red bold bright}error{bold bright}: aborting due to previous error{/}
  {fg:Blue}={/} For more information about this error, try `rustc --explain E0499`.

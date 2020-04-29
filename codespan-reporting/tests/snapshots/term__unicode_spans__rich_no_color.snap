@@ -10,6 +10,5 @@ error[E01]: cow may not jump during new moon.
   │   -- Cow range does not start at boundary.
   │   ------ Cow does not start or end at boundary.
   │     -- Cow range does not end at boundary.
-  │
 
 

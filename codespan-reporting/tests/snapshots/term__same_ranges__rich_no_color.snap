@@ -8,6 +8,5 @@ error: Unexpected token
 1 │ ::S { }
   │     ^ Unexpected '{'
   │     - Expected '('
-  │
 
 
