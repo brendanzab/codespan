@@ -7,20 +7,17 @@ note: middle
   │
 1 │ Hello world!
   │       ^ middle
-  │
 
 note: end of line
   ┌─ hello:1:13
   │
 1 │ Hello world!
   │             ^ end of line
-  │
 
 note: end of file
   ┌─ hello:2:11
   │
 2 │ Bye world!
   │           ^ end of file
-  │
 
 
