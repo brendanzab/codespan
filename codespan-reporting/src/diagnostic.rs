@@ -67,7 +67,7 @@ pub struct Label<FileId> {
     pub style: LabelStyle,
     /// The file that we are labelling.
     pub file_id: FileId,
-    /// The range we are going to include in the final snippet.
+    /// The range in bytes we are going to include in the final snippet.
     pub range: Range<usize>,
     /// An optional message to provide some additional information for the
     /// underlined code. These should not include line breaks.
