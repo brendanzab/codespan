@@ -143,14 +143,21 @@ where
                     // to piggyback off its lexicographic comparison implementation.
                     (range.start, range.end).cmp(&(label_start, label_end))
                 }) {
-                    // If the ranges are the same, order the labels as they
-                    // originally were specified in the diagnostic.
-                    Ok(index) => index + 1,
-                    Err(index) => index,
+                    // If the ranges are the same, order the labels in reverse
+                    // to how they were originally specified in the diagnostic.
+                    // This helps with printing in the renderer.
+                    Ok(index) | Err(index) => index,
                 };
 
+                // Ensure that we print at least one caret, even when we
+                // have a zero-length source range.
+                let mut label_range = label_start..label_end;
+                if label_range.len() == 0 {
+                    label_range.end = label_range.start + 1;
+                }
+
                 line.single_labels
-                    .insert(index, (label.style, label_start..label_end, &label.message));
+                    .insert(index, (label.style, label_range, &label.message));
             } else {
                 // Multiple lines
                 //

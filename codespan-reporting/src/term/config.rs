@@ -32,16 +32,14 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Measure the width of a string, taking into account the tab width.
-    pub fn width(&self, s: &str) -> usize {
+    /// Measure the unicode width of a character, taking into account the tab width.
+    pub fn width(&self, ch: char) -> usize {
         use unicode_width::UnicodeWidthChar;
 
-        s.chars()
-            .map(|ch| match ch {
-                '\t' => self.tab_width,
-                _ => ch.width().unwrap_or(0),
-            })
-            .sum()
+        match ch {
+            '\t' => self.tab_width,
+            _ => ch.width().unwrap_or(0),
+        }
     }
 
     /// Construct a source writer using the current config.
@@ -279,29 +277,10 @@ pub struct Chars {
     /// The character to use for the left of a multi-line label.
     /// Defaults to: `'│'`.
     pub multi_left: char,
-}
 
-impl Chars {
-    pub fn single_caret_char(&self, label_style: LabelStyle) -> char {
-        match label_style {
-            LabelStyle::Primary => self.single_primary_caret,
-            LabelStyle::Secondary => self.single_secondary_caret,
-        }
-    }
-
-    pub fn multi_caret_char_start(&self, label_style: LabelStyle) -> char {
-        match label_style {
-            LabelStyle::Primary => self.multi_primary_caret_start,
-            LabelStyle::Secondary => self.multi_secondary_caret_start,
-        }
-    }
-
-    pub fn multi_caret_char_end(&self, label_style: LabelStyle) -> char {
-        match label_style {
-            LabelStyle::Primary => self.multi_primary_caret_end,
-            LabelStyle::Secondary => self.multi_secondary_caret_end,
-        }
-    }
+    /// The character to use for the left of a pointer underneath a caret.
+    /// Defaults to: `'│'`.
+    pub pointer_left: char,
 }
 
 impl Default for Chars {
@@ -326,6 +305,8 @@ impl Default for Chars {
             multi_bottom_left: '╰',
             multi_bottom: '─',
             multi_left: '│',
+
+            pointer_left: '│',
         }
     }
 }

@@ -14,10 +14,16 @@ note: end of line
 1 │ Hello world!
   │             ^ end of line
 
-note: end of file
+note: end of line
   ┌─ hello:2:11
   │
 2 │ Bye world!
-  │           ^ end of file
+  │           ^ end of line
+
+note: end of file
+  ┌─ hello:3:4
+  │
+3 │    
+  │    ^ end of file
 
 

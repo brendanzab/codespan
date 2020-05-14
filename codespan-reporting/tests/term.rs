@@ -330,7 +330,7 @@ mod empty_ranges {
 
     lazy_static::lazy_static! {
         static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, &'static str>> = {
-            let file = SimpleFile::new("hello", "Hello world!\nBye world!");
+            let file = SimpleFile::new("hello", "Hello world!\nBye world!\n   ");
             let eof = file.source().len();
 
             let diagnostics = vec![
@@ -340,6 +340,9 @@ mod empty_ranges {
                 Diagnostic::note()
                     .with_message("end of line")
                     .with_labels(vec![Label::primary((), 12..12).with_message("end of line")]),
+                Diagnostic::note()
+                    .with_message("end of line")
+                    .with_labels(vec![Label::primary((), 23..23).with_message("end of line")]),
                 Diagnostic::note()
                     .with_message("end of file")
                     .with_labels(vec![Label::primary((), eof..eof).with_message("end of file")]),

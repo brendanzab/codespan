@@ -6,13 +6,13 @@ error[E01]: cow may not jump during new moon.
   ┌─ moon_jump.rs:1:1
   │
 1 │ 🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄
-  │   ^^ Invalid jump
+  │ ^^ Invalid jump
 
 note: invalid unicode range
   ┌─ moon_jump.rs:1:1
   │
 1 │ 🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄
-  │   -- Cow range does not start at boundary.
+  │ -- Cow range does not start at boundary.
 
 note: invalid unicode range
   ┌─ moon_jump.rs:1:3
@@ -24,6 +24,6 @@ note: invalid unicode range
   ┌─ moon_jump.rs:1:1
   │
 1 │ 🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄
-  │   ------ Cow does not start or end at boundary.
+  │ ------ Cow does not start or end at boundary.
 
 
