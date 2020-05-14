@@ -741,14 +741,26 @@ mod unicode_spans {
                     .with_labels(vec![
                         Label::primary((), invalid_start..invalid_end)
                             .with_message("Invalid jump"),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), invalid_start.."🐄".len())
                             .with_message("Cow range does not start at boundary."),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), "🐄🌑".len().."🐄🌑🐄".len() - 1)
                             .with_message("Cow range does not end at boundary."),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), invalid_start.."🐄🌑🐄".len() - 1)
                             .with_message("Cow does not start or end at boundary."),
-
-                    ])];
+                    ]),
+            ];
             TestData{files: file, diagnostics }
         };
     }
