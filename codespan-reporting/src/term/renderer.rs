@@ -588,7 +588,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         range: RangeTo<usize>,
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..(self.config.width(&source[range.clone()]) + 1) {
+        let source = slice_at_char_boundaries(source, 0..range.end);
+        for _ in 0..(self.config.width(source) + 1) {
             write!(self, "{}", self.chars().multi_top)?;
         }
         write!(self, "{}", self.chars().multi_caret_char_start(label_style))?;
@@ -611,7 +612,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         message: &str,
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..self.config.width(&source[range.clone()]) {
+        let source = slice_at_char_boundaries(source, 0..range.end);
+        for _ in 0..self.config.width(source) {
             write!(self, "{}", self.chars().multi_bottom)?;
         }
         write!(self, "{}", self.chars().multi_caret_char_end(label_style))?;
