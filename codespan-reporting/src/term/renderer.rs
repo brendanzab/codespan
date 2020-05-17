@@ -511,36 +511,6 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// The top of a multi-line label.
-    fn label_multi_top_line(
-        &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
-        len: usize,
-    ) -> io::Result<()> {
-        self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..len {
-            write!(self, "{}", self.config.chars.multi_top)?;
-        }
-        self.reset()?;
-        Ok(())
-    }
-
-    /// The top of a multi-line label.
-    fn label_multi_bottom_line(
-        &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
-        len: usize,
-    ) -> io::Result<()> {
-        self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..len {
-            write!(self, "{}", self.config.chars.multi_bottom)?;
-        }
-        self.reset()?;
-        Ok(())
-    }
-
     /// The top-left of a multi-line label.
     ///
     /// ```text
@@ -633,8 +603,16 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         match underline {
             None => self.inner_gutter_space(),
-            Some((ls, VerticalBound::Top)) => self.label_multi_top_line(severity, ls, 2),
-            Some((ls, VerticalBound::Bottom)) => self.label_multi_bottom_line(severity, ls, 2),
+            Some((label_style, vertical_bound)) => {
+                self.set_color(self.styles().label(severity, label_style))?;
+                let ch = match vertical_bound {
+                    VerticalBound::Top => self.config.chars.multi_top,
+                    VerticalBound::Bottom => self.config.chars.multi_bottom,
+                };
+                write!(self, "{0}{0}", ch)?;
+                self.reset()?;
+                Ok(())
+            }
         }
     }
 
