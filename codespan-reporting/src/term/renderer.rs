@@ -84,8 +84,10 @@ type Underline = (LabelStyle, VerticalBound);
 /// snippet break ── │    · │
 ///  snippet line ── │ 38 │ │   Brownie lemon drops chocolate jelly-o candy canes. Danish marzipan
 ///  snippet line ── │ 39 │ │   jujubes soufflé carrot cake marshmallow tiramisu caramels candy canes.
-///                  │    │ │           ^^^^^^^^^^^^^^^^^^ blah blah
-///                  │    │ │                               -------------------- blah blah
+///                  │    │ │           ^^^^^^^^^^^^^^^^^^^ -------------------- blah blah
+///                  │    │ │           │
+///                  │    │ │           blah blah
+///                  │    │ │           note: this is a note
 ///  snippet line ── │ 40 │ │   Fruitcake jelly-o danish toffee. Tootsie roll pastry cheesecake
 ///  snippet line ── │ 41 │ │   soufflé marzipan. Chocolate bar oat cake jujubes lollipop pastry
 ///  snippet line ── │ 42 │ │   cupcake. Candy canes cupcake toffee gingerbread candy canes muffin
@@ -229,6 +231,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         num_multi_labels: usize,
         multi_labels: &[(usize, MultiLabel<'_>)],
     ) -> io::Result<()> {
+        // Trim trailing newlines, linefeeds, and null chars from source, if they exist.
+        // FIXME: Use the number of trimmed placeholders when rendering single line carets
+        let source = source.trim_end_matches(['\n', '\r', '\0'].as_ref());
+
         // Write source line
         //
         // ```text
@@ -260,20 +266,223 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             }
 
             // Write source
-            write!(self.config.source(self.writer), " {}", source.trim_end())?;
+            write!(self.config.source(self.writer), " {}", source)?;
             write!(self, "\n")?;
         }
 
         // Write single labels underneath source
         //
         // ```text
-        //     │ │   │    ^^^^ oh noes
+        //   │     - ---- ^^^ second mutable borrow occurs here
+        //   │     │ │
+        //   │     │ first mutable borrow occurs here
+        //   │     first borrow later used by call
+        //   │     help: some help here
         // ```
-        for (label_style, range, message) in single_labels.iter() {
+        if !single_labels.is_empty() {
+            // Our plan is as follows:
+            //
+            // 1. Do an initial scan to find:
+            //    - The number of non-empty messages.
+            //    - The right-most start and end positions of labels.
+            //    - A candidate for a trailing label (where the label's message
+            //      is printed to the left of the caret).
+            // 2. Check if the trailing label candidate overlaps another label -
+            //    if so we print it underneath the carets with the other labels.
+            // 3. Print a line of carets, and (possibly) the trailing message
+            //    to the left.
+            // 4. Print vertical lines pointing to the carets, and the messages
+            //    for those carets.
+            //
+            // We try our best avoid introducing new dynamic allocations,
+            // instead preferring to iterate over the labels multiple times. It
+            // is unclear what the performance tradeoffs are however, so further
+            // investigation may be required.
+
+            // The number of non-empty messages to print.
+            let mut num_messages = 0;
+            // The right-most start position, eg:
+            //
+            // ```text
+            // -^^^^---- ^^^^^^^
+            //           │
+            //           right-most start position
+            // ```
+            let mut max_label_start = 0;
+            // The right-most end position, eg:
+            //
+            // ```text
+            // -^^^^---- ^^^^^^^
+            //                 │
+            //                 right-most end position
+            // ```
+            let mut max_label_end = 0;
+            // A trailing message, eg:
+            //
+            // ```text
+            // ^^^ second mutable borrow occurs here
+            // ```
+            let mut trailing_label = None;
+
+            for (label_index, label) in single_labels.iter().enumerate() {
+                let (_, range, message) = label;
+                if !message.is_empty() {
+                    num_messages += 1;
+                }
+                max_label_start = std::cmp::max(max_label_start, range.start);
+                max_label_end = std::cmp::max(max_label_end, range.end);
+                // This is a candidate for the trailing label, so let's record it.
+                if range.end == max_label_end {
+                    if message.is_empty() {
+                        trailing_label = None;
+                    } else {
+                        trailing_label = Some((label_index, label));
+                    }
+                }
+            }
+            if let Some((trailing_label_index, (_, trailing_range, _))) = trailing_label {
+                // Check to see if the trailing label candidate overlaps any of
+                // the other labels on the current line.
+                if single_labels
+                    .iter()
+                    .enumerate()
+                    .filter(|(label_index, _)| *label_index != trailing_label_index)
+                    .any(|(_, (_, range, _))| is_overlapping(trailing_range, range))
+                {
+                    // If it does, we'll instead want to render it below the
+                    // carets along with the other hanging labels.
+                    trailing_label = None;
+                }
+            }
+
+            // Write a line of carets
+            //
+            // ```text
+            //   │ ^^^^^^  -------^^^^^^^^^-------^^^^^----- ^^^^ trailing label message
+            // ```
             self.outer_gutter(outer_padding)?;
             self.border_left()?;
             self.inner_gutter(severity, num_multi_labels, multi_labels)?;
-            self.label_single(severity, *label_style, source, range.clone(), message)?;
+            write!(self, " ")?;
+
+            let mut previous_label_style = None;
+            for (byte_index, ch) in source
+                .char_indices()
+                // Add a placeholder source column at the end to allow for
+                // printing carets at the end of lines, eg:
+                //
+                // ```text
+                // 1 │ Hello world!
+                //   │             ^
+                // ```
+                //
+                // ' ' is used because its unicode width is equal to 1 according
+                // to `unicode_width::UnicodeWidthChar`.
+                .chain(std::iter::once((source.len(), ' ')))
+            {
+                // Find the current label style at this column
+                let column_range = byte_index..(byte_index + ch.len_utf8());
+                let current_label_style = single_labels
+                    .iter()
+                    .filter(|(_, range, _)| is_overlapping(range, &column_range))
+                    .map(|(label_style, _, _)| *label_style)
+                    .max_by_key(label_priority_key);
+
+                // Update writer style if necessary
+                if previous_label_style != current_label_style {
+                    match current_label_style {
+                        None => self.reset()?,
+                        Some(label_style) => {
+                            self.set_color(self.styles().label(severity, label_style))?;
+                        }
+                    }
+                }
+
+                let caret_ch = match current_label_style {
+                    Some(LabelStyle::Primary) => Some(self.chars().single_primary_caret),
+                    Some(LabelStyle::Secondary) => Some(self.chars().single_secondary_caret),
+                    // Only print padding if we are before the end of the last single line caret
+                    None if byte_index < max_label_end => Some(' '),
+                    None => None,
+                };
+                if let Some(caret_ch) = caret_ch {
+                    // FIXME: improve rendering for carets that occurring within character boundaries
+                    for _ in 0..self.config.width(ch) {
+                        write!(self, "{}", caret_ch)?;
+                    }
+                }
+
+                previous_label_style = current_label_style;
+            }
+            // Reset style if it was previously set
+            if previous_label_style.is_some() {
+                self.reset()?;
+            }
+            // Write first trailing label message
+            if let Some((_, (label_style, _, message))) = trailing_label {
+                write!(self, " ")?;
+                self.set_color(self.styles().label(severity, *label_style))?;
+                write!(self, "{}", message)?;
+                self.reset()?;
+            }
+            write!(self, "\n")?;
+
+            // Write hanging labels pointing to carets
+            //
+            // ```text
+            //   │     │ │
+            //   │     │ first mutable borrow occurs here
+            //   │     first borrow later used by call
+            //   │     help: some help here
+            // ```
+            if num_messages > trailing_label.iter().count() {
+                // Write first set of vertical lines before hanging labels
+                //
+                // ```text
+                //   │     │ │
+                // ```
+                self.outer_gutter(outer_padding)?;
+                self.border_left()?;
+                self.inner_gutter(severity, num_multi_labels, multi_labels)?;
+                write!(self, " ")?;
+                self.caret_pointers(
+                    severity,
+                    max_label_start,
+                    single_labels,
+                    trailing_label,
+                    source.char_indices(),
+                )?;
+                write!(self, "\n")?;
+
+                // Write hanging labels pointing to carets
+                //
+                // ```text
+                //   │     │ first mutable borrow occurs here
+                //   │     first borrow later used by call
+                //   │     help: some help here
+                // ```
+                for (label_style, range, message) in
+                    hanging_labels(single_labels, trailing_label).rev()
+                {
+                    self.outer_gutter(outer_padding)?;
+                    self.border_left()?;
+                    self.inner_gutter(severity, num_multi_labels, multi_labels)?;
+                    write!(self, " ")?;
+                    self.caret_pointers(
+                        severity,
+                        max_label_start,
+                        single_labels,
+                        trailing_label,
+                        source
+                            .char_indices()
+                            .take_while(|(byte_index, _)| *byte_index < range.start),
+                    )?;
+                    self.set_color(self.styles().label(severity, *label_style))?;
+                    write!(self, "{}", message)?;
+                    self.reset()?;
+                    write!(self, "\n")?;
+                }
+            }
         }
 
         // Write top or bottom label carets underneath source
@@ -454,34 +663,39 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
-    /// Single-line label with a message.
-    ///
-    /// ```text
-    /// ^^ expected `Int` but found `String`
-    /// ```
-    fn label_single(
+    /// Write vertical lines pointing to carets.
+    fn caret_pointers(
         &mut self,
         severity: Severity,
-        label_style: LabelStyle,
-        source: &str,
-        range: Range<usize>,
-        message: &str,
+        max_label_start: usize,
+        single_labels: &[SingleLabel<'_>],
+        trailing_label: Option<(usize, &SingleLabel<'_>)>,
+        char_indices: impl Iterator<Item = (usize, char)>,
     ) -> io::Result<()> {
-        let space_source = slice_at_char_boundaries(source, 0..range.start);
-        let space_len = self.config.width(space_source);
-        write!(self, " {space: >width$}", space = "", width = space_len)?;
-        self.set_color(self.styles().label(severity, label_style))?;
-        let source = slice_at_char_boundaries(source, range);
-        // We use `usize::max` here to ensure that we print at least one
-        // label character - even when we have a zero-length span.
-        for _ in 0..usize::max(self.config.width(source), 1) {
-            write!(self, "{}", self.chars().single_caret_char(label_style))?;
+        for (byte_index, ch) in char_indices {
+            let column_range = byte_index..(byte_index + ch.len_utf8());
+            let label_style = hanging_labels(single_labels, trailing_label)
+                .filter(|(_, range, _)| column_range.contains(&range.start))
+                .map(|(label_style, _, _)| *label_style)
+                .max_by_key(label_priority_key);
+
+            let spaces = match label_style {
+                None => 0..self.config.width(ch),
+                Some(label_style) => {
+                    self.set_color(self.styles().label(severity, label_style))?;
+                    write!(self, "{}", self.chars().pointer_left)?;
+                    self.reset()?;
+                    1..self.config.width(ch)
+                }
+            };
+            // Only print padding if we are before the end of the last single line caret
+            if byte_index <= max_label_start {
+                for _ in spaces {
+                    write!(self, " ")?;
+                }
+            }
         }
-        if !message.is_empty() {
-            write!(self, " {}", message)?;
-        }
-        self.reset()?;
-        write!(self, "\n")?;
+
         Ok(())
     }
 
@@ -507,36 +721,6 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         }
         self.set_color(self.styles().label(severity, label_style))?;
         write!(self, "{}", self.chars().multi_left)?;
-        self.reset()?;
-        Ok(())
-    }
-
-    /// The top of a multi-line label.
-    fn label_multi_top_line(
-        &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
-        len: usize,
-    ) -> io::Result<()> {
-        self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..len {
-            write!(self, "{}", self.config.chars.multi_top)?;
-        }
-        self.reset()?;
-        Ok(())
-    }
-
-    /// The top of a multi-line label.
-    fn label_multi_bottom_line(
-        &mut self,
-        severity: Severity,
-        label_style: LabelStyle,
-        len: usize,
-    ) -> io::Result<()> {
-        self.set_color(self.styles().label(severity, label_style))?;
-        for _ in 0..len {
-            write!(self, "{}", self.config.chars.multi_bottom)?;
-        }
         self.reset()?;
         Ok(())
     }
@@ -588,11 +772,22 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         range: RangeTo<usize>,
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
-        let source = slice_at_char_boundaries(source, 0..range.end);
-        for _ in 0..(self.config.width(source) + 1) {
-            write!(self, "{}", self.chars().multi_top)?;
+
+        for (_, ch) in source
+            .char_indices()
+            .take_while(|(byte_index, _)| *byte_index < range.end + 1)
+        {
+            // FIXME: improve rendering for carets that occurring within character boundaries
+            for _ in 0..self.config.width(ch) {
+                write!(self, "{}", self.chars().multi_top)?;
+            }
         }
-        write!(self, "{}", self.chars().multi_caret_char_start(label_style))?;
+
+        let caret_start = match label_style {
+            LabelStyle::Primary => self.config.chars.multi_primary_caret_start,
+            LabelStyle::Secondary => self.config.chars.multi_secondary_caret_start,
+        };
+        write!(self, "{}", caret_start)?;
         self.reset()?;
         write!(self, "\n")?;
         Ok(())
@@ -612,11 +807,22 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         message: &str,
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
-        let source = slice_at_char_boundaries(source, 0..range.end);
-        for _ in 0..self.config.width(source) {
-            write!(self, "{}", self.chars().multi_bottom)?;
+
+        for (_, ch) in source
+            .char_indices()
+            .take_while(|(byte_index, _)| *byte_index < range.end)
+        {
+            // FIXME: improve rendering for carets that occurring within character boundaries
+            for _ in 0..self.config.width(ch) {
+                write!(self, "{}", self.chars().multi_bottom)?;
+            }
         }
-        write!(self, "{}", self.chars().multi_caret_char_end(label_style))?;
+
+        let caret_end = match label_style {
+            LabelStyle::Primary => self.config.chars.multi_primary_caret_start,
+            LabelStyle::Secondary => self.config.chars.multi_secondary_caret_start,
+        };
+        write!(self, "{}", caret_end)?;
         if !message.is_empty() {
             write!(self, " {}", message)?;
         }
@@ -633,8 +839,16 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         match underline {
             None => self.inner_gutter_space(),
-            Some((ls, VerticalBound::Top)) => self.label_multi_top_line(severity, ls, 2),
-            Some((ls, VerticalBound::Bottom)) => self.label_multi_bottom_line(severity, ls, 2),
+            Some((label_style, vertical_bound)) => {
+                self.set_color(self.styles().label(severity, label_style))?;
+                let ch = match vertical_bound {
+                    VerticalBound::Top => self.config.chars.multi_top,
+                    VerticalBound::Bottom => self.config.chars.multi_bottom,
+                };
+                write!(self, "{0}{0}", ch)?;
+                self.reset()?;
+                Ok(())
+            }
         }
     }
 
@@ -701,83 +915,31 @@ impl<'writer, 'config> WriteColor for Renderer<'writer, 'config> {
     }
 }
 
-/// Searches for character boundary from byte_index towards the end of the string.
-fn closest_char_boundary(s: &str, byte_index: usize) -> usize {
-    let length = s.len();
-    for index in byte_index..=length {
-        if s.is_char_boundary(index) {
-            return index;
-        }
-    }
-    length
+/// Check if two ranges overlap
+fn is_overlapping(range0: &Range<usize>, range1: &Range<usize>) -> bool {
+    let start = std::cmp::max(range0.start, range1.start);
+    let end = std::cmp::min(range0.end, range1.end);
+    start < end
 }
 
-/// Searches for character boundary from byte_index towards the start of the string.
-fn closest_char_boundary_rev(s: &str, byte_index: usize) -> usize {
-    for index in (0..=byte_index).rev() {
-        if s.is_char_boundary(index) {
-            return index;
-        }
+/// For prioritizing primary labels over secondary labels when rendering carets.
+fn label_priority_key(label_style: &LabelStyle) -> u8 {
+    match label_style {
+        LabelStyle::Secondary => 0,
+        LabelStyle::Primary => 1,
     }
-    0
 }
 
-/// Finds a valid unicode boundaries looking from `range.start` towards the beginning of the string.
-/// From `range.end` towards the end of the string. Returning a `&str` of all characters
-/// that overlapping the range.
-fn slice_at_char_boundaries<'a>(s: &'a str, range: Range<usize>) -> &'a str {
-    let start = closest_char_boundary_rev(s, range.start);
-    let end = closest_char_boundary(s, range.end);
-    &s[start..end]
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::iter::repeat;
-
-    #[test]
-    fn test_boundary() {
-        let s = "🌞";
-        assert_eq!(closest_char_boundary(s, 0), 0);
-        assert_eq!(closest_char_boundary_rev(s, 0), 0);
-        for i in 1..s.len() {
-            assert_eq!(closest_char_boundary_rev(s, i), 0);
-            assert_eq!(closest_char_boundary(s, i), s.len());
-        }
-    }
-
-    #[test]
-    fn test_boundaries() {
-        let s = "🌑🌒🌓🌔";
-        let individually = ["🌑", "🌒", "🌓", "🌔"];
-
-        let mut expect = Vec::new();
-        // [(0, 0, "", ""),
-        //  (0, 4, "🌑", "🌑"), repeated 4 times,
-        //  (4, 4, "", ""), once
-        //  (4, 8, "🌒", "🌒"), repeated 4 times, and so on (+4, +4)
-        //  ...
-        //  (16, 16, "", ""); 21]
-        expect.push((0, 0, "", ""));
-        for (idx, &char) in individually.iter().enumerate() {
-            let n = char.len();
-            assert_eq!(n, 4);
-            let expected_start = (idx % n) * n;
-            let expected_end = (idx % n) * n + n;
-            expect.extend(repeat((expected_start, expected_end, char, char)).take(n - 1));
-            expect.push((expected_end, expected_end, "", ""));
-        }
-
-        // drop mut.
-        let expect = expect;
-        let mut found = Vec::new();
-        for i in 0..=s.len() {
-            let sliced = slice_at_char_boundaries(s, i..i);
-            let prev = closest_char_boundary_rev(s, i);
-            let next = closest_char_boundary(s, i);
-            found.push((prev, next, &s[prev..next], sliced));
-        }
-        assert_eq!(found, expect);
-    }
+/// Return an iterator that yields the labels that require hanging messages
+/// rendered underneath them.
+fn hanging_labels<'labels, 'diagnostic>(
+    single_labels: &'labels [SingleLabel<'diagnostic>],
+    trailing_label: Option<(usize, &'labels SingleLabel<'diagnostic>)>,
+) -> impl 'labels + DoubleEndedIterator<Item = &'labels SingleLabel<'diagnostic>> {
+    single_labels
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, _, message))| !message.is_empty())
+        .filter(move |(i, _)| trailing_label.map_or(true, |(j, _)| *i != j))
+        .map(|(_, label)| label)
 }

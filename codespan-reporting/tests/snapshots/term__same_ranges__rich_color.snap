@@ -6,7 +6,9 @@ expression: TEST_DATA.emit_color(&config)
   {fg:Blue}┌─{/} same_range:1:5
   {fg:Blue}│{/}
 {fg:Blue}1{/} {fg:Blue}│{/} ::S { }
-  {fg:Blue}│{/}     {fg:Red}^ Unexpected '{'{/}
-  {fg:Blue}│{/}     {fg:Blue}- Expected '('{/}
+  {fg:Blue}│{/}     {fg:Red}^{/}
+  {fg:Blue}│{/}     {fg:Red}│{/}
+  {fg:Blue}│{/}     {fg:Red}Unexpected '{'{/}
+  {fg:Blue}│{/}     {fg:Blue}Expected '('{/}
 
 

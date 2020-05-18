@@ -330,7 +330,7 @@ mod empty_ranges {
 
     lazy_static::lazy_static! {
         static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, &'static str>> = {
-            let file = SimpleFile::new("hello", "Hello world!\nBye world!");
+            let file = SimpleFile::new("hello", "Hello world!\nBye world!\n   ");
             let eof = file.source().len();
 
             let diagnostics = vec![
@@ -340,6 +340,9 @@ mod empty_ranges {
                 Diagnostic::note()
                     .with_message("end of line")
                     .with_labels(vec![Label::primary((), 12..12).with_message("end of line")]),
+                Diagnostic::note()
+                    .with_message("end of line")
+                    .with_labels(vec![Label::primary((), 23..23).with_message("end of line")]),
                 Diagnostic::note()
                     .with_message("end of file")
                     .with_labels(vec![Label::primary((), eof..eof).with_message("end of file")]),
@@ -741,14 +744,26 @@ mod unicode_spans {
                     .with_labels(vec![
                         Label::primary((), invalid_start..invalid_end)
                             .with_message("Invalid jump"),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), invalid_start.."🐄".len())
                             .with_message("Cow range does not start at boundary."),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), "🐄🌑".len().."🐄🌑🐄".len() - 1)
                             .with_message("Cow range does not end at boundary."),
+                    ]),
+                Diagnostic::note()
+                    .with_message("invalid unicode range")
+                    .with_labels(vec![
                         Label::secondary((), invalid_start.."🐄🌑🐄".len() - 1)
                             .with_message("Cow does not start or end at boundary."),
-
-                    ])];
+                    ]),
+            ];
             TestData{files: file, diagnostics }
         };
     }
