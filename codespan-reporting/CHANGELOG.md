@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2020-05-18
+
+### Changed
+
+-   We have made the caret rendering easier to read when there are multiple
+    labels on the same line. We also avoid printing trailing borders on the
+    final source source snippet if no notes are present. Instead of this:
+    ```
+       ┌─ one_line.rs:3:5
+       │
+     3 │     v.push(v.pop().unwrap());
+       │     - first borrow later used by call
+       │       ---- first mutable borrow occurs here
+       │            ^ second mutable borrow occurs here
+       │
+    ```
+    …we now render the following:
+    ```
+       ┌─ one_line.rs:3:5
+       │
+     3 │     v.push(v.pop().unwrap());
+       │     - ---- ^ second mutable borrow occurs here
+       │     │ │
+       │     │ first mutable borrow occurs here
+       │     first borrow later used by call
+    ```
+
+### Fixed
+
+-   Diagnostic rendering no longer panics if label ranges are between UTF-8
+    character boundaries.
+
 ## [0.9.3] - 2020-04-29
 
 ### Changed
@@ -206,7 +238,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/brendanzab/codespan/compare/v0.9.0...v0.9.1
