@@ -114,10 +114,12 @@ More examples of using `codespan-reporting` can be found in the
 `codespan-reporting` is currently used in the following projects:
 
 - [Arret](https://arret-lang.org)
+- [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
+- [CXX](https://github.com/dtolnay/cxx)
 - [Gleam](https://github.com/lpil/gleam/)
 - [Gluon](https://github.com/gluon-lang/gluon)
-- [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
-- [cxx](https://github.com/dtolnay/cxx)
+- [MDBook LinkCheck](https://github.com/Michael-F-Bryan/mdbook-linkcheck)
+- [Nushell](https://www.nushell.sh/)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 
 ## Alternatives to codespan-reporting
