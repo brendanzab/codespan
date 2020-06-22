@@ -1,4 +1,3 @@
-use std::io;
 use termcolor::{Color, ColorSpec};
 
 use crate::diagnostic::{LabelStyle, Severity};
@@ -28,56 +27,6 @@ impl Default for Config {
             styles: Styles::default(),
             chars: Chars::default(),
         }
-    }
-}
-
-impl Config {
-    /// Measure the unicode width of a character, taking into account the tab width.
-    pub fn width(&self, ch: char) -> usize {
-        use unicode_width::UnicodeWidthChar;
-
-        match ch {
-            '\t' => self.tab_width,
-            _ => ch.width().unwrap_or(0),
-        }
-    }
-
-    /// Construct a source writer using the current config.
-    pub fn source<'a, W: ?Sized>(&self, writer: &'a mut W) -> SourceWriter<&'a mut W> {
-        SourceWriter {
-            upstream: writer,
-            tab_width: self.tab_width,
-        }
-    }
-}
-
-/// Writer that replaces tab characters with the configured number of spaces.
-pub struct SourceWriter<W> {
-    upstream: W,
-    tab_width: usize,
-}
-
-impl<W: io::Write> io::Write for SourceWriter<W> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut last_term = 0usize;
-        for (i, ch) in buf.iter().enumerate() {
-            if *ch == b'\t' {
-                self.upstream.write_all(&buf[last_term..i])?;
-                last_term = i + 1;
-                write!(
-                    self.upstream,
-                    "{space: >width$}",
-                    space = "",
-                    width = self.tab_width,
-                )?;
-            }
-        }
-        self.upstream.write_all(&buf[last_term..])?;
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.upstream.flush()
     }
 }
 

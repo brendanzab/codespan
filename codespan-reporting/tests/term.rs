@@ -631,10 +631,83 @@ mod tabbed {
     fn tab_width_default_no_color() {
         let config = TEST_CONFIG.clone();
 
-        insta::assert_snapshot!(
-            "tab_width_default_no_color",
-            TEST_DATA.emit_no_color(&config)
-        );
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_3_no_color() {
+        let config = Config {
+            tab_width: 3,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_6_no_color() {
+        let config = Config {
+            tab_width: 6,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+}
+
+mod tab_columns {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
+
+            let source = [
+                "\thello",
+                "∙\thello",
+                "∙∙\thello",
+                "∙∙∙\thello",
+                "∙∙∙∙\thello",
+                "∙∙∙∙∙\thello",
+                "∙∙∙∙∙∙\thello",
+            ].join("\n");
+            let hello_ranges = source
+                .match_indices("hello")
+                .map(|(start, hello)| start..(start+hello.len()))
+                .collect::<Vec<_>>();
+
+            let file_id = files.add("tab_columns", source);
+
+            let diagnostics = vec![
+                Diagnostic::warning()
+                    .with_message("tab test")
+                    .with_labels(
+                        hello_ranges
+                            .into_iter()
+                            .map(|range| Label::primary(file_id, range))
+                            .collect(),
+                    ),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
+    #[test]
+    fn tab_width_default_no_color() {
+        let config = TEST_CONFIG.clone();
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+    }
+
+    #[test]
+    fn tab_width_2_no_color() {
+        let config = Config {
+            tab_width: 2,
+            ..TEST_CONFIG.clone()
+        };
+
+        insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
     }
 
     #[test]
