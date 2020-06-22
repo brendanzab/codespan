@@ -341,7 +341,7 @@ where
     Source: AsRef<str>,
 {
     fn new(name: OsString, source: Source) -> Self {
-        let line_starts = codespan_reporting::files::line_starts(source.as_ref())
+        let line_starts = line_starts(source.as_ref())
             .map(|i| ByteIndex::from(i as u32))
             .collect();
 
@@ -353,7 +353,7 @@ where
     }
 
     fn update(&mut self, source: Source) {
-        let line_starts = codespan_reporting::files::line_starts(source.as_ref())
+        let line_starts = line_starts(source.as_ref())
             .map(|i| ByteIndex::from(i as u32))
             .collect();
         self.source = source;
@@ -441,6 +441,11 @@ where
             SpanOutOfBoundsError { given: span, span }
         })
     }
+}
+
+// NOTE: this is copied from `codespan_reporting::files::line_starts` and should be kept in sync.
+fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
+    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 
 #[cfg(test)]

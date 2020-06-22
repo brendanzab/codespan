@@ -191,6 +191,7 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 ///
 /// assert_eq!(line_index(&line_starts, 5), Some(1));
 /// ```
+// NOTE: this is copied in `codespan::file::line_starts` and should be kept in sync.
 pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
     std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
