@@ -5,7 +5,7 @@ expression: TEST_DATA.emit_color(&config)
 {fg:Red bold bright}error{bold bright}: Unexpected token{/}
   {fg:Blue}┌─{/} same_range:1:5
   {fg:Blue}│{/}
-{fg:Blue}1{/} {fg:Blue}│{/} ::S { }
+{fg:Blue}1{/} {fg:Blue}│{/} ::S {fg:Red}{{/} }
   {fg:Blue}│{/}     {fg:Red}^{/}
   {fg:Blue}│{/}     {fg:Red}│{/}
   {fg:Blue}│{/}     {fg:Red}Unexpected '{'{/}

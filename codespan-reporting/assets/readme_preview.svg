@@ -55,17 +55,17 @@
    <span class="fg blue">┌─</span> FizzBuzz.fun:10:15
    <span class="fg blue">│</span>  
 <span class="fg blue">10</span> <span class="fg blue">│</span>   fizz₂ : Nat → String
-   <span class="fg blue">│</span>                 <span class="fg blue">------ expected type `String` found here</span>
+   <span class="fg blue">│</span>                 <span class="fg blue">------</span> <span class="fg blue">expected type `String` found here</span>
 <span class="fg blue">11</span> <span class="fg blue">│</span>   fizz₂ num =
 <span class="fg blue">12</span> <span class="fg blue">│</span> <span class="fg blue">╭</span>     case (mod num 5) (mod num 3) of
 <span class="fg blue">13</span> <span class="fg blue">│</span> <span class="fg blue">│</span>         0 0 =&gt; "FizzBuzz"
-   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">---------- this is found to be of type `String`</span>
+   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">----------</span> <span class="fg blue">this is found to be of type `String`</span>
 <span class="fg blue">14</span> <span class="fg blue">│</span> <span class="fg blue">│</span>         0 _ =&gt; "Fizz"
-   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">------ this is found to be of type `String`</span>
+   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">------</span> <span class="fg blue">this is found to be of type `String`</span>
 <span class="fg blue">15</span> <span class="fg blue">│</span> <span class="fg blue">│</span>         _ 0 =&gt; "Buzz"
-   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">------ this is found to be of type `String`</span>
-<span class="fg blue">16</span> <span class="fg blue">│</span> <span class="fg blue">│</span>         _ _ =&gt; num
-   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg red">^^^ expected `String`, found `Nat`</span>
+   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg blue">------</span> <span class="fg blue">this is found to be of type `String`</span>
+<span class="fg blue">16</span> <span class="fg blue">│</span> <span class="fg blue">│</span>         _ _ =&gt; <span class="fg red">num</span>
+   <span class="fg blue">│</span> <span class="fg blue">│</span>                <span class="fg red">^^^</span> <span class="fg red">expected `String`, found `Nat`</span>
    <span class="fg blue">│</span> <span class="fg blue">╰</span><span class="fg blue">──────────────────' `case` clauses have incompatible types</span>
    <span class="fg blue">│</span>  
    <span class="fg blue">=</span> expected type `String`

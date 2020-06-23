@@ -266,11 +266,43 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
             // Write source text
             write!(self, " ")?;
+            let mut in_primary = false;
             for (metrics, ch) in self.char_metrics(source.char_indices()) {
+                let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
+
+                // Check if we are overlapping a primary label
+                let is_primary = single_labels.iter().any(|(ls, range, _)| {
+                    *ls == LabelStyle::Primary && is_overlapping(range, &column_range)
+                }) || multi_labels.iter().any(|(_, label)| match label {
+                    MultiLabel::Top(ls, range) => {
+                        *ls == LabelStyle::Primary && column_range.start >= range.end
+                    }
+                    MultiLabel::TopLeft(ls) | MultiLabel::Left(ls) => *ls == LabelStyle::Primary,
+                    MultiLabel::Bottom(ls, range, _) => {
+                        *ls == LabelStyle::Primary && column_range.end <= range.end
+                    }
+                });
+
+                // Set the source color if we are in a primary label
+                match (is_primary, in_primary) {
+                    (true, true) | (false, false) => {}
+                    (true, false) => {
+                        self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
+                        in_primary = true;
+                    }
+                    (false, true) => {
+                        self.reset()?;
+                        in_primary = false;
+                    }
+                }
+
                 match ch {
                     '\t' => (0..metrics.unicode_width).try_for_each(|_| write!(self, " "))?,
                     _ => write!(self, "{}", ch)?,
                 }
+            }
+            if in_primary {
+                self.reset()?;
             }
             write!(self, "\n")?;
         }
