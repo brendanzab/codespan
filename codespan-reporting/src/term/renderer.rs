@@ -284,16 +284,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 });
 
                 // Set the source color if we are in a primary label
-                match (is_primary, in_primary) {
-                    (true, true) | (false, false) => {}
-                    (true, false) => {
-                        self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
-                        in_primary = true;
-                    }
-                    (false, true) => {
-                        self.reset()?;
-                        in_primary = false;
-                    }
+                if is_primary && !in_primary {
+                    self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
+                    in_primary = true;
+                } else if !is_primary && in_primary {
+                    self.reset()?;
+                    in_primary = false;
                 }
 
                 match ch {
