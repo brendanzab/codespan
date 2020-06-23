@@ -68,7 +68,7 @@ where
             range: std::ops::Range<usize>,
             // TODO: How do we reuse these allocations?
             single_labels: Vec<SingleLabel<'diagnostic>>,
-            multi_labels: Vec<(usize, MultiLabel<'diagnostic>)>,
+            multi_labels: Vec<(usize, LabelStyle, MultiLabel<'diagnostic>)>,
         }
 
         // TODO: Make this data structure external, to allow for allocation reuse
@@ -189,7 +189,7 @@ where
                         // ```text
                         // 4 │ ╭     case (mod num 5) (mod num 3) of
                         // ```
-                        "" => (label_index, MultiLabel::TopLeft(label.style)),
+                        "" => (label_index, label.style, MultiLabel::TopLeft),
                         // There's source code in the prefix, so run a label
                         // underneath it to get to the start of the range.
                         //
@@ -197,7 +197,7 @@ where
                         // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
                         //   │ ╭─────────────^
                         // ```
-                        _ => (label_index, MultiLabel::Top(label.style, ..label_start)),
+                        _ => (label_index, label.style, MultiLabel::Top(..label_start)),
                     });
 
                 // Marked lines
@@ -217,7 +217,7 @@ where
                     labeled_file
                         .get_or_insert_line(line_index, line_range, line_number)
                         .multi_labels
-                        .push((label_index, MultiLabel::Left(label.style)));
+                        .push((label_index, label.style, MultiLabel::Left));
                 }
 
                 // Last labeled line
@@ -233,7 +233,8 @@ where
                     .multi_labels
                     .push((
                         label_index,
-                        MultiLabel::Bottom(label.style, ..label_end, &label.message),
+                        label.style,
+                        MultiLabel::Bottom(..label_end, &label.message),
                     ));
             }
         }

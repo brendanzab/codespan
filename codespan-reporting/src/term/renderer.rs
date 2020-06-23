@@ -30,25 +30,25 @@ pub enum MultiLabel<'diagnostic> {
     /// ```text
     /// ╭
     /// ```
-    TopLeft(LabelStyle),
+    TopLeft,
     /// Multi-line label top.
     ///
     /// ```text
     /// ╭────────────^
     /// ```
-    Top(LabelStyle, RangeTo<usize>),
+    Top(RangeTo<usize>),
     /// Left vertical labels for multi-line labels.
     ///
     /// ```text
     /// │
     /// ```
-    Left(LabelStyle),
+    Left,
     /// Multi-line label bottom, with an optional message.
     ///
     /// ```text
     /// ╰────────────^ blah blah
     /// ```
-    Bottom(LabelStyle, RangeTo<usize>, &'diagnostic str),
+    Bottom(RangeTo<usize>, &'diagnostic str),
 }
 
 #[derive(Copy, Clone)]
@@ -228,7 +228,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         single_labels: &[SingleLabel<'_>],
         num_multi_labels: usize,
-        multi_labels: &[(usize, MultiLabel<'_>)],
+        multi_labels: &[(usize, LabelStyle, MultiLabel<'_>)],
     ) -> io::Result<()> {
         // Trim trailing newlines, linefeeds, and null chars from source, if they exist.
         // FIXME: Use the number of trimmed placeholders when rendering single line carets
@@ -248,29 +248,56 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let mut multi_labels_iter = multi_labels.iter().peekable();
             for label_column in 0..num_multi_labels {
                 match multi_labels_iter.peek() {
-                    Some((label_index, label)) if *label_index == label_column => {
+                    Some((label_index, label_style, label)) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft(label_style) => {
+                            MultiLabel::TopLeft => {
                                 self.label_multi_top_left(severity, *label_style)?;
                             }
                             MultiLabel::Top(..) => self.inner_gutter_space()?,
-                            MultiLabel::Left(label_style) | MultiLabel::Bottom(label_style, ..) => {
+                            MultiLabel::Left | MultiLabel::Bottom(..) => {
                                 self.label_multi_left(severity, *label_style, None)?;
                             }
                         }
                         multi_labels_iter.next();
                     }
-                    Some((_, _)) | None => self.inner_gutter_space()?,
+                    Some((_, _, _)) | None => self.inner_gutter_space()?,
                 }
             }
 
             // Write source text
             write!(self, " ")?;
+            let mut in_primary = false;
             for (metrics, ch) in self.char_metrics(source.char_indices()) {
+                let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
+
+                // Check if we are overlapping a primary label
+                let is_primary = single_labels.iter().any(|(ls, range, _)| {
+                    *ls == LabelStyle::Primary && is_overlapping(range, &column_range)
+                }) || multi_labels.iter().any(|(_, ls, label)| {
+                    *ls == LabelStyle::Primary
+                        && match label {
+                            MultiLabel::Top(range) => column_range.start >= range.end,
+                            MultiLabel::TopLeft | MultiLabel::Left => true,
+                            MultiLabel::Bottom(range, _) => column_range.end <= range.end,
+                        }
+                });
+
+                // Set the source color if we are in a primary label
+                if is_primary && !in_primary {
+                    self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
+                    in_primary = true;
+                } else if !is_primary && in_primary {
+                    self.reset()?;
+                    in_primary = false;
+                }
+
                 match ch {
                     '\t' => (0..metrics.unicode_width).try_for_each(|_| write!(self, " "))?,
                     _ => write!(self, "{}", ch)?,
                 }
+            }
+            if in_primary {
+                self.reset()?;
             }
             write!(self, "\n")?;
         }
@@ -412,10 +439,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     None => None,
                 };
                 if let Some(caret_ch) = caret_ch {
-                    // FIXME: improve rendering for carets that occurring within character boundaries
-                    for _ in 0..metrics.unicode_width {
-                        write!(self, "{}", caret_ch)?;
-                    }
+                    // FIXME: improve rendering of carets between character boundaries
+                    (0..metrics.unicode_width).try_for_each(|_| write!(self, "{}", caret_ch))?;
                 }
 
                 previous_label_style = current_label_style;
@@ -497,11 +522,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         //     │ ╰───│──────────────────^ woops
         //     │   ╭─│─────────^
         // ```
-        for (multi_label_index, (_, label)) in multi_labels.iter().enumerate() {
+        for (multi_label_index, (_, label_style, label)) in multi_labels.iter().enumerate() {
             let (label_style, range, bottom_message) = match label {
-                MultiLabel::TopLeft(_) | MultiLabel::Left(_) => continue, // no label caret needed
-                MultiLabel::Top(ls, range) => (*ls, range, None),
-                MultiLabel::Bottom(ls, range, message) => (*ls, range, Some(message)),
+                MultiLabel::TopLeft | MultiLabel::Left => continue, // no label caret needed
+                MultiLabel::Top(range) => (*label_style, range, None),
+                MultiLabel::Bottom(range, message) => (*label_style, range, Some(message)),
             };
 
             self.outer_gutter(outer_padding)?;
@@ -516,22 +541,22 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let mut multi_labels_iter = multi_labels.iter().enumerate().peekable();
             for label_column in 0..num_multi_labels {
                 match multi_labels_iter.peek() {
-                    Some((i, (label_index, label))) if *label_index == label_column => {
+                    Some((i, (label_index, ls, label))) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft(ls) | MultiLabel::Left(ls) => {
+                            MultiLabel::TopLeft | MultiLabel::Left => {
                                 self.label_multi_left(severity, *ls, underline.map(|(s, _)| s))?;
                             }
-                            MultiLabel::Top(ls, ..) if multi_label_index > *i => {
+                            MultiLabel::Top(..) if multi_label_index > *i => {
                                 self.label_multi_left(severity, *ls, underline.map(|(s, _)| s))?;
                             }
-                            MultiLabel::Bottom(ls, ..) if multi_label_index < *i => {
+                            MultiLabel::Bottom(..) if multi_label_index < *i => {
                                 self.label_multi_left(severity, *ls, underline.map(|(s, _)| s))?;
                             }
-                            MultiLabel::Top(ls, ..) if multi_label_index == *i => {
+                            MultiLabel::Top(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Top));
                                 self.label_multi_top_left(severity, label_style)?
                             }
-                            MultiLabel::Bottom(ls, ..) if multi_label_index == *i => {
+                            MultiLabel::Bottom(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Bottom));
                                 self.label_multi_bottom_left(severity, label_style)?;
                             }
@@ -568,7 +593,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         outer_padding: usize,
         severity: Severity,
         num_multi_labels: usize,
-        multi_labels: &[(usize, MultiLabel<'_>)],
+        multi_labels: &[(usize, LabelStyle, MultiLabel<'_>)],
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
@@ -587,7 +612,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         outer_padding: usize,
         severity: Severity,
         num_multi_labels: usize,
-        multi_labels: &[(usize, MultiLabel<'_>)],
+        multi_labels: &[(usize, LabelStyle, MultiLabel<'_>)],
     ) -> io::Result<()> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
@@ -808,10 +833,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             .char_metrics(source.char_indices())
             .take_while(|(metrics, _)| metrics.byte_index < range.end + 1)
         {
-            // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..metrics.unicode_width {
-                write!(self, "{}", self.chars().multi_top)?;
-            }
+            // FIXME: improve rendering of carets between character boundaries
+            (0..metrics.unicode_width)
+                .try_for_each(|_| write!(self, "{}", self.chars().multi_top))?;
         }
 
         let caret_start = match label_style {
@@ -843,10 +867,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             .char_metrics(source.char_indices())
             .take_while(|(metrics, _)| metrics.byte_index < range.end)
         {
-            // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..metrics.unicode_width {
-                write!(self, "{}", self.chars().multi_bottom)?;
-            }
+            // FIXME: improve rendering of carets between character boundaries
+            (0..metrics.unicode_width)
+                .try_for_each(|_| write!(self, "{}", self.chars().multi_bottom))?;
         }
 
         let caret_end = match label_style {
@@ -893,16 +916,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &mut self,
         severity: Severity,
         num_multi_labels: usize,
-        multi_labels: &[(usize, MultiLabel<'_>)],
+        multi_labels: &[(usize, LabelStyle, MultiLabel<'_>)],
     ) -> io::Result<()> {
         let mut multi_labels_iter = multi_labels.iter().peekable();
         for label_column in 0..num_multi_labels {
             match multi_labels_iter.peek() {
-                Some((label_index, label)) if *label_index == label_column => match label {
-                    MultiLabel::TopLeft(label_style)
-                    | MultiLabel::Left(label_style)
-                    | MultiLabel::Bottom(label_style, ..) => {
-                        self.label_multi_left(severity, *label_style, None)?;
+                Some((label_index, ls, label)) if *label_index == label_column => match label {
+                    MultiLabel::TopLeft | MultiLabel::Left | MultiLabel::Bottom(..) => {
+                        self.label_multi_left(severity, *ls, None)?;
                         multi_labels_iter.next();
                     }
                     MultiLabel::Top(..) => {
@@ -910,7 +931,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                         multi_labels_iter.next();
                     }
                 },
-                Some((_, _)) | None => self.inner_gutter_space()?,
+                Some((_, _, _)) | None => self.inner_gutter_space()?,
             }
         }
 

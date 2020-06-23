@@ -5,7 +5,7 @@ expression: TEST_DATA.emit_color(&config)
 {fg:Green bold bright}note{bold bright}: middle{/}
   {fg:Blue}┌─{/} hello:1:7
   {fg:Blue}│{/}
-{fg:Blue}1{/} {fg:Blue}│{/} Hello world!
+{fg:Blue}1{/} {fg:Blue}│{/} Hello {fg:Green}w{/}orld!
   {fg:Blue}│{/}       {fg:Green}^{/} {fg:Green}middle{/}
 
 {fg:Green bold bright}note{bold bright}: end of line{/}

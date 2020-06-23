@@ -12,7 +12,7 @@ expression: TEST_DATA.emit_color(&config)
 {fg:Blue}5{/} {fg:Blue}│{/} {fg:Blue}│{/}     0 0 => "FizzBuzz"
 {fg:Blue}6{/} {fg:Blue}│{/} {fg:Blue}│{/}     0 _ => "Fizz"
 {fg:Blue}7{/} {fg:Blue}│{/} {fg:Blue}│{/}     _ 0 => "Buzz"
-{fg:Blue}8{/} {fg:Blue}│{/} {fg:Blue}│{/}     _ _ => num
+{fg:Blue}8{/} {fg:Blue}│{/} {fg:Blue}│{/}     _ _ => {fg:Red}num{/}
   {fg:Blue}│{/} {fg:Blue}│{/}            {fg:Red}^^^{/} {fg:Red}expected `String`, found `Nat`{/}
   {fg:Blue}│{/} {fg:Blue}╰{/}{fg:Blue}──────────────' `case` clauses have incompatible types{/}
   {fg:Blue}│{/}  
@@ -32,7 +32,7 @@ expression: TEST_DATA.emit_color(&config)
    {fg:Blue}│{/} {fg:Blue}│{/}                {fg:Blue}------{/} {fg:Blue}this is found to be of type `String`{/}
 {fg:Blue}15{/} {fg:Blue}│{/} {fg:Blue}│{/}         _ 0 => "Buzz"
    {fg:Blue}│{/} {fg:Blue}│{/}                {fg:Blue}------{/} {fg:Blue}this is found to be of type `String`{/}
-{fg:Blue}16{/} {fg:Blue}│{/} {fg:Blue}│{/}         _ _ => num
+{fg:Blue}16{/} {fg:Blue}│{/} {fg:Blue}│{/}         _ _ => {fg:Red}num{/}
    {fg:Blue}│{/} {fg:Blue}│{/}                {fg:Red}^^^{/} {fg:Red}expected `String`, found `Nat`{/}
    {fg:Blue}│{/} {fg:Blue}╰{/}{fg:Blue}──────────────────' `case` clauses have incompatible types{/}
    {fg:Blue}│{/}  
