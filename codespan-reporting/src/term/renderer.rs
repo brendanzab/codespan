@@ -412,10 +412,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     None => None,
                 };
                 if let Some(caret_ch) = caret_ch {
-                    // FIXME: improve rendering for carets that occurring within character boundaries
-                    for _ in 0..metrics.unicode_width {
-                        write!(self, "{}", caret_ch)?;
-                    }
+                    // FIXME: improve rendering of carets between character boundaries
+                    (0..metrics.unicode_width).try_for_each(|_| write!(self, "{}", caret_ch))?;
                 }
 
                 previous_label_style = current_label_style;
@@ -808,10 +806,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             .char_metrics(source.char_indices())
             .take_while(|(metrics, _)| metrics.byte_index < range.end + 1)
         {
-            // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..metrics.unicode_width {
-                write!(self, "{}", self.chars().multi_top)?;
-            }
+            // FIXME: improve rendering of carets between character boundaries
+            (0..metrics.unicode_width)
+                .try_for_each(|_| write!(self, "{}", self.chars().multi_top))?;
         }
 
         let caret_start = match label_style {
@@ -843,10 +840,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             .char_metrics(source.char_indices())
             .take_while(|(metrics, _)| metrics.byte_index < range.end)
         {
-            // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..metrics.unicode_width {
-                write!(self, "{}", self.chars().multi_bottom)?;
-            }
+            // FIXME: improve rendering of carets between character boundaries
+            (0..metrics.unicode_width)
+                .try_for_each(|_| write!(self, "{}", self.chars().multi_bottom))?;
         }
 
         let caret_end = match label_style {
