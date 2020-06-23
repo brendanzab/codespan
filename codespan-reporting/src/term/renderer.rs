@@ -71,7 +71,6 @@ type Underline = (LabelStyle, VerticalBound);
 ///                     │ │ │   │                                                                │
 ///                  ┌────────────────────────────────────────────────────────────────────────────
 ///        header ── │ error[0001]: oh noes, a cupcake has occurred!
-///         empty ── │
 /// snippet start ── │    ┌─ test:9:0
 /// snippet empty ── │    │
 ///  snippet line ── │  9 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
@@ -265,8 +264,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 }
             }
 
-            // Write source
-            write!(self.config.source(self.writer), " {}", source)?;
+            // Write source text
+            write!(self, " ")?;
+            for (metrics, ch) in self.char_metrics(source.char_indices()) {
+                match ch {
+                    '\t' => (0..metrics.unicode_width).try_for_each(|_| write!(self, " "))?,
+                    _ => write!(self, "{}", ch)?,
+                }
+            }
             write!(self, "\n")?;
         }
 
@@ -366,8 +371,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             write!(self, " ")?;
 
             let mut previous_label_style = None;
-            for (byte_index, ch) in source
-                .char_indices()
+            let placeholder_metrics = Metrics {
+                byte_index: source.len(),
+                unicode_width: 1,
+            };
+            for (metrics, ch) in self
+                .char_metrics(source.char_indices())
                 // Add a placeholder source column at the end to allow for
                 // printing carets at the end of lines, eg:
                 //
@@ -375,13 +384,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 // 1 │ Hello world!
                 //   │             ^
                 // ```
-                //
-                // ' ' is used because its unicode width is equal to 1 according
-                // to `unicode_width::UnicodeWidthChar`.
-                .chain(std::iter::once((source.len(), ' ')))
+                .chain(std::iter::once((placeholder_metrics, '\0')))
             {
                 // Find the current label style at this column
-                let column_range = byte_index..(byte_index + ch.len_utf8());
+                let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
                 let current_label_style = single_labels
                     .iter()
                     .filter(|(_, range, _)| is_overlapping(range, &column_range))
@@ -402,12 +408,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     Some(LabelStyle::Primary) => Some(self.chars().single_primary_caret),
                     Some(LabelStyle::Secondary) => Some(self.chars().single_secondary_caret),
                     // Only print padding if we are before the end of the last single line caret
-                    None if byte_index < max_label_end => Some(' '),
+                    None if metrics.byte_index < max_label_end => Some(' '),
                     None => None,
                 };
                 if let Some(caret_ch) = caret_ch {
                     // FIXME: improve rendering for carets that occurring within character boundaries
-                    for _ in 0..self.config.width(ch) {
+                    for _ in 0..metrics.unicode_width {
                         write!(self, "{}", caret_ch)?;
                     }
                 }
@@ -615,12 +621,39 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         Ok(())
     }
 
+    /// Adds tab-stop aware unicode-width computations to an iterator over
+    /// character indices. Assumes that the character indices begin at the start
+    /// of the line.
+    fn char_metrics(
+        &self,
+        char_indices: impl Iterator<Item = (usize, char)>,
+    ) -> impl Iterator<Item = (Metrics, char)> {
+        use unicode_width::UnicodeWidthChar;
+
+        let tab_width = self.config.tab_width;
+        let mut unicode_column = 0;
+
+        char_indices.map(move |(byte_index, ch)| {
+            let metrics = Metrics {
+                byte_index,
+                unicode_width: match (ch, tab_width) {
+                    ('\t', 0) => 0, // Guard divide-by-zero
+                    ('\t', _) => tab_width - (unicode_column % tab_width),
+                    (ch, _) => ch.width().unwrap_or(0),
+                },
+            };
+            unicode_column += metrics.unicode_width;
+
+            (metrics, ch)
+        })
+    }
+
     /// Location focus.
     fn snippet_locus(&mut self, locus: &Locus) -> io::Result<()> {
         write!(
             self,
-            "{origin}:{line_number}:{column_number}",
-            origin = locus.name,
+            "{name}:{line_number}:{column_number}",
+            name = locus.name,
             line_number = locus.location.line_number,
             column_number = locus.location.column_number,
         )
@@ -628,7 +661,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// The outer gutter of a source line.
     fn outer_gutter(&mut self, outer_padding: usize) -> io::Result<()> {
-        write!(self, "{space: >width$}", space = "", width = outer_padding,)?;
+        write!(self, "{space: >width$}", space = "", width = outer_padding)?;
         write!(self, " ")?;
         Ok(())
     }
@@ -672,27 +705,25 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         trailing_label: Option<(usize, &SingleLabel<'_>)>,
         char_indices: impl Iterator<Item = (usize, char)>,
     ) -> io::Result<()> {
-        for (byte_index, ch) in char_indices {
-            let column_range = byte_index..(byte_index + ch.len_utf8());
+        for (metrics, ch) in self.char_metrics(char_indices) {
+            let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
             let label_style = hanging_labels(single_labels, trailing_label)
                 .filter(|(_, range, _)| column_range.contains(&range.start))
                 .map(|(label_style, _, _)| *label_style)
                 .max_by_key(label_priority_key);
 
-            let spaces = match label_style {
-                None => 0..self.config.width(ch),
+            let mut spaces = match label_style {
+                None => 0..metrics.unicode_width,
                 Some(label_style) => {
                     self.set_color(self.styles().label(severity, label_style))?;
                     write!(self, "{}", self.chars().pointer_left)?;
                     self.reset()?;
-                    1..self.config.width(ch)
+                    1..metrics.unicode_width
                 }
             };
             // Only print padding if we are before the end of the last single line caret
-            if byte_index <= max_label_start {
-                for _ in spaces {
-                    write!(self, " ")?;
-                }
+            if metrics.byte_index <= max_label_start {
+                spaces.try_for_each(|_| write!(self, " "))?;
             }
         }
 
@@ -773,12 +804,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
 
-        for (_, ch) in source
-            .char_indices()
-            .take_while(|(byte_index, _)| *byte_index < range.end + 1)
+        for (metrics, _) in self
+            .char_metrics(source.char_indices())
+            .take_while(|(metrics, _)| metrics.byte_index < range.end + 1)
         {
             // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..self.config.width(ch) {
+            for _ in 0..metrics.unicode_width {
                 write!(self, "{}", self.chars().multi_top)?;
             }
         }
@@ -808,12 +839,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     ) -> io::Result<()> {
         self.set_color(self.styles().label(severity, label_style))?;
 
-        for (_, ch) in source
-            .char_indices()
-            .take_while(|(byte_index, _)| *byte_index < range.end)
+        for (metrics, _) in self
+            .char_metrics(source.char_indices())
+            .take_while(|(metrics, _)| metrics.byte_index < range.end)
         {
             // FIXME: improve rendering for carets that occurring within character boundaries
-            for _ in 0..self.config.width(ch) {
+            for _ in 0..metrics.unicode_width {
                 write!(self, "{}", self.chars().multi_bottom)?;
             }
         }
@@ -913,6 +944,11 @@ impl<'writer, 'config> WriteColor for Renderer<'writer, 'config> {
     fn is_synchronous(&self) -> bool {
         self.writer.is_synchronous()
     }
+}
+
+struct Metrics {
+    byte_index: usize,
+    unicode_width: usize,
 }
 
 /// Check if two ranges overlap
