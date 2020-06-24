@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2020-06-24
+
+### Fixed
+
+-   Building the crate with the `reporting` feature disabled.
+
 ## [0.9.4] - 2020-05-18
 ## [0.9.3] - 2020-04-29
 ## [0.9.2] - 2020-03-29
@@ -35,7 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.5...HEAD
+[0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
