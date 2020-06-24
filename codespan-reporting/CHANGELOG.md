@@ -13,6 +13,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Sections of source code that are marked with primary labels are now rendered
     using the primary highlight color.
+-   Tab stops are now rendered properly.
+
+    We used to just render `\t` characters in source snippets with the same
+    number of spaces. For example, when rendering with a tab width of `3` we
+    would print:
+    ```
+    warning: tab test
+      ┌─ tab_columns:1:2
+      │
+    1 │    hello
+      │    ^^^^^
+    2 │ ∙   hello
+      │     ^^^^^
+    3 │ ∙∙   hello
+      │      ^^^^^
+    4 │ ∙∙∙   hello
+      │       ^^^^^
+    5 │ ∙∙∙∙   hello
+      │        ^^^^^
+    6 │ ∙∙∙∙∙   hello
+      │         ^^^^^
+    7 │ ∙∙∙∙∙∙   hello
+      │          ^^^^^
+    ```
+    Now we properly take into account the column of the tab character:
+    ```
+    warning: tab test
+      ┌─ tab_columns:1:2
+      │
+    1 │    hello
+      │    ^^^^^
+    2 │ ∙  hello
+      │    ^^^^^
+    3 │ ∙∙ hello
+      │    ^^^^^
+    4 │ ∙∙∙   hello
+      │       ^^^^^
+    5 │ ∙∙∙∙  hello
+      │       ^^^^^
+    6 │ ∙∙∙∙∙ hello
+      │       ^^^^^
+    7 │ ∙∙∙∙∙∙   hello
+      │          ^^^^^
+    ```
 
 ## [0.9.4] - 2020-05-18
 
