@@ -208,7 +208,7 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    if std::cmp::max(line_index-start_line_index,end_line_index-line_index) > renderer.context_lines() {
+                    if std::cmp::min(line_index-start_line_index,end_line_index-line_index) > renderer.context_lines() {
                         // Skip if there are too many lines in between
                         continue;
                     }
