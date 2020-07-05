@@ -207,8 +207,13 @@ where
                 // 6 │ │     0 _ => "Fizz"
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
-                // TODO(#125): If start line and end line are too far apart, add a source break.
                 for line_index in (start_line_index + 1)..end_line_index {
+                    // TODO: make number of context lines configurable
+                    if std::cmp::max(line_index-start_line_index,end_line_index-line_index) > 3 {
+                        // Skip if there are too many lines in between
+                        continue;
+                    }
+
                     let line_range = files.line_range(label.file_id, line_index).unwrap();
                     let line_number = files.line_number(label.file_id, line_index).unwrap();
 
