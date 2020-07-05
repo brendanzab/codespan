@@ -10,7 +10,7 @@ documentation = "https://docs.rs/codespan-lsp"
 edition = "2018"
 
 [dependencies]
-codespan = { version = "0.9.5", path = "../codespan" }
+codespan-reporting = { version = "0.9.5", path = "../codespan-reporting" }
 # WARNING: Be extremely careful when expanding this version range.
 # We should be confident that all of the uses of `lsp-types` in `codespan-lsp`
 # will be valid for all the versions in this range. Getting this range wrong
@@ -18,3 +18,6 @@ codespan = { version = "0.9.5", path = "../codespan" }
 # absolute no-no, breaking much of what we enjoy about Cargo!
 lsp-types = ">=0.70, <0.75"
 url = "2"
+
+[dev-dependencies]
+codespan = { version = "0.9.5", path = "../codespan" }
