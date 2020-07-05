@@ -18,7 +18,7 @@ pub struct Config {
     /// Characters to use when rendering the diagnostic.
     pub chars: Chars,
     /// Number of lines to be printed after the first and before the last highlighted line.
-    pub context_lines: usize
+    pub context_lines: usize,
 }
 
 impl Default for Config {

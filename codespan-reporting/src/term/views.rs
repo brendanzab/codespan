@@ -179,7 +179,11 @@ where
                 let prefix_source = &source[start_line_range.start..label.range.start];
 
                 labeled_file
-                    .get_or_insert_line(start_line_index, start_line_range, start_line_number)
+                    .get_or_insert_line(
+                        start_line_index,
+                        start_line_range.clone(),
+                        start_line_number,
+                    )
                     .multi_labels
                     // TODO: Do this in the `Renderer`?
                     .push(match prefix_source.trim() {
@@ -208,7 +212,16 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    if std::cmp::min(line_index-start_line_index,end_line_index-line_index) > renderer.context_lines() {
+                    if std::cmp::min(line_index - start_line_index, end_line_index - line_index)
+                        > renderer.context_lines()
+                        && !self.diagnostic.labels.iter().any(|label| {
+                            // check that no other label is on this line
+                            start_line_range.start <= label.range.start
+                                && label.range.start <= end_line_range.end
+                                || start_line_range.start <= label.range.end
+                                    && label.range.end <= end_line_range.end
+                        })
+                    {
                         // Skip if there are too many lines in between
                         continue;
                     }
