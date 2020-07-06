@@ -844,3 +844,59 @@ mod unicode_spans {
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
 }
+
+mod multiline_omit {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "codespan/src/file.rs",
+                [
+                    "Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu ",
+                    "marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice ",
+                    "cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw ",
+                    "pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing ",
+                    "tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie ",
+                    "roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon ",
+                    "drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. ",
+                    "Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. ",
+                    "Tootsie roll bonbon pastry toffee.",
+                    "Biscuit wafer ice cream. Liquorice dragée sugar plum chocolate bar dragée. Gingerbread ",
+                    "candy pastry dragée dragée sweet roll chocolate bar bear claw. Sweet roll cupcake ",
+                    "cotton candy chupa chups cookie gummi bears ice cream jelly. Dessert tart gummi ",
+                    "bears gummi bears. Bonbon muffin danish sugar plum pie. Brownie marzipan pie ",
+                    "candy cotton candy icing gummies. Donut oat cake liquorice. Lollipop biscuit ",
+                    "candy canes sweet roll donut cupcake lemon drops. Soufflé oat cake chocolate ",
+                    "bar soufflé. Chocolate cookie sweet roll toffee sesame snaps soufflé donut cotton ",
+                    "candy. Muffin cotton candy jelly beans carrot cake candy. Powder candy croissant ",
+                    "soufflé tiramisu. Bear claw sesame snaps gingerbread brownie gummies.",
+                ].join("\n"),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::note()
+                    .with_message("paragraph")
+                    .with_code("P001")
+                    .with_labels(vec![
+                        Label::primary((), 0..687).with_message("this is the whole paragraph"),
+                        Label::secondary((), 0..20).with_message("this is the first sentence"),
+                        Label::secondary((), 271..373).with_message("this is another sentence")
+                    ]),
+                Diagnostic::help()
+                    .with_message("paragraph")
+                    .with_code("P002")
+                    .with_labels(vec![
+                        Label::primary((), 688..1416).with_message("this is the whole paragraph"),
+                    ])
+            ];
+
+            TestData { files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
