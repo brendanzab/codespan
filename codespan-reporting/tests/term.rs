@@ -848,81 +848,73 @@ mod unicode_spans {
 mod multiline_omit {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
-            let file = SimpleFile::new(
-                "codespan/src/file.rs",
-                [
-                    "Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu ",
-                    "marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice ",
-                    "cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw ",
-                    "pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing ",
-                    "tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie ",
-                    "roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon ",
-                    "drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. ",
-                    "Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. ",
-                    "Tootsie roll bonbon pastry toffee.",
-                    "Biscuit wafer ice cream. Liquorice dragée sugar plum chocolate bar dragée. Gingerbread ",
-                    "candy pastry dragée dragée sweet roll chocolate bar bear claw. Sweet roll cupcake ",
-                    "cotton candy chupa chups cookie gummi bears ice cream jelly. Dessert tart gummi ",
-                    "bears gummi bears. Bonbon muffin danish sugar plum pie. Brownie marzipan pie ",
-                    "candy cotton candy icing gummies. Donut oat cake liquorice. Lollipop biscuit ",
-                    "candy canes sweet roll donut cupcake lemon drops. Soufflé oat cake chocolate ",
-                    "bar soufflé. Chocolate cookie sweet roll toffee sesame snaps soufflé donut cotton ",
-                    "candy. Muffin cotton candy jelly beans carrot cake candy. Powder candy croissant ",
-                    "soufflé tiramisu. Bear claw sesame snaps gingerbread brownie gummies.",
-                    "Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu ",
-                    "marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice ",
-                    "cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw ",
-                    "pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing ",
-                    "tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie ",
-                    "blah blah blah this line should be skipped",
-                    "blah blah blah this line should be skipped",
-                    "blah blah blah this line should be skipped",
-                    "roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon ",
-                    "drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. ",
-                    "Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. ",
-                    "Tootsie roll bonbon pastry toffee.",
-                ].join("\n"),
-            );
-
-            let diagnostics = vec![
-                Diagnostic::note()
-                    .with_message("paragraph")
-                    .with_code("P001")
-                    .with_labels(vec![
-                        Label::primary((), 0..687).with_message("this is the whole paragraph"),
-                        Label::secondary((), 0..20).with_message("this is the first sentence"),
-                        Label::secondary((), 271..373).with_message("this is another sentence")
-                    ])
-                    .with_notes(vec![
-                        "all the secondary labels stop the primary label from being interrupted".to_owned()
-                    ]),
-                Diagnostic::help()
-                    .with_message("paragraph")
-                    .with_code("P002")
-                    .with_labels(vec![
-                        Label::primary((), 688..1416).with_message("this is the whole paragraph"),
-                    ])
-                    .with_notes(vec![
-                        "it does not make sense to skip a single line".to_owned()
-                    ]),
-                Diagnostic::note()
-                    .with_code("P003")
-                    .with_labels(vec![
-                        Label::primary((), 1417..2233).with_message("this is the whole paragraph")
-                    ])
-                    .with_notes(vec![
-                        "this diagnostic will actually skip over some lines".to_owned()
-                    ])
-            ];
-
-            TestData { files: file, diagnostics }
+    #[test]
+    fn rich_no_color() {
+        let config = Config {
+            display_style: DisplayStyle::Rich,
+            context_lines: 1,
+            ..TEST_CONFIG.clone()
         };
-    }
 
-    test_emit!(rich_color);
-    test_emit!(short_color);
-    test_emit!(rich_no_color);
-    test_emit!(short_no_color);
+        let mut files = SimpleFiles::new();
+
+        let file_id1 = files.add(
+            "empty_if_comments.lua",
+            [
+                "elseif 3 then", // primary label starts here
+                "",              // context line
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",     // context line
+                "else", // primary label ends here
+            ]
+            .join("\n"),
+        );
+
+        let file_id2 = files.add(
+            "src/lib.rs",
+            [
+                "fn main() {",
+                "    1",   // primary label starts here
+                "    + 1", // context line
+                "    + 1", // skip
+                "    + 1", // skip
+                "    + 1", // skip
+                "    +1",  // secondary label here
+                "    + 1", // this single line will not be skipped; the previously filtered out label must be retrieved
+                "    + 1", // context line
+                "    + 1", // primary label ends here
+                "}",
+            ]
+            .join("\n"),
+        );
+
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_message("empty elseif block")
+                .with_code("empty_if")
+                .with_labels(vec![
+                    Label::primary(file_id1, 0..23),
+                    Label::secondary(file_id1, 15..21).with_message("content should be in here"),
+                ]),
+            Diagnostic::error()
+                .with_message("mismatched types")
+                .with_code("E0308")
+                .with_labels(vec![
+                    Label::primary(file_id2, 17..80).with_message("expected (), found integer"),
+                    Label::secondary(file_id2, 55..55).with_message("missing whitespace"),
+                ])
+                .with_notes(vec![
+                    "note:\texpected type `()`\n\tfound type `{integer}`".to_owned()
+                ]),
+        ];
+
+        let test_data = TestData { files, diagnostics };
+
+        insta::assert_snapshot!(test_data.emit_no_color(&config));
+    }
 }
