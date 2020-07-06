@@ -115,7 +115,7 @@ pub trait Files<'a> {
 /// Returned by [`Files::location`].
 ///
 /// [`Files::location`]: Files::location
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Location {
     /// The user-facing line number.
     pub line_number: usize,

@@ -249,7 +249,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use codespan::{Files, Location};
+    use codespan_reporting::files::{Location, SimpleFiles};
 
     use super::*;
 
@@ -260,7 +260,7 @@ let test = 2
 let test1 = ""
 test
 "#;
-        let mut files = Files::new();
+        let mut files = SimpleFiles::new();
         let file_id = files.add("test", text);
         let pos = position_to_byte_index(
             &files,
@@ -270,8 +270,15 @@ test
                 character: 2,
             },
         )
-        .unwrap() as u32;
-        assert_eq!(Location::new(3, 2), files.location(file_id, pos).unwrap());
+        .unwrap();
+        assert_eq!(
+            Location {
+                // One-based
+                line_number: 3 + 1,
+                column_number: 2 + 1,
+            },
+            files.location(file_id, pos).unwrap()
+        );
     }
 
     // The protocol specifies that each `character` in position is a UTF-16 character.
@@ -280,7 +287,7 @@ test
 
     #[test]
     fn unicode_get_byte_index() {
-        let mut files = Files::new();
+        let mut files = SimpleFiles::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = position_to_byte_index(
@@ -306,7 +313,7 @@ test
 
     #[test]
     fn unicode_get_position() {
-        let mut files = Files::new();
+        let mut files = SimpleFiles::new();
         let file_id = files.add("unicode", UNICODE);
 
         let result = byte_index_to_position(&files, file_id, 5);

@@ -18,6 +18,3 @@ codespan-reporting = { version = "0.9.5", path = "../codespan-reporting" }
 # absolute no-no, breaking much of what we enjoy about Cargo!
 lsp-types = ">=0.70, <0.75"
 url = "2"
-
-[dev-dependencies]
-codespan = { version = "0.9.5", path = "../codespan" }
