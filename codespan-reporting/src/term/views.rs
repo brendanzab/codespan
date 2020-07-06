@@ -212,19 +212,8 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    if std::cmp::min(line_index - start_line_index, end_line_index - line_index)
-                        > renderer.context_lines()
-                        && !self.diagnostic.labels.iter().any(|label| {
-                            // check that no other label is on this line
-                            start_line_range.start <= label.range.start
-                                && label.range.start <= end_line_range.end
-                                || start_line_range.start <= label.range.end
-                                    && label.range.end <= end_line_range.end
-                        })
-                    {
-                        // Skip if there are too many lines in between
-                        continue;
-                    }
+                    let optional=std::cmp::min(line_index - start_line_index, end_line_index - line_index)
+                        <= renderer.context_lines();
 
                     let line_range = files.line_range(label.file_id, line_index).unwrap();
                     let line_number = files.line_number(label.file_id, line_index).unwrap();
@@ -234,7 +223,7 @@ where
                     labeled_file
                         .get_or_insert_line(line_index, line_range, line_number)
                         .multi_labels
-                        .push((label_index, label.style, MultiLabel::Left));
+                        .push((label_index, label.style, MultiLabel::Left(optional)));
                 }
 
                 // Last labeled line
@@ -303,7 +292,17 @@ where
                 )?;
             }
 
-            let mut lines = labeled_file.lines.into_iter().peekable();
+            let mut lines = labeled_file.lines.iter()
+                .filter(|(_,line)|
+                    line.multi_labels.iter().any(|l|
+                        if let (_,_,MultiLabel::Left(false))=l{
+                            false
+                        }else{
+                            true
+                        }
+                    )
+                )
+                .peekable();
             let current_labels = Vec::new();
 
             while let Some((line_index, line)) = lines.next() {
@@ -320,7 +319,7 @@ where
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the next line.
                 if let Some((next_line_index, _)) = lines.peek() {
-                    match next_line_index.checked_sub(line_index) {
+                    match next_line_index.checked_sub(*line_index) {
                         // Consecutive lines
                         Some(1) => {}
                         // One line between the current line and the next line
@@ -334,7 +333,7 @@ where
                                 self.diagnostic.severity,
                                 &[],
                                 labeled_file.num_multi_labels,
-                                &current_labels,
+                                &current_labels,//TODO: get unfiltered labels
                             )?;
                         }
                         // More than one line between the current line and the next line.
