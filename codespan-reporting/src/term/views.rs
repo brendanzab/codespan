@@ -296,38 +296,49 @@ where
             let mut lines = labeled_file
                 .lines
                 .iter()
-                .filter(|(_, line)| {
-                    // only keep a line if there are any non-optional labels
-                    line.multi_labels.iter().any(|l| {
-                        if let (_, _, MultiLabel::Left(true)) = l {
-                            false
-                        } else {
-                            true
-                        }
-                    }) || !line.single_labels.is_empty()
+                .map(|(index, line)| {
+                    (
+                        index,
+                        line,
+                        line.multi_labels.iter().any(|l| {
+                            if let (_, _, MultiLabel::Left(true)) = l {
+                                false
+                            } else {
+                                true
+                            }
+                        }) || !line.single_labels.is_empty(),
+                    )
                 })
                 .peekable();
             let current_labels = Vec::new();
 
-            while let Some((line_index, line)) = lines.next() {
-                renderer.render_snippet_source(
-                    outer_padding,
-                    line.number,
-                    &source[line.range.clone()],
-                    self.diagnostic.severity,
-                    &line.single_labels,
-                    labeled_file.num_multi_labels,
-                    &line.multi_labels,
-                )?;
+            while let Some((line_index, line, required)) = lines.next() {
+                if !required {
+                    // this cannot be the first line and the rendering will have been handled already
+                    while let Some((_, _, false)) = lines.peek() {
+                        // skip consecutive lines which are not required
+                        lines.next();
+                    }
+                } else {
+                    renderer.render_snippet_source(
+                        outer_padding,
+                        line.number,
+                        &source[line.range.clone()],
+                        self.diagnostic.severity,
+                        &line.single_labels,
+                        labeled_file.num_multi_labels,
+                        &line.multi_labels,
+                    )?;
+                }
 
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the next line.
-                if let Some((next_line_index, _)) = lines.peek() {
+                if let Some((next_line_index, _, required)) = lines.peek() {
                     match next_line_index.checked_sub(*line_index) {
                         // Consecutive lines
                         Some(1) => {}
                         // One line between the current line and the next line
-                        Some(2) => {
+                        Some(2) if *required => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
                             // get filtered out labels, if there are any
@@ -361,7 +372,7 @@ where
                                 outer_padding,
                                 self.diagnostic.severity,
                                 labeled_file.num_multi_labels,
-                                &current_labels,
+                                &line.multi_labels,
                             )?;
                         }
                     }
