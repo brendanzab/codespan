@@ -1,0 +1,8 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_color(&config)
+---
+codespan/src/file.rs:1:1: {fg:Green bold bright}note[P001]{bold bright}: paragraph{/}
+codespan/src/file.rs:10:1: {fg:Cyan bold bright}help[P002]{bold bright}: paragraph{/}
+codespan/src/file.rs:19:1: {fg:Green bold bright}note[P003]{bold bright}: {/}
+

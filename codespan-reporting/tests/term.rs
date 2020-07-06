@@ -871,6 +871,18 @@ mod multiline_omit {
                     "bar soufflé. Chocolate cookie sweet roll toffee sesame snaps soufflé donut cotton ",
                     "candy. Muffin cotton candy jelly beans carrot cake candy. Powder candy croissant ",
                     "soufflé tiramisu. Bear claw sesame snaps gingerbread brownie gummies.",
+                    "Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu ",
+                    "marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice ",
+                    "cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw ",
+                    "pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing ",
+                    "tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie ",
+                    "blah blah blah this line should be skipped",
+                    "blah blah blah this line should be skipped",
+                    "blah blah blah this line should be skipped",
+                    "roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon ",
+                    "drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. ",
+                    "Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. ",
+                    "Tootsie roll bonbon pastry toffee.",
                 ].join("\n"),
             );
 
@@ -882,12 +894,26 @@ mod multiline_omit {
                         Label::primary((), 0..687).with_message("this is the whole paragraph"),
                         Label::secondary((), 0..20).with_message("this is the first sentence"),
                         Label::secondary((), 271..373).with_message("this is another sentence")
+                    ])
+                    .with_notes(vec![
+                        "all the secondary labels stop the primary label from being interrupted".to_owned()
                     ]),
                 Diagnostic::help()
                     .with_message("paragraph")
                     .with_code("P002")
                     .with_labels(vec![
                         Label::primary((), 688..1416).with_message("this is the whole paragraph"),
+                    ])
+                    .with_notes(vec![
+                        "it does not make sense to skip a single line".to_owned()
+                    ]),
+                Diagnostic::note()
+                    .with_code("P003")
+                    .with_labels(vec![
+                        Label::primary((), 1417..2233).with_message("this is the whole paragraph")
+                    ])
+                    .with_notes(vec![
+                        "this diagnostic will actually skip over some lines".to_owned()
                     ])
             ];
 

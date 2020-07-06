@@ -1,0 +1,56 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_color(&config)
+---
+{fg:Green bold bright}note[P001]{bold bright}: paragraph{/}
+  {fg:Blue}┌─{/} codespan/src/file.rs:1:1
+  {fg:Blue}│{/}    
+{fg:Blue}1{/} {fg:Blue}│{/} {fg:Green}╭{/}   {fg:Green}Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu {/}
+  {fg:Blue}│{/} {fg:Green}│{/}   {fg:Blue}--------------------{/} {fg:Blue}this is the first sentence{/}
+{fg:Blue}2{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice {/}
+{fg:Blue}3{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw {/}
+{fg:Blue}4{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing {/}
+  {fg:Blue}│{/} {fg:Green}│{/} {fg:Blue}╭{/}{fg:Blue}──────────────────────────'{/}
+{fg:Blue}5{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Blue}│{/} {fg:Green}tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie {/}
+  {fg:Blue}│{/} {fg:Green}│{/} {fg:Blue}╰{/}{fg:Blue}──────────────────────────────────────────────' this is another sentence{/}
+{fg:Blue}6{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon {/}
+{fg:Blue}7{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. {/}
+{fg:Blue}8{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. {/}
+{fg:Blue}9{/} {fg:Blue}│{/} {fg:Green}│{/}   {fg:Green}Tootsie roll bonbon pastry toffee.{/}
+  {fg:Blue}│{/} {fg:Green}╰{/}{fg:Green}──{/}{fg:Green}──────────────────────────────────^ this is the whole paragraph{/}
+  {fg:Blue}│{/}    
+  {fg:Blue}={/} all the secondary labels stop the primary label from being interrupted
+
+{fg:Cyan bold bright}help[P002]{bold bright}: paragraph{/}
+   {fg:Blue}┌─{/} codespan/src/file.rs:10:1
+   {fg:Blue}│{/}  
+{fg:Blue}10{/} {fg:Blue}│{/} {fg:Cyan}╭{/} {fg:Cyan}Biscuit wafer ice cream. Liquorice dragée sugar plum chocolate bar dragée. Gingerbread {/}
+{fg:Blue}11{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}candy pastry dragée dragée sweet roll chocolate bar bear claw. Sweet roll cupcake {/}
+{fg:Blue}12{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}cotton candy chupa chups cookie gummi bears ice cream jelly. Dessert tart gummi {/}
+{fg:Blue}13{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}bears gummi bears. Bonbon muffin danish sugar plum pie. Brownie marzipan pie {/}
+{fg:Blue}14{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}candy cotton candy icing gummies. Donut oat cake liquorice. Lollipop biscuit {/}
+{fg:Blue}15{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}candy canes sweet roll donut cupcake lemon drops. Soufflé oat cake chocolate {/}
+{fg:Blue}16{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}bar soufflé. Chocolate cookie sweet roll toffee sesame snaps soufflé donut cotton {/}
+{fg:Blue}17{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}candy. Muffin cotton candy jelly beans carrot cake candy. Powder candy croissant {/}
+{fg:Blue}18{/} {fg:Blue}│{/} {fg:Cyan}│{/} {fg:Cyan}soufflé tiramisu. Bear claw sesame snaps gingerbread brownie gummies.{/}
+   {fg:Blue}│{/} {fg:Cyan}╰{/}{fg:Cyan}─────────────────────────────────────────────────────────────────────^ this is the whole paragraph{/}
+   {fg:Blue}│{/}  
+   {fg:Blue}={/} it does not make sense to skip a single line
+
+{fg:Green bold bright}note[P003]{bold bright}: {/}
+   {fg:Blue}┌─{/} codespan/src/file.rs:19:1
+   {fg:Blue}│{/}  
+{fg:Blue}19{/} {fg:Blue}│{/} {fg:Green}╭{/} {fg:Green}Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu {/}
+{fg:Blue}20{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice {/}
+{fg:Blue}21{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw {/}
+{fg:Blue}22{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing {/}
+   {fg:Blue}·{/}  
+{fg:Blue}27{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon {/}
+{fg:Blue}28{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. {/}
+{fg:Blue}29{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. {/}
+{fg:Blue}30{/} {fg:Blue}│{/} {fg:Green}│{/} {fg:Green}Tootsie roll bonbon pastry toffee.{/}
+   {fg:Blue}│{/} {fg:Green}╰{/}{fg:Green}──────────────────────────────────^ this is the whole paragraph{/}
+   {fg:Blue}│{/}  
+   {fg:Blue}={/} this diagnostic will actually skip over some lines
+
+

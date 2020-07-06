@@ -1,0 +1,56 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_no_color(&config)
+---
+note[P001]: paragraph
+  ┌─ codespan/src/file.rs:1:1
+  │    
+1 │ ╭   Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu 
+  │ │   -------------------- this is the first sentence
+2 │ │   marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice 
+3 │ │   cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw 
+4 │ │   pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing 
+  │ │ ╭──────────────────────────'
+5 │ │ │ tart liquorice cake pastry pie bonbon biscuit. Tart jujubes chocolate tootsie 
+  │ │ ╰──────────────────────────────────────────────' this is another sentence
+6 │ │   roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon 
+7 │ │   drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. 
+8 │ │   Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. 
+9 │ │   Tootsie roll bonbon pastry toffee.
+  │ ╰────────────────────────────────────^ this is the whole paragraph
+  │    
+  = all the secondary labels stop the primary label from being interrupted
+
+help[P002]: paragraph
+   ┌─ codespan/src/file.rs:10:1
+   │  
+10 │ ╭ Biscuit wafer ice cream. Liquorice dragée sugar plum chocolate bar dragée. Gingerbread 
+11 │ │ candy pastry dragée dragée sweet roll chocolate bar bear claw. Sweet roll cupcake 
+12 │ │ cotton candy chupa chups cookie gummi bears ice cream jelly. Dessert tart gummi 
+13 │ │ bears gummi bears. Bonbon muffin danish sugar plum pie. Brownie marzipan pie 
+14 │ │ candy cotton candy icing gummies. Donut oat cake liquorice. Lollipop biscuit 
+15 │ │ candy canes sweet roll donut cupcake lemon drops. Soufflé oat cake chocolate 
+16 │ │ bar soufflé. Chocolate cookie sweet roll toffee sesame snaps soufflé donut cotton 
+17 │ │ candy. Muffin cotton candy jelly beans carrot cake candy. Powder candy croissant 
+18 │ │ soufflé tiramisu. Bear claw sesame snaps gingerbread brownie gummies.
+   │ ╰─────────────────────────────────────────────────────────────────────^ this is the whole paragraph
+   │  
+   = it does not make sense to skip a single line
+
+note[P003]: 
+   ┌─ codespan/src/file.rs:19:1
+   │  
+19 │ ╭ Cupcake ipsum dolor. Sit amet chocolate cake jelly chupa chups jelly beans tiramisu 
+20 │ │ marshmallow sweet roll. Biscuit candy canes gummies topping halvah danish. Ice 
+21 │ │ cream chocolate cake tart. Brownie lemon drops sesame snaps. Oat cake bear claw 
+22 │ │ pudding macaroon bonbon. Danish tart cookie pastry cookie. Chocolate cake icing 
+   ·  
+27 │ │ roll croissant caramels tiramisu tart. Macaroon cupcake marshmallow toffee lemon 
+28 │ │ drops. Pie chocolate cake jelly beans candy canes icing pudding cheesecake marzipan. 
+29 │ │ Jelly liquorice apple pie fruitcake lemon drops candy gummi bears sugar plum. 
+30 │ │ Tootsie roll bonbon pastry toffee.
+   │ ╰──────────────────────────────────^ this is the whole paragraph
+   │  
+   = this diagnostic will actually skip over some lines
+
+

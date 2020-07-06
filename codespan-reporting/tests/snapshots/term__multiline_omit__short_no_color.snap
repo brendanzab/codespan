@@ -1,0 +1,8 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_no_color(&config)
+---
+codespan/src/file.rs:1:1: note[P001]: paragraph
+codespan/src/file.rs:10:1: help[P002]: paragraph
+codespan/src/file.rs:19:1: note[P003]: 
+
