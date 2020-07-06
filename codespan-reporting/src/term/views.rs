@@ -212,8 +212,9 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let optional=std::cmp::min(line_index - start_line_index, end_line_index - line_index)
-                        <= renderer.context_lines();
+                    let optional =
+                        std::cmp::min(line_index - start_line_index, end_line_index - line_index)
+                            > renderer.context_lines();
 
                     let line_range = files.line_range(label.file_id, line_index).unwrap();
                     let line_number = files.line_number(label.file_id, line_index).unwrap();
@@ -292,16 +293,19 @@ where
                 )?;
             }
 
-            let mut lines = labeled_file.lines.iter()
-                .filter(|(_,line)|
-                    line.multi_labels.iter().any(|l|
-                        if let (_,_,MultiLabel::Left(false))=l{
+            let mut lines = labeled_file
+                .lines
+                .iter()
+                .filter(|(_, line)| {
+                    // only keep a line if there are any non-optional labels
+                    line.multi_labels.iter().any(|l| {
+                        if let (_, _, MultiLabel::Left(true)) = l {
                             false
-                        }else{
+                        } else {
                             true
                         }
-                    )
-                )
+                    }) || !line.single_labels.is_empty()
+                })
                 .peekable();
             let current_labels = Vec::new();
 
@@ -326,6 +330,16 @@ where
                         Some(2) => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
+                            // get filtered out labels, if there are any
+                            let labels = if let Some((_, line)) = labeled_file
+                                .lines
+                                .iter()
+                                .find(|(index, _)| **index == line_index + 1)
+                            {
+                                &line.multi_labels
+                            } else {
+                                &current_labels
+                            };
                             renderer.render_snippet_source(
                                 outer_padding,
                                 files.line_number(file_id, line_index + 1).unwrap(),
@@ -333,7 +347,7 @@ where
                                 self.diagnostic.severity,
                                 &[],
                                 labeled_file.num_multi_labels,
-                                &current_labels,//TODO: get unfiltered labels
+                                labels,
                             )?;
                         }
                         // More than one line between the current line and the next line.
