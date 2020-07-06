@@ -23,7 +23,7 @@ pub type SingleLabel<'diagnostic> = (LabelStyle, Range<usize>, &'diagnostic str)
 
 /// A multi-line label to render.
 ///
-/// Locations are relative to the start of where the source cord is rendered.
+/// Locations are relative to the start of where the source code is rendered.
 pub enum MultiLabel<'diagnostic> {
     /// Left top corner for multi-line labels.
     ///
