@@ -42,6 +42,8 @@ pub enum MultiLabel<'diagnostic> {
     /// ```text
     /// │
     /// ```
+    ///
+    /// The contained value stores if this line of the label can be left out.
     Left(bool),
     /// Multi-line label bottom, with an optional message.
     ///

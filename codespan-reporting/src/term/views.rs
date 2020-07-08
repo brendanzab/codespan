@@ -212,7 +212,7 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let optional =
+                    let line_omittable =
                         std::cmp::min(line_index - start_line_index, end_line_index - line_index)
                             > renderer.context_lines();
 
@@ -224,7 +224,7 @@ where
                     labeled_file
                         .get_or_insert_line(line_index, line_range, line_number)
                         .multi_labels
-                        .push((label_index, label.style, MultiLabel::Left(optional)));
+                        .push((label_index, label.style, MultiLabel::Left(line_omittable)));
                 }
 
                 // Last labeled line
@@ -297,17 +297,23 @@ where
                 .lines
                 .iter()
                 .map(|(index, line)| {
-                    (
-                        index,
-                        line,
-                        line.multi_labels.iter().any(|l| {
-                            if let (_, _, MultiLabel::Left(true)) = l {
-                                false
-                            } else {
-                                true
-                            }
-                        }) || !line.single_labels.is_empty(),
-                    )
+                    /*
+                    The line has to be rendered if there is any non-omittable `MultiLabel`
+                    or there is a `SingleLabel`.
+                    */
+                    let line_required = line.multi_labels.iter().any(|l| {
+                        // are all `MultiLabel`s omittable?
+                        if let (_, _, MultiLabel::Left(true)) = l {
+                            false
+                        } else {
+                            true
+                        }
+                    })
+                    ||
+                    // are there any `SingleLabel`s?
+                    !line.single_labels.is_empty();
+
+                    (index, line, line_required)
                 })
                 .peekable();
             let current_labels = Vec::new();
