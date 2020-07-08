@@ -845,7 +845,7 @@ mod unicode_spans {
     test_emit!(short_no_color);
 }
 
-mod position_indicator{
+mod position_indicator {
     use super::*;
 
     lazy_static::lazy_static! {

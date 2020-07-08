@@ -101,7 +101,8 @@ where
             {
                 Some(labeled_file) => {
                     // another diagnostic also referenced this file
-                    if labeled_file.start > label.range.start && label.style == LabelStyle::Primary{
+                    if labeled_file.start > label.range.start && label.style == LabelStyle::Primary
+                    {
                         // this label indicates an earlier start
                         labeled_file.start = label.range.start;
                         labeled_file.location =
