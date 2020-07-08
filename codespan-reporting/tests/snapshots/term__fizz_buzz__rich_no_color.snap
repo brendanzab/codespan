@@ -3,7 +3,7 @@ source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
 ---
 error[E0308]: `case` clauses have incompatible types
-  ┌─ FizzBuzz.fun:3:15
+  ┌─ FizzBuzz.fun:8:12
   │  
 3 │   fizz₁ : Nat → String
   │                 ------ expected type `String` found here
@@ -20,7 +20,7 @@ error[E0308]: `case` clauses have incompatible types
        found type `Nat`
 
 error[E0308]: `case` clauses have incompatible types
-   ┌─ FizzBuzz.fun:10:15
+   ┌─ FizzBuzz.fun:16:16
    │  
 10 │   fizz₂ : Nat → String
    │                 ------ expected type `String` found here
