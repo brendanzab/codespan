@@ -844,3 +844,38 @@ mod unicode_spans {
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
 }
+
+mod position_indicator{
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "tests/main.js",
+                [
+                    "\"use strict\";",
+                    "let zero=0;",
+                    "function foo() {",
+                    "  \"use strict\";",
+                    "  one=1;",
+                    "}",
+                ].join("\n"),
+            );
+            let diagnostics = vec![
+                Diagnostic::warning()
+                    .with_code("ParserWarning")
+                    .with_message("The strict mode declaration in the body of function `foo` is redundant, as the outer scope is already in strict mode")
+                    .with_labels(vec![
+                        Label::primary((), 45..57)
+                            .with_message("This strict mode declaration is redundant"),
+                        Label::secondary((), 0..12)
+                            .with_message("Strict mode is first declared here"),
+                    ]),
+            ];
+            TestData{files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
