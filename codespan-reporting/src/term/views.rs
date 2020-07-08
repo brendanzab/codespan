@@ -100,7 +100,9 @@ where
                 .find(|labeled_file| label.file_id == labeled_file.file_id)
             {
                 Some(labeled_file) => {
-                    if labeled_file.start > label.range.start {
+                    // another diagnostic also referenced this file
+                    if labeled_file.start > label.range.start && label.style == LabelStyle::Primary{
+                        // this label indicates an earlier start
                         labeled_file.start = label.range.start;
                         labeled_file.location =
                             files.location(label.file_id, label.range.start).unwrap();
@@ -108,6 +110,7 @@ where
                     labeled_file
                 }
                 None => {
+                    // no other diagnostic referenced this file yet
                     labeled_files.push(LabeledFile {
                         file_id: label.file_id,
                         start: label.range.start,
