@@ -1,6 +1,6 @@
 ---
 source: codespan-reporting/tests/term.rs
-expression: test_data.emit_no_color(&config)
+expression: TEST_DATA.emit_no_color(&config)
 ---
 error[empty_if]: empty elseif block
    ┌─ empty_if_comments.lua:1:1
@@ -25,6 +25,7 @@ error[E0308]: mismatched types
    · │
  7 │ │     +1
    │ │      - missing whitespace
+ 8 │ │     + 1
  9 │ │     + 1
 10 │ │     + 1
    │ ╰───────^ expected (), found integer
