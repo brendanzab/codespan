@@ -211,6 +211,7 @@ where
                         _ => (label_index, label.style, MultiLabel::Top(..label_start)),
                     });
 
+                // The first line has to be rendered so the start of the label is visible.
                 start_line.omittable = false;
 
                 // Marked lines
@@ -231,9 +232,14 @@ where
                     line.multi_labels
                         .push((label_index, label.style, MultiLabel::Left));
 
-                    line.omittable &= !(line_index - start_line_index
-                        <= renderer.start_context_lines()
-                        || end_line_index - line_index <= renderer.end_context_lines());
+                    // The line should be rendered to match the configuration of how much context to show.
+                    line.omittable &= !(
+                        // Is this line part of the context after the start of the label?
+                        line_index - start_line_index <= renderer.start_context_lines()
+                        ||
+                        // Is this line part of the context before the end of the label?
+                        end_line_index - line_index <= renderer.end_context_lines()
+                    );
                 }
 
                 // Last labeled line
@@ -256,6 +262,7 @@ where
                     MultiLabel::Bottom(..label_end, &label.message),
                 ));
 
+                // The last line has to be rendered so the end of the label is visible.
                 end_line.omittable = false;
             }
         }

@@ -17,9 +17,13 @@ pub struct Config {
     pub styles: Styles,
     /// Characters to use when rendering the diagnostic.
     pub chars: Chars,
-    /// Number of lines to be shown after the first highlighted line of a multiline label.
+    /// The minimum number of lines to be shown after the line on which a multiline [`Label`] begins.
+    ///
+    /// Defaults to: `3`.
     pub start_context_lines: usize,
-    /// Number of lines to be shown before the last highlighted line of a multiline label.
+    /// The minimum number of lines to be shown before the line on which a multiline [`Label`] ends.
+    ///
+    /// Defaults to: `1`.
     pub end_context_lines: usize,
 }
 
