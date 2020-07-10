@@ -59,6 +59,8 @@ where
                     number: line_number,
                     single_labels: vec![],
                     multi_labels: vec![],
+                    // This has to be true by default so we know if it must be rendered by another condition already.
+                    omittable: true,
                 })
             }
         }
@@ -69,6 +71,7 @@ where
             // TODO: How do we reuse these allocations?
             single_labels: Vec<SingleLabel<'diagnostic>>,
             multi_labels: Vec<(usize, LabelStyle, MultiLabel<'diagnostic>)>,
+            omittable: bool,
         }
 
         // TODO: Make this data structure external, to allow for allocation reuse
@@ -158,6 +161,9 @@ where
 
                 line.single_labels
                     .insert(index, (label.style, label_range, &label.message));
+
+                // If this line is not rendered, the SingleLabel is not visible.
+                line.omittable = false;
             } else {
                 // Multiple lines
                 //
@@ -178,12 +184,13 @@ where
                 let label_start = label.range.start - start_line_range.start;
                 let prefix_source = &source[start_line_range.start..label.range.start];
 
-                labeled_file
-                    .get_or_insert_line(
-                        start_line_index,
-                        start_line_range.clone(),
-                        start_line_number,
-                    )
+                let start_line = labeled_file.get_or_insert_line(
+                    start_line_index,
+                    start_line_range.clone(),
+                    start_line_number,
+                );
+
+                start_line
                     .multi_labels
                     // TODO: Do this in the `Renderer`?
                     .push(match prefix_source.trim() {
@@ -204,6 +211,8 @@ where
                         _ => (label_index, label.style, MultiLabel::Top(..label_start)),
                     });
 
+                start_line.omittable = false;
+
                 // Marked lines
                 //
                 // ```text
@@ -212,19 +221,19 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let line_omittable =
-                        std::cmp::min(line_index - start_line_index, end_line_index - line_index)
-                            > renderer.context_lines();
-
                     let line_range = files.line_range(label.file_id, line_index).unwrap();
                     let line_number = files.line_number(label.file_id, line_index).unwrap();
 
                     outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
 
-                    labeled_file
-                        .get_or_insert_line(line_index, line_range, line_number)
-                        .multi_labels
-                        .push((label_index, label.style, MultiLabel::Left(line_omittable)));
+                    let line = labeled_file.get_or_insert_line(line_index, line_range, line_number);
+
+                    line.multi_labels
+                        .push((label_index, label.style, MultiLabel::Left));
+
+                    line.omittable &=
+                        std::cmp::min(line_index - start_line_index, end_line_index - line_index)
+                            > renderer.context_lines();
                 }
 
                 // Last labeled line
@@ -235,14 +244,19 @@ where
                 // ```
                 let label_end = label.range.end - end_line_range.start;
 
-                labeled_file
-                    .get_or_insert_line(end_line_index, end_line_range, end_line_number)
-                    .multi_labels
-                    .push((
-                        label_index,
-                        label.style,
-                        MultiLabel::Bottom(..label_end, &label.message),
-                    ));
+                let end_line = labeled_file.get_or_insert_line(
+                    end_line_index,
+                    end_line_range,
+                    end_line_number,
+                );
+
+                end_line.multi_labels.push((
+                    label_index,
+                    label.style,
+                    MultiLabel::Bottom(..label_end, &label.message),
+                ));
+
+                end_line.omittable = false;
             }
         }
 
@@ -296,55 +310,29 @@ where
             let mut lines = labeled_file
                 .lines
                 .iter()
-                .map(|(index, line)| {
-                    /*
-                    The line has to be rendered if there is any non-omittable `MultiLabel`
-                    or there is a `SingleLabel`.
-                    */
-                    let line_required = line.multi_labels.iter().any(|l| {
-                        // are all `MultiLabel`s omittable?
-                        if let (_, _, MultiLabel::Left(true)) = l {
-                            false
-                        } else {
-                            true
-                        }
-                    })
-                    ||
-                    // are there any `SingleLabel`s?
-                    !line.single_labels.is_empty();
-
-                    (index, line, line_required)
-                })
+                .filter(|(_, line)| !line.omittable)
                 .peekable();
             let current_labels = Vec::new();
 
-            while let Some((line_index, line, required)) = lines.next() {
-                if !required {
-                    // this cannot be the first line and the rendering will have been handled already
-                    while let Some((_, _, false)) = lines.peek() {
-                        // skip consecutive lines which are not required
-                        lines.next();
-                    }
-                } else {
-                    renderer.render_snippet_source(
-                        outer_padding,
-                        line.number,
-                        &source[line.range.clone()],
-                        self.diagnostic.severity,
-                        &line.single_labels,
-                        labeled_file.num_multi_labels,
-                        &line.multi_labels,
-                    )?;
-                }
+            while let Some((line_index, line)) = lines.next() {
+                renderer.render_snippet_source(
+                    outer_padding,
+                    line.number,
+                    &source[line.range.clone()],
+                    self.diagnostic.severity,
+                    &line.single_labels,
+                    labeled_file.num_multi_labels,
+                    &line.multi_labels,
+                )?;
 
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the next line.
-                if let Some((next_line_index, _, required)) = lines.peek() {
+                if let Some((next_line_index, _)) = lines.peek() {
                     match next_line_index.checked_sub(*line_index) {
                         // Consecutive lines
                         Some(1) => {}
                         // One line between the current line and the next line
-                        Some(2) if *required => {
+                        Some(2) => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
                             // get filtered out labels, if there are any
