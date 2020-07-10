@@ -50,7 +50,7 @@ impl PartialOrd for Severity {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// Labels that describe the primary cause of a diagnostic.
