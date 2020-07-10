@@ -231,9 +231,9 @@ where
                     line.multi_labels
                         .push((label_index, label.style, MultiLabel::Left));
 
-                    line.omittable &=
-                        std::cmp::min(line_index - start_line_index, end_line_index - line_index)
-                            > renderer.context_lines();
+                    line.omittable &= !(line_index - start_line_index
+                        <= renderer.start_context_lines()
+                        || end_line_index - line_index <= renderer.end_context_lines());
                 }
 
                 // Last labeled line

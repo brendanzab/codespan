@@ -851,7 +851,8 @@ mod multiline_omit {
     lazy_static::lazy_static! {
         static ref TEST_CONFIG: Config = Config {
             styles: Styles::with_blue(Color::Blue),
-            context_lines: 1,
+            start_context_lines: 1,
+            end_context_lines: 1,
             ..Config::default()
         };
 

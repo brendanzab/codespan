@@ -17,8 +17,10 @@ pub struct Config {
     pub styles: Styles,
     /// Characters to use when rendering the diagnostic.
     pub chars: Chars,
-    /// Number of lines to be printed after the first and before the last highlighted line.
-    pub context_lines: usize,
+    /// Number of lines to be shown after the first highlighted line of a multiline label.
+    pub start_context_lines: usize,
+    /// Number of lines to be shown before the last highlighted line of a multiline label.
+    pub end_context_lines: usize,
 }
 
 impl Default for Config {
@@ -28,7 +30,8 @@ impl Default for Config {
             tab_width: 4,
             styles: Styles::default(),
             chars: Chars::default(),
-            context_lines: 3,
+            start_context_lines: 3,
+            end_context_lines: 1,
         }
     }
 }

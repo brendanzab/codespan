@@ -127,8 +127,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &self.config.styles
     }
 
-    pub fn context_lines(&self) -> usize {
-        self.config.context_lines
+    pub fn start_context_lines(&self) -> usize {
+        self.config.start_context_lines
+    }
+
+    pub fn end_context_lines(&self) -> usize {
+        self.config.end_context_lines
     }
 
     /// Diagnostic header, with severity, code, and message.
