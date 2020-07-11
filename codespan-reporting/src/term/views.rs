@@ -342,16 +342,15 @@ where
                         Some(2) => {
                             // Write a source line
                             let file_id = labeled_file.file_id;
-                            // get filtered out labels, if there are any
-                            let labels = if let Some((_, line)) = labeled_file
+
+                            // This line was not intended to be rendered initially.
+                            // To render the line right, we have to get back the original labels.
+                            let labels = labeled_file
                                 .lines
                                 .iter()
                                 .find(|(index, _)| **index == line_index + 1)
-                            {
-                                &line.multi_labels
-                            } else {
-                                &current_labels
-                            };
+                                .map_or(&current_labels, |(_, line)| &line.multi_labels);
+
                             renderer.render_snippet_source(
                                 outer_padding,
                                 files.line_number(file_id, line_index + 1).unwrap(),
