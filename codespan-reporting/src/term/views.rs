@@ -59,8 +59,8 @@ where
                     number: line_number,
                     single_labels: vec![],
                     multi_labels: vec![],
-                    // This has to be true by default so we know if it must be rendered by another condition already.
-                    omittable: true,
+                    // This has to be false by default so we know if it must be rendered by another condition already.
+                    must_render: false,
                 })
             }
         }
@@ -71,7 +71,7 @@ where
             // TODO: How do we reuse these allocations?
             single_labels: Vec<SingleLabel<'diagnostic>>,
             multi_labels: Vec<(usize, LabelStyle, MultiLabel<'diagnostic>)>,
-            omittable: bool,
+            must_render: bool,
         }
 
         // TODO: Make this data structure external, to allow for allocation reuse
@@ -163,7 +163,7 @@ where
                     .insert(index, (label.style, label_range, &label.message));
 
                 // If this line is not rendered, the SingleLabel is not visible.
-                line.omittable = false;
+                line.must_render = true;
             } else {
                 // Multiple lines
                 //
@@ -212,7 +212,7 @@ where
                     });
 
                 // The first line has to be rendered so the start of the label is visible.
-                start_line.omittable = false;
+                start_line.must_render = true;
 
                 // Marked lines
                 //
@@ -233,13 +233,12 @@ where
                         .push((label_index, label.style, MultiLabel::Left));
 
                     // The line should be rendered to match the configuration of how much context to show.
-                    line.omittable &= !(
+                    line.must_render |=
                         // Is this line part of the context after the start of the label?
                         line_index - start_line_index <= renderer.start_context_lines()
                         ||
                         // Is this line part of the context before the end of the label?
-                        end_line_index - line_index <= renderer.end_context_lines()
-                    );
+                        end_line_index - line_index <= renderer.end_context_lines();
                 }
 
                 // Last labeled line
@@ -263,7 +262,7 @@ where
                 ));
 
                 // The last line has to be rendered so the end of the label is visible.
-                end_line.omittable = false;
+                end_line.must_render = true;
             }
         }
 
@@ -317,7 +316,7 @@ where
             let mut lines = labeled_file
                 .lines
                 .iter()
-                .filter(|(_, line)| !line.omittable)
+                .filter(|(_, line)| line.must_render)
                 .peekable();
             let current_labels = Vec::new();
 
