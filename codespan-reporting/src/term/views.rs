@@ -105,10 +105,11 @@ where
                     if labeled_file.start > label.range.start
                         && labeled_file.max_label_style >= label.style
                     {
-                        // this label indicates an earlier start
+                        // this label indicates an earlier start and has at least the same level of style
                         labeled_file.start = label.range.start;
                         labeled_file.location =
                             files.location(label.file_id, label.range.start).unwrap();
+                        labeled_file.max_label_style = label.style;
                     }
                     labeled_file
                 }
