@@ -346,9 +346,7 @@ where
                             let labels = labeled_file
                                 .lines
                                 .get(&(line_index + 1))
-                                .map_or(&[] as &[(usize, LabelStyle, MultiLabel)], |line| {
-                                    &line.multi_labels[..]
-                                });
+                                .map_or(&[][..], |line| &line.multi_labels[..]);
 
                             renderer.render_snippet_source(
                                 outer_padding,
