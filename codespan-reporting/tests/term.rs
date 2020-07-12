@@ -873,9 +873,85 @@ mod position_indicator {
                     ]),
             ];
             TestData{files: file, diagnostics }
-        };
+        }
     }
 
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
+}
+
+mod multiline_omit {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_CONFIG: Config = Config {
+            styles: Styles::with_blue(Color::Blue),
+            start_context_lines: 2,
+            end_context_lines: 1,
+            ..Config::default()
+        };
+
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
+
+            let file_id1 = files.add(
+                "empty_if_comments.lua",
+                [
+                    "elseif 3 then", // primary label starts here
+                    "",              // context line
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",     // context line
+                    "else", // primary label ends here
+                ]
+                .join("\n"),
+            );
+
+            let file_id2 = files.add(
+                "src/lib.rs",
+                [
+                    "fn main() {",
+                    "    1",   // primary label starts here
+                    "    + 1", // context line
+                    "    + 1", // skip
+                    "    + 1", // skip
+                    "    + 1", // skip
+                    "    +1",  // secondary label here
+                    "    + 1", // this single line will not be skipped; the previously filtered out label must be retrieved
+                    "    + 1", // context line
+                    "    + 1", // primary label ends here
+                    "}",
+                ]
+                .join("\n"),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("empty elseif block")
+                    .with_code("empty_if")
+                    .with_labels(vec![
+                        Label::primary(file_id1, 0..23),
+                        Label::secondary(file_id1, 15..21).with_message("content should be in here"),
+                    ]),
+                Diagnostic::error()
+                    .with_message("mismatched types")
+                    .with_code("E0308")
+                    .with_labels(vec![
+                        Label::primary(file_id2, 17..80).with_message("expected (), found integer"),
+                        Label::secondary(file_id2, 55..55).with_message("missing whitespace"),
+                    ])
+                    .with_notes(vec![
+                        "note:\texpected type `()`\n\tfound type `{integer}`".to_owned()
+                    ]),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
 }
