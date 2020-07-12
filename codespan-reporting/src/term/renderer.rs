@@ -23,7 +23,7 @@ pub type SingleLabel<'diagnostic> = (LabelStyle, Range<usize>, &'diagnostic str)
 
 /// A multi-line label to render.
 ///
-/// Locations are relative to the start of where the source cord is rendered.
+/// Locations are relative to the start of where the source code is rendered.
 pub enum MultiLabel<'diagnostic> {
     /// Left top corner for multi-line labels.
     ///
@@ -125,6 +125,16 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     fn styles(&self) -> &'config Styles {
         &self.config.styles
+    }
+
+    // FIXME: Architectural smell - we'd prefer not to pass information from the renderer to the view.
+    pub fn start_context_lines(&self) -> usize {
+        self.config.start_context_lines
+    }
+
+    // FIXME: Architectural smell - we'd prefer not to pass information from the renderer to the view.
+    pub fn end_context_lines(&self) -> usize {
+        self.config.end_context_lines
     }
 
     /// Diagnostic header, with severity, code, and message.
