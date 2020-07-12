@@ -873,7 +873,7 @@ mod position_indicator {
                     ]),
             ];
             TestData{files: file, diagnostics }
-        }
+        };
     }
 
     test_emit!(rich_no_color);
