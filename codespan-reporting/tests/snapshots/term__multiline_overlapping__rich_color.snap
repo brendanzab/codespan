@@ -3,7 +3,7 @@ source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_color(&config)
 ---
 {fg:Red bold bright}error[E0308]{bold bright}: match arms have incompatible types{/}
-  {fg:Blue}┌─{/} codespan/src/file.rs:1:9
+  {fg:Blue}┌─{/} codespan/src/file.rs:4:34
   {fg:Blue}│{/}    
 {fg:Blue}1{/} {fg:Blue}│{/}   {fg:Blue}╭{/}         match line_index.compare(self.last_line_index()) {
 {fg:Blue}2{/} {fg:Blue}│{/}   {fg:Blue}│{/}             Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),

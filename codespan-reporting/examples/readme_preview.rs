@@ -81,7 +81,10 @@ fn main() -> anyhow::Result<()> {
         Opts::Svg => {
             let mut buffer = Vec::new();
             let mut writer = HtmlEscapeWriter::new(SvgWriter::new(&mut buffer));
-            let config = codespan_reporting::term::Config::default();
+            let config = codespan_reporting::term::Config {
+                styles: codespan_reporting::term::Styles::with_blue(Color::Blue),
+                ..codespan_reporting::term::Config::default()
+            };
 
             for diagnostic in &diagnostics {
                 term::emit(&mut writer, &config, &file, &diagnostic)?;

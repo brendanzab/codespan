@@ -3,7 +3,7 @@ source: codespan-reporting/tests/term.rs
 expression: TEST_DATA.emit_no_color(&config)
 ---
 error[E0499]: cannot borrow `v` as mutable more than once at a time
-  ┌─ one_line.rs:3:5
+  ┌─ one_line.rs:3:12
   │
 3 │     v.push(v.pop().unwrap());
   │     - ---- ^ second mutable borrow occurs here

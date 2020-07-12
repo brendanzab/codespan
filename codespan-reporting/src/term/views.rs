@@ -45,6 +45,7 @@ where
             location: Location,
             num_multi_labels: usize,
             lines: BTreeMap<usize, Line<'diagnostic>>,
+            max_label_style: LabelStyle,
         }
 
         impl<'diagnostic, FileId> LabeledFile<'diagnostic, FileId> {
@@ -103,14 +104,20 @@ where
                 .find(|labeled_file| label.file_id == labeled_file.file_id)
             {
                 Some(labeled_file) => {
-                    if labeled_file.start > label.range.start {
+                    // another diagnostic also referenced this file
+                    if labeled_file.start > label.range.start
+                        && labeled_file.max_label_style >= label.style
+                    {
+                        // this label indicates an earlier start and has at least the same level of style
                         labeled_file.start = label.range.start;
                         labeled_file.location =
                             files.location(label.file_id, label.range.start).unwrap();
+                        labeled_file.max_label_style = label.style;
                     }
                     labeled_file
                 }
                 None => {
+                    // no other diagnostic referenced this file yet
                     labeled_files.push(LabeledFile {
                         file_id: label.file_id,
                         start: label.range.start,
@@ -118,6 +125,7 @@ where
                         location: files.location(label.file_id, label.range.start).unwrap(),
                         num_multi_labels: 0,
                         lines: BTreeMap::new(),
+                        max_label_style: label.style,
                     });
                     labeled_files.last_mut().unwrap()
                 }
