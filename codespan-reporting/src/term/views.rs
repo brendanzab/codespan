@@ -318,7 +318,6 @@ where
                 .iter()
                 .filter(|(_, line)| line.must_render)
                 .peekable();
-            let current_labels = Vec::new();
 
             while let Some((line_index, line)) = lines.next() {
                 renderer.render_snippet_source(
@@ -346,9 +345,10 @@ where
                             // To render the line right, we have to get back the original labels.
                             let labels = labeled_file
                                 .lines
-                                .iter()
-                                .find(|(index, _)| **index == line_index + 1)
-                                .map_or(&current_labels, |(_, line)| &line.multi_labels);
+                                .get(&(line_index + 1))
+                                .map_or(&[] as &[(usize, LabelStyle, MultiLabel)], |line| {
+                                    &line.multi_labels[..]
+                                });
 
                             renderer.render_snippet_source(
                                 outer_padding,
@@ -390,7 +390,7 @@ where
                     outer_padding,
                     self.diagnostic.severity,
                     labeled_file.num_multi_labels,
-                    &current_labels,
+                    &[],
                 )?;
             }
         }
