@@ -127,10 +127,12 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &self.config.styles
     }
 
+    // FIXME: Architectural smell - we'd prefer not to pass information from the renderer to the view.
     pub fn start_context_lines(&self) -> usize {
         self.config.start_context_lines
     }
 
+    // FIXME: Architectural smell - we'd prefer not to pass information from the renderer to the view.
     pub fn end_context_lines(&self) -> usize {
         self.config.end_context_lines
     }
