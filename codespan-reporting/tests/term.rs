@@ -879,7 +879,6 @@ mod position_indicator {
 
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
-
 }
 
 mod multiline_omit {
