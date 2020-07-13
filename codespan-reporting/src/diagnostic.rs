@@ -50,7 +50,7 @@ impl PartialOrd for Severity {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// Labels that describe the primary cause of a diagnostic.
@@ -112,6 +112,8 @@ impl<FileId> Label<FileId> {
 
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
+///
+/// The position of a Diagnostic is considered to be the position of the [`Label`] with a style of [`LabelStyle::primary`] that has the smallest start position.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {

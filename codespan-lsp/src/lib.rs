@@ -229,8 +229,9 @@ where
     let source = source.as_ref();
 
     let line_span = files.line_range(file_id, position.line as usize).unwrap();
+    let line_str = source.get(line_span.clone()).unwrap();
 
-    let byte_offset = character_to_line_offset(source, position.character)?;
+    let byte_offset = character_to_line_offset(line_str, position.character)?;
 
     Ok(line_span.start + byte_offset)
 }
@@ -314,7 +315,8 @@ test
     #[test]
     fn unicode_get_position() {
         let mut files = SimpleFiles::new();
-        let file_id = files.add("unicode", UNICODE);
+        let file_id = files.add("unicode", UNICODE.to_string());
+        let file_id2 = files.add("unicode newline", "\n".to_string() + UNICODE);
 
         let result = byte_index_to_position(&files, file_id, 5);
         assert_eq!(
@@ -330,6 +332,15 @@ test
             result,
             Ok(LspPosition {
                 line: 0,
+                character: 6,
+            })
+        );
+
+        let result = byte_index_to_position(&files, file_id2, 11);
+        assert_eq!(
+            result,
+            Ok(LspPosition {
+                line: 1,
                 character: 6,
             })
         );
