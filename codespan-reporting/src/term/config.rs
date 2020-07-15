@@ -59,6 +59,16 @@ pub enum DisplayStyle {
     ///
     /// ```
     Rich,
+    /// Output a condensed diagnostic, with a line number, severity, message and notes (if any).
+    ///
+    /// ```text
+    /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// = expected type `Int`
+    ///      found type `String`
+    ///
+    /// error[E0002]: Bad config found
+    /// ```
+    Medium,
     /// Output a short diagnostic, with a line number, severity, and message.
     ///
     /// ```text

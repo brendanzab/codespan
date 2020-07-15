@@ -419,6 +419,7 @@ where
 /// Output a short diagnostic, with a line number, severity, and message.
 pub struct ShortDiagnostic<'diagnostic, FileId> {
     diagnostic: &'diagnostic Diagnostic<FileId>,
+    show_notes: bool
 }
 
 impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
@@ -427,8 +428,9 @@ where
 {
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
+        show_notes: bool,
     ) -> ShortDiagnostic<'diagnostic, FileId> {
-        ShortDiagnostic { diagnostic }
+        ShortDiagnostic { diagnostic, show_notes }
     }
 
     pub fn render<'files>(
@@ -472,6 +474,19 @@ where
                 self.diagnostic.code.as_ref().map(String::as_str),
                 self.diagnostic.message.as_str(),
             )?;
+        }
+
+        if self.show_notes {
+            // Additional notes
+            //
+            // ```text
+            // = expected type `Int`
+            //      found type `String`
+            // ```
+            for note in &self.diagnostic.notes {
+                renderer.render_snippet_note(0, note)?;
+            }
+            renderer.render_empty()?;
         }
 
         Ok(())
