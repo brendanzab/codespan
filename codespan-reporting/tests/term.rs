@@ -26,6 +26,17 @@ macro_rules! test_emit {
             insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
+    (medium_color) => {
+        #[test]
+        fn medium_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
+        }
+    };
     (short_color) => {
         #[test]
         fn short_color() {
@@ -42,6 +53,17 @@ macro_rules! test_emit {
         fn rich_no_color() {
             let config = Config {
                 display_style: DisplayStyle::Rich,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+        }
+    };
+    (medium_no_color) => {
+        #[test]
+        fn medium_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
                 ..TEST_CONFIG.clone()
             };
 
@@ -82,8 +104,10 @@ mod empty {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 

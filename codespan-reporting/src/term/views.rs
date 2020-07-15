@@ -419,7 +419,7 @@ where
 /// Output a short diagnostic, with a line number, severity, and message.
 pub struct ShortDiagnostic<'diagnostic, FileId> {
     diagnostic: &'diagnostic Diagnostic<FileId>,
-    show_notes: bool
+    show_notes: bool,
 }
 
 impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
@@ -430,7 +430,10 @@ where
         diagnostic: &'diagnostic Diagnostic<FileId>,
         show_notes: bool,
     ) -> ShortDiagnostic<'diagnostic, FileId> {
-        ShortDiagnostic { diagnostic, show_notes }
+        ShortDiagnostic {
+            diagnostic,
+            show_notes,
+        }
     }
 
     pub fn render<'files>(
