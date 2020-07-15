@@ -154,8 +154,10 @@ mod same_line {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -296,8 +298,10 @@ mod overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -320,8 +324,10 @@ mod message {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -344,8 +350,10 @@ mod message_and_notes {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -377,8 +385,10 @@ mod empty_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -403,8 +413,10 @@ mod same_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -487,8 +499,10 @@ mod multifile {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -564,8 +578,10 @@ mod fizz_buzz {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -611,8 +627,10 @@ mod multiline_overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -816,6 +834,7 @@ mod unicode {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -866,6 +885,7 @@ mod unicode_spans {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -901,6 +921,7 @@ mod position_indicator {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
