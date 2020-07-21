@@ -5,7 +5,7 @@ use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
 use crate::diagnostic::Diagnostic;
-use crate::files::Files;
+use crate::files::{Files, Src, RefSrc};
 
 mod config;
 mod renderer;
@@ -82,19 +82,19 @@ impl Into<ColorChoice> for ColorArg {
 }
 
 /// Emit a diagnostic using the given writer, context, config, and files.
-pub fn emit<'files, F: Files<'files>>(
+pub fn emit<'files, FileId: Copy + PartialEq, S: Src, F: FnMut(FileId) -> S>(
     writer: &mut dyn WriteColor,
     config: &Config,
-    files: &'files F,
-    diagnostic: &Diagnostic<F::FileId>,
+    fetch_file: F,
+    diagnostic: &Diagnostic<FileId>,
 ) -> io::Result<()> {
     use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
     let mut renderer = Renderer::new(writer, config);
     match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).render(files, &mut renderer),
-        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).render(files, &mut renderer),
+        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).render(fetch_file, &mut renderer),
+        DisplayStyle::Short => ShortDiagnostic::new(diagnostic).render(fetch_file, &mut renderer),
     }
 }
 
@@ -113,6 +113,6 @@ mod tests {
         let mut writer = termcolor::NoColor::new(Vec::<u8>::new());
         let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
 
-        emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();
+        emit(&mut writer, &Config::default(), |id| files.get(id).unwrap(), &diagnostic).unwrap();
     }
 }

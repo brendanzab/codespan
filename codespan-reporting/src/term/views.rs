@@ -2,7 +2,7 @@ use std::io;
 use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
-use crate::files::{Files, Location};
+use crate::files::{Src, Files, Location, line_starts, RefSrc};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 
 /// Count the number of decimal digits in `n`.
@@ -28,14 +28,11 @@ where
         RichDiagnostic { diagnostic }
     }
 
-    pub fn render<'files>(
+    pub fn render<S: Src, F: FnMut(FileId) -> S>(
         &self,
-        files: &'files impl Files<'files, FileId = FileId>,
+        mut fetch_file: F,
         renderer: &mut Renderer<'_, '_>,
-    ) -> io::Result<()>
-    where
-        FileId: 'files,
-    {
+    ) -> io::Result<()> {
         use std::collections::BTreeMap;
 
         struct LabeledFile<'diagnostic, FileId> {
@@ -83,15 +80,29 @@ where
 
         // Group labels by file
         for label in &self.diagnostic.labels {
-            let source = files.source(label.file_id).unwrap();
-            let source = source.as_ref();
+            let src = fetch_file(label.file_id);
+            let line_starts_cache;
+            let src_helper = RefSrc {
+                name: src.name(),
+                source: src.source(),
+                line_starts: match src.line_starts() {
+                    Some(line_starts) => line_starts,
+                    None => {
+                        line_starts_cache = line_starts(src.source()).collect::<Vec<_>>();
+                        &line_starts_cache
+                    },
+                },
+            };
 
-            let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let start_line_number = files.line_number(label.file_id, start_line_index).unwrap();
-            let start_line_range = files.line_range(label.file_id, start_line_index).unwrap();
-            let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
-            let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
-            let end_line_range = files.line_range(label.file_id, end_line_index).unwrap();
+            // let source = files.source(label.file_id).unwrap();
+            // let source = source.as_ref();
+
+            let start_line_index = src_helper.line_index((), label.range.start).unwrap();
+            let start_line_number = src_helper.line_number((), start_line_index).unwrap();
+            let start_line_range = src_helper.line_range((), start_line_index).unwrap();
+            let end_line_index = src_helper.line_index((), label.range.end).unwrap();
+            let end_line_number = src_helper.line_number((), end_line_index).unwrap();
+            let end_line_range = src_helper.line_range((), end_line_index).unwrap();
 
             outer_padding = std::cmp::max(outer_padding, count_digits(start_line_number));
             outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
@@ -110,8 +121,7 @@ where
                     {
                         // this label indicates an earlier start and has at least the same level of style
                         labeled_file.start = label.range.start;
-                        labeled_file.location =
-                            files.location(label.file_id, label.range.start).unwrap();
+                        labeled_file.location = src_helper.location((), label.range.start).unwrap();
                         labeled_file.max_label_style = label.style;
                     }
                     labeled_file
@@ -121,8 +131,8 @@ where
                     labeled_files.push(LabeledFile {
                         file_id: label.file_id,
                         start: label.range.start,
-                        name: files.name(label.file_id).unwrap().to_string(),
-                        location: files.location(label.file_id, label.range.start).unwrap(),
+                        name: src.name().to_string(),
+                        location: src_helper.location((), label.range.start).unwrap(),
                         num_multi_labels: 0,
                         lines: BTreeMap::new(),
                         max_label_style: label.style,
@@ -190,7 +200,7 @@ where
 
                 // First labeled line
                 let label_start = label.range.start - start_line_range.start;
-                let prefix_source = &source[start_line_range.start..label.range.start];
+                let prefix_source = &src.source()[start_line_range.start..label.range.start];
 
                 let start_line = labeled_file.get_or_insert_line(
                     start_line_index,
@@ -230,8 +240,8 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let line_range = files.line_range(label.file_id, line_index).unwrap();
-                    let line_number = files.line_number(label.file_id, line_index).unwrap();
+                    let line_range = src_helper.line_range((), line_index).unwrap();
+                    let line_number = src_helper.line_number((), line_index).unwrap();
 
                     outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
 
@@ -297,8 +307,22 @@ where
         // ```
         let mut labeled_files = labeled_files.into_iter().peekable();
         while let Some(labeled_file) = labeled_files.next() {
-            let source = files.source(labeled_file.file_id).unwrap();
-            let source = source.as_ref();
+            let src = fetch_file(labeled_file.file_id);
+            let line_starts_cache;
+            let src_helper = RefSrc {
+                name: src.name(),
+                source: src.source(),
+                line_starts: match src.line_starts() {
+                    Some(line_starts) => line_starts,
+                    None => {
+                        line_starts_cache = line_starts(src.source()).collect::<Vec<_>>();
+                        &line_starts_cache
+                    },
+                },
+            };
+
+            // let source = files.source(labeled_file.file_id).unwrap();
+            // let source = source.as_ref();
 
             // Top left border and locus.
             //
@@ -331,7 +355,7 @@ where
                 renderer.render_snippet_source(
                     outer_padding,
                     line.number,
-                    &source[line.range.clone()],
+                    &src.source()[line.range.clone()],
                     self.diagnostic.severity,
                     &line.single_labels,
                     labeled_file.num_multi_labels,
@@ -346,9 +370,6 @@ where
                         Some(1) => {}
                         // One line between the current line and the next line
                         Some(2) => {
-                            // Write a source line
-                            let file_id = labeled_file.file_id;
-
                             // This line was not intended to be rendered initially.
                             // To render the line right, we have to get back the original labels.
                             let labels = labeled_file
@@ -358,8 +379,8 @@ where
 
                             renderer.render_snippet_source(
                                 outer_padding,
-                                files.line_number(file_id, line_index + 1).unwrap(),
-                                &source[files.line_range(file_id, line_index + 1).unwrap()],
+                                src_helper.line_number((), line_index + 1).unwrap(),
+                                &src.source()[src_helper.line_range((), line_index + 1).unwrap()],
                                 self.diagnostic.severity,
                                 &[],
                                 labeled_file.num_multi_labels,
@@ -431,14 +452,11 @@ where
         ShortDiagnostic { diagnostic }
     }
 
-    pub fn render<'files>(
+    pub fn render<S: Src, F: FnMut(FileId) -> S>(
         &self,
-        files: &'files impl Files<'files, FileId = FileId>,
+        mut fetch_file: F,
         renderer: &mut Renderer<'_, '_>,
-    ) -> io::Result<()>
-    where
-        FileId: 'files,
-    {
+    ) -> io::Result<()> {
         // Located headers
         //
         // ```text
@@ -449,10 +467,24 @@ where
         for label in labels.filter(|label| label.style == LabelStyle::Primary) {
             primary_labels_encountered += 1;
 
+            let src = fetch_file(label.file_id);
+            let line_starts_cache;
+            let src_helper = RefSrc {
+                name: src.name(),
+                source: src.source(),
+                line_starts: match src.line_starts() {
+                    Some(line_starts) => line_starts,
+                    None => {
+                        line_starts_cache = line_starts(src.source()).collect::<Vec<_>>();
+                        &line_starts_cache
+                    },
+                },
+            };
+
             renderer.render_header(
                 Some(&Locus {
-                    name: files.name(label.file_id).unwrap().to_string(),
-                    location: files.location(label.file_id, label.range.start).unwrap(),
+                    name: src.name().to_string(),
+                    location: src_helper.location((), label.range.start).unwrap(),
                 }),
                 self.diagnostic.severity,
                 self.diagnostic.code.as_ref().map(String::as_str),

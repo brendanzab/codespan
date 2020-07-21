@@ -61,7 +61,7 @@ fn main() -> anyhow::Result<()> {
                     ])
                     .with_notes(vec![format!("expected: {}", error.expected)]);
 
-                term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
+                term::emit(&mut writer.lock(), &config, |_| &file, &diagnostic)?;
             }
         }
     }

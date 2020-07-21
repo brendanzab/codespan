@@ -25,6 +25,73 @@
 
 use std::ops::Range;
 
+pub trait Src {
+    fn name(&self) -> &str;
+    fn source(&self) -> &str;
+    fn line_starts(&self) -> Option<&[usize]> { None }
+}
+
+impl<'a, T: Src> Src for &'a T {
+    fn name(&self) -> &str { T::name(*self) }
+    fn source(&self) -> &str { T::source(*self) }
+    fn line_starts(&self) -> Option<&[usize]> { T::line_starts(*self) }
+}
+
+#[derive(Copy, Clone)]
+pub struct RefSrc<'a> {
+    pub name: &'a str,
+    pub source: &'a str,
+    pub line_starts: &'a [usize],
+}
+
+impl<'a> Src for RefSrc<'a> {
+    fn name(&self) -> &str { self.name }
+    fn source(&self) -> &str { self.source }
+    fn line_starts(&self) -> Option<&[usize]> { Some(self.line_starts) }
+}
+
+impl<'a> RefSrc<'a> {
+    fn line_start(&self, line_index: usize) -> Option<usize> {
+        use std::cmp::Ordering;
+
+        match line_index.cmp(&self.line_starts.len()) {
+            Ordering::Less => self.line_starts.get(line_index).cloned(),
+            Ordering::Equal => Some(self.source.len()),
+            Ordering::Greater => None,
+        }
+    }
+}
+
+impl<'a> Files<'a> for RefSrc<'a> {
+    type FileId = ();
+    type Name = &'a str;
+    type Source = &'a str;
+
+    fn name(&self, (): ()) -> Option<&str> {
+        Some(self.name)
+    }
+
+    fn source(&self, (): ()) -> Option<&str> {
+        Some(self.source)
+    }
+
+    fn line_index(&self, (): (), byte_index: usize) -> Option<usize> {
+        match self.line_starts.binary_search(&byte_index) {
+            Ok(line) => Some(line),
+            Err(next_line) => Some(next_line - 1),
+        }
+    }
+
+    fn line_range(&self, (): (), line_index: usize) -> Option<Range<usize>> {
+        let line_start = self.line_start(line_index)?;
+        let next_line_start = self.line_start(line_index + 1)?;
+
+        Some(line_start..next_line_start)
+    }
+
+    fn get(&'a self, id: Self::FileId) -> Option<RefSrc<'a>> { Some(*self) }
+}
+
 /// A minimal interface for accessing source files when rendering diagnostics.
 ///
 /// A lifetime parameter `'a` is provided to allow any of the returned values to returned by reference.
@@ -108,6 +175,8 @@ pub trait Files<'a> {
 
     /// The byte range of line in the source of the file.
     fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Option<Range<usize>>;
+
+    fn get(&'a self, id: Self::FileId) -> Option<RefSrc<'a>> { None }
 }
 
 /// A user-facing location in a source file.
@@ -251,7 +320,7 @@ where
 
 impl<'a, Name, Source> Files<'a> for SimpleFile<Name, Source>
 where
-    Name: 'a + std::fmt::Display + Clone,
+    Name: 'a + std::fmt::Display + Clone + AsRef<str>,
     Source: 'a + AsRef<str>,
 {
     type FileId = ();
@@ -279,6 +348,24 @@ where
 
         Some(line_start..next_line_start)
     }
+
+    fn get(&'a self, (): ()) -> Option<RefSrc<'a>> {
+        Some(RefSrc {
+            name: &self.name.as_ref(),
+            source: &self.source.as_ref(),
+            line_starts: &self.line_starts,
+        })
+    }
+}
+
+impl<Name, Source> Src for SimpleFile<Name, Source>
+where
+    Name: AsRef<str> + std::fmt::Display + Clone,
+    Source: AsRef<str>,
+{
+    fn name(&self) -> &str { self.name.as_ref() }
+    fn source(&self) -> &str { Files::source(self, ()).unwrap().as_ref() }
+    fn line_starts(&self) -> Option<&[usize]> { Some(&self.line_starts) }
 }
 
 /// A file database that can store multiple source files.
@@ -316,7 +403,7 @@ where
 
 impl<'a, Name, Source> Files<'a> for SimpleFiles<Name, Source>
 where
-    Name: 'a + std::fmt::Display + Clone,
+    Name: 'a + std::fmt::Display + Clone + AsRef<str>,
     Source: 'a + AsRef<str>,
 {
     type FileId = usize;
@@ -337,6 +424,14 @@ where
 
     fn line_range(&self, file_id: usize, line_index: usize) -> Option<Range<usize>> {
         self.get(file_id)?.line_range((), line_index)
+    }
+
+    fn get(&'a self, file_id: usize) -> Option<RefSrc<'a>> {
+        Some(RefSrc {
+            name: &self.get(file_id)?.name.as_ref(),
+            source: &self.get(file_id)?.source.as_ref(),
+            line_starts: &self.get(file_id)?.line_starts,
+        })
     }
 }
 

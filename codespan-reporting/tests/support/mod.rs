@@ -1,5 +1,5 @@
 use codespan_reporting::diagnostic::Diagnostic;
-use codespan_reporting::files::Files;
+use codespan_reporting::files::{Files, RefSrc};
 use codespan_reporting::term::{emit, Config};
 use termcolor::{Buffer, WriteColor};
 
@@ -15,7 +15,7 @@ pub struct TestData<'files, F: Files<'files>> {
 impl<'files, F: Files<'files>> TestData<'files, F> {
     fn emit<W: WriteColor>(&'files self, mut writer: W, config: &Config) -> W {
         for diagnostic in &self.diagnostics {
-            emit(&mut writer, config, &self.files, &diagnostic).unwrap();
+            emit(&mut writer, config, |id| self.files.get(id).unwrap(), &diagnostic).unwrap();
         }
         writer
     }

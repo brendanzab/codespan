@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
     let config = codespan_reporting::term::Config::default();
     for message in &messages {
         let writer = &mut writer.lock();
-        term::emit(writer, &config, &files, &message.to_diagnostic())?;
+        term::emit(writer, &config, |id| files.get(id).unwrap(), &message.to_diagnostic())?;
     }
 
     Ok(())
@@ -46,7 +46,7 @@ mod files {
 
     /// A file that is backed by an `Arc<String>`.
     #[derive(Debug, Clone)]
-    struct File {
+    pub struct File {
         /// The name of the file.
         name: String,
         /// The source code of the file.
@@ -65,6 +65,12 @@ mod files {
                 Ordering::Greater => None,
             }
         }
+    }
+
+    impl files::Src for File {
+        fn name(&self) -> &str { &self.name }
+        fn source(&self) -> &str { &self.source }
+        fn line_starts(&self) -> Option<&[usize]> { Some(&self.line_starts) }
     }
 
     /// An opaque file identifier.
@@ -106,7 +112,7 @@ mod files {
         }
 
         /// Get the file corresponding to the given id.
-        fn get(&self, file_id: FileId) -> Option<&File> {
+        pub fn get(&self, file_id: FileId) -> Option<&File> {
             self.files.get(file_id.0 as usize)
         }
     }
