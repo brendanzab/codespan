@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the `diagnostic!` macro
+
+### Changed
+
+- Added `PartialEq` implementations to `Diagnostic` and `Label` where `FileId` implements `PartialEq`
+
 ## [0.9.5] - 2020-06-24
 
 ### Changed
