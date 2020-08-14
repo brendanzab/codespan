@@ -78,6 +78,7 @@ impl FileId {
     const OFFSET: u32 = 1;
 
     fn new(index: usize) -> FileId {
+        // this unwrap should never fail
         FileId(NonZeroU32::new(index as u32 + Self::OFFSET).unwrap())
     }
 
