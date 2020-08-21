@@ -1,9 +1,9 @@
-use std::io;
 use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
+use crate::term::RenderError;
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -13,12 +13,6 @@ fn count_digits(mut n: usize) -> usize {
         n /= 10; // remove last digit
     }
     count
-}
-
-pub enum RenderError{
-    FileMissing,
-    InvalidIndex,
-    IO(io::Error),
 }
 
 /// Output a richly formatted diagnostic, with source code previews.

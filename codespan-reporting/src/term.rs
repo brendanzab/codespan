@@ -1,6 +1,5 @@
 //! Terminal back-end for emitting diagnostics.
 
-use std::io;
 use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
@@ -14,6 +13,20 @@ mod views;
 pub use termcolor;
 
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
+
+/// An enum representing an error that happened while rendering a diagnostic.
+#[derive(Debug)]
+pub enum RenderError {
+    FileMissing,
+    InvalidIndex,
+    IO(std::io::Error),
+}
+
+impl From<std::io::Error> for RenderError {
+    fn from(err: std::io::Error) -> RenderError {
+        RenderError::IO(err)
+    }
+}
 
 /// A command line argument that configures the coloring of the output.
 ///
