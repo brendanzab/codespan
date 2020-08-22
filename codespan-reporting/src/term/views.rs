@@ -489,7 +489,6 @@ where
             for note in &self.diagnostic.notes {
                 renderer.render_snippet_note(0, note)?;
             }
-            renderer.render_empty()?;
         }
 
         Ok(())
