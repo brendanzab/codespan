@@ -31,7 +31,11 @@ impl From<std::io::Error> for RenderError {
 
 impl std::fmt::Display for RenderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            RenderError::FileMissing => write!(f, "file missing"),
+            RenderError::InvalidIndex => write!(f, "invalid index"),
+            RenderError::IO(err) => write!(f, "{:?}", err),
+        }
     }
 }
 
