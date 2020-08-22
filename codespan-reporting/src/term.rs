@@ -16,6 +16,7 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// An enum representing an error that happened while rendering a diagnostic.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum RenderError {
     FileMissing,
     InvalidIndex,
