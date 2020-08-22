@@ -20,12 +20,12 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 pub enum RenderError {
     FileMissing,
     InvalidIndex,
-    IO(std::io::Error),
+    Io(std::io::Error),
 }
 
 impl From<std::io::Error> for RenderError {
     fn from(err: std::io::Error) -> RenderError {
-        RenderError::IO(err)
+        RenderError::Io(err)
     }
 }
 
@@ -34,7 +34,7 @@ impl std::fmt::Display for RenderError {
         match self {
             RenderError::FileMissing => write!(f, "file missing"),
             RenderError::InvalidIndex => write!(f, "invalid index"),
-            RenderError::IO(err) => write!(f, "{:?}", err),
+            RenderError::Io(err) => write!(f, "{:?}", err),
         }
     }
 }
@@ -42,7 +42,7 @@ impl std::fmt::Display for RenderError {
 impl std::error::Error for RenderError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            RenderError::IO(e) => Some(e),
+            RenderError::Io(err) => Some(err),
             _ => None,
         }
     }
