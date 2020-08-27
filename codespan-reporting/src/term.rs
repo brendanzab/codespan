@@ -34,7 +34,7 @@ impl std::fmt::Display for RenderError {
         match self {
             RenderError::FileMissing => write!(f, "file missing"),
             RenderError::InvalidIndex => write!(f, "invalid index"),
-            RenderError::Io(err) => write!(f, "{:?}", err),
+            RenderError::Io(err) => write!(f, "{}", err),
         }
     }
 }
