@@ -1,9 +1,9 @@
-use std::io;
 use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
+use crate::term::RenderError;
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -32,7 +32,7 @@ where
         &self,
         files: &'files impl Files<'files, FileId = FileId>,
         renderer: &mut Renderer<'_, '_>,
-    ) -> io::Result<()>
+    ) -> Result<(), RenderError>
     where
         FileId: 'files,
     {
@@ -83,15 +83,29 @@ where
 
         // Group labels by file
         for label in &self.diagnostic.labels {
-            let source = files.source(label.file_id).unwrap();
+            let source = files
+                .source(label.file_id)
+                .ok_or(RenderError::FileMissing)?;
             let source = source.as_ref();
 
-            let start_line_index = files.line_index(label.file_id, label.range.start).unwrap();
-            let start_line_number = files.line_number(label.file_id, start_line_index).unwrap();
-            let start_line_range = files.line_range(label.file_id, start_line_index).unwrap();
-            let end_line_index = files.line_index(label.file_id, label.range.end).unwrap();
-            let end_line_number = files.line_number(label.file_id, end_line_index).unwrap();
-            let end_line_range = files.line_range(label.file_id, end_line_index).unwrap();
+            let start_line_index = files
+                .line_index(label.file_id, label.range.start)
+                .ok_or(RenderError::InvalidIndex)?;
+            let start_line_number = files
+                .line_number(label.file_id, start_line_index)
+                .ok_or(RenderError::InvalidIndex)?;
+            let start_line_range = files
+                .line_range(label.file_id, start_line_index)
+                .ok_or(RenderError::InvalidIndex)?;
+            let end_line_index = files
+                .line_index(label.file_id, label.range.end)
+                .ok_or(RenderError::InvalidIndex)?;
+            let end_line_number = files
+                .line_number(label.file_id, end_line_index)
+                .ok_or(RenderError::InvalidIndex)?;
+            let end_line_range = files
+                .line_range(label.file_id, end_line_index)
+                .ok_or(RenderError::InvalidIndex)?;
 
             outer_padding = std::cmp::max(outer_padding, count_digits(start_line_number));
             outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
@@ -110,8 +124,9 @@ where
                     {
                         // this label indicates an earlier start and has at least the same level of style
                         labeled_file.start = label.range.start;
-                        labeled_file.location =
-                            files.location(label.file_id, label.range.start).unwrap();
+                        labeled_file.location = files
+                            .location(label.file_id, label.range.start)
+                            .ok_or(RenderError::InvalidIndex)?;
                         labeled_file.max_label_style = label.style;
                     }
                     labeled_file
@@ -121,13 +136,21 @@ where
                     labeled_files.push(LabeledFile {
                         file_id: label.file_id,
                         start: label.range.start,
-                        name: files.name(label.file_id).unwrap().to_string(),
-                        location: files.location(label.file_id, label.range.start).unwrap(),
+                        name: files
+                            .name(label.file_id)
+                            .ok_or(RenderError::FileMissing)?
+                            .to_string(),
+                        location: files
+                            .location(label.file_id, label.range.start)
+                            .ok_or(RenderError::InvalidIndex)?,
                         num_multi_labels: 0,
                         lines: BTreeMap::new(),
                         max_label_style: label.style,
                     });
-                    labeled_files.last_mut().unwrap()
+                    // this unwrap should never fail because we just pushed an element
+                    labeled_files
+                        .last_mut()
+                        .expect("just pushed an element that disappeared")
                 }
             };
 
@@ -230,8 +253,12 @@ where
                 // 7 │ │     _ 0 => "Buzz"
                 // ```
                 for line_index in (start_line_index + 1)..end_line_index {
-                    let line_range = files.line_range(label.file_id, line_index).unwrap();
-                    let line_number = files.line_number(label.file_id, line_index).unwrap();
+                    let line_range = files
+                        .line_range(label.file_id, line_index)
+                        .ok_or(RenderError::InvalidIndex)?;
+                    let line_number = files
+                        .line_number(label.file_id, line_index)
+                        .ok_or(RenderError::InvalidIndex)?;
 
                     outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
 
@@ -297,7 +324,9 @@ where
         // ```
         let mut labeled_files = labeled_files.into_iter().peekable();
         while let Some(labeled_file) = labeled_files.next() {
-            let source = files.source(labeled_file.file_id).unwrap();
+            let source = files
+                .source(labeled_file.file_id)
+                .ok_or(RenderError::FileMissing)?;
             let source = source.as_ref();
 
             // Top left border and locus.
@@ -358,8 +387,12 @@ where
 
                             renderer.render_snippet_source(
                                 outer_padding,
-                                files.line_number(file_id, line_index + 1).unwrap(),
-                                &source[files.line_range(file_id, line_index + 1).unwrap()],
+                                files
+                                    .line_number(file_id, line_index + 1)
+                                    .ok_or(RenderError::InvalidIndex)?,
+                                &source[files
+                                    .line_range(file_id, line_index + 1)
+                                    .ok_or(RenderError::InvalidIndex)?],
                                 self.diagnostic.severity,
                                 &[],
                                 labeled_file.num_multi_labels,
@@ -410,9 +443,7 @@ where
         for note in &self.diagnostic.notes {
             renderer.render_snippet_note(outer_padding, note)?;
         }
-        renderer.render_empty()?;
-
-        Ok(())
+        renderer.render_empty()
     }
 }
 
@@ -435,7 +466,7 @@ where
         &self,
         files: &'files impl Files<'files, FileId = FileId>,
         renderer: &mut Renderer<'_, '_>,
-    ) -> io::Result<()>
+    ) -> Result<(), RenderError>
     where
         FileId: 'files,
     {
@@ -451,8 +482,13 @@ where
 
             renderer.render_header(
                 Some(&Locus {
-                    name: files.name(label.file_id).unwrap().to_string(),
-                    location: files.location(label.file_id, label.range.start).unwrap(),
+                    name: files
+                        .name(label.file_id)
+                        .ok_or(RenderError::FileMissing)?
+                        .to_string(),
+                    location: files
+                        .location(label.file_id, label.range.start)
+                        .ok_or(RenderError::InvalidIndex)?,
                 }),
                 self.diagnostic.severity,
                 self.diagnostic.code.as_ref().map(String::as_str),

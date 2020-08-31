@@ -95,7 +95,7 @@ pub trait Files<'a> {
         Some(column_index + 1)
     }
 
-    /// Convenience method for returning line and column number at the given a
+    /// Convenience method for returning line and column number at the given
     /// byte index in the file.
     fn location(&'a self, id: Self::FileId, byte_index: usize) -> Option<Location> {
         let line_index = self.line_index(id, byte_index)?;

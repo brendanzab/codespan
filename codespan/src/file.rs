@@ -78,7 +78,7 @@ impl FileId {
     const OFFSET: u32 = 1;
 
     fn new(index: usize) -> FileId {
-        FileId(NonZeroU32::new(index as u32 + Self::OFFSET).unwrap())
+        FileId(NonZeroU32::new(index as u32 + Self::OFFSET).expect("file index cannot be stored"))
     }
 
     fn get(self) -> usize {
