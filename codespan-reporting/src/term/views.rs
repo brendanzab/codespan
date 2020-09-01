@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
-use crate::term::RenderError;
+use crate::term::{Config, RenderError};
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -16,16 +16,20 @@ fn count_digits(mut n: usize) -> usize {
 }
 
 /// Output a richly formatted diagnostic, with source code previews.
-pub struct RichDiagnostic<'diagnostic, FileId> {
+pub struct RichDiagnostic<'diagnostic, 'config, FileId> {
     diagnostic: &'diagnostic Diagnostic<FileId>,
+    config: &'config Config,
 }
 
-impl<'diagnostic, FileId> RichDiagnostic<'diagnostic, FileId>
+impl<'diagnostic, 'config, FileId> RichDiagnostic<'diagnostic, 'config, FileId>
 where
     FileId: Copy + PartialEq,
 {
-    pub fn new(diagnostic: &'diagnostic Diagnostic<FileId>) -> RichDiagnostic<'diagnostic, FileId> {
-        RichDiagnostic { diagnostic }
+    pub fn new(
+        diagnostic: &'diagnostic Diagnostic<FileId>,
+        config: &'config Config,
+    ) -> RichDiagnostic<'diagnostic, 'config, FileId> {
+        RichDiagnostic { diagnostic, config }
     }
 
     pub fn render<'files>(
@@ -270,10 +274,10 @@ where
                     // The line should be rendered to match the configuration of how much context to show.
                     line.must_render |=
                         // Is this line part of the context after the start of the label?
-                        line_index - start_line_index <= renderer.start_context_lines()
+                        line_index - start_line_index <= self.config.start_context_lines
                         ||
                         // Is this line part of the context before the end of the label?
-                        end_line_index - line_index <= renderer.end_context_lines();
+                        end_line_index - line_index <= self.config.end_context_lines;
                 }
 
                 // Last labeled line
