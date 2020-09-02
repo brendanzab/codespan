@@ -326,7 +326,11 @@ where
 
 /// A file that is stored in the database.
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
+// `Serialize` is only implemented on `OsString` for windows/unix
+#[cfg_attr(
+    all(feature = "serialization", any(windows, unix)),
+    derive(Deserialize, Serialize)
+)]
 struct File<Source> {
     /// The name of the file.
     name: OsString,
