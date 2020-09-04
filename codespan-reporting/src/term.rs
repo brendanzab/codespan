@@ -1,6 +1,5 @@
 //! Terminal back-end for emitting diagnostics.
 
-use std::io;
 use std::str::FromStr;
 use termcolor::{ColorChoice, WriteColor};
 
@@ -14,6 +13,40 @@ mod views;
 pub use termcolor;
 
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
+
+/// An enum representing an error that happened while rendering a diagnostic.
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum RenderError {
+    FileMissing,
+    InvalidIndex,
+    Io(std::io::Error),
+}
+
+impl From<std::io::Error> for RenderError {
+    fn from(err: std::io::Error) -> RenderError {
+        RenderError::Io(err)
+    }
+}
+
+impl std::fmt::Display for RenderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RenderError::FileMissing => write!(f, "file missing"),
+            RenderError::InvalidIndex => write!(f, "invalid index"),
+            RenderError::Io(err) => write!(f, "{}", err),
+        }
+    }
+}
+
+impl std::error::Error for RenderError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            RenderError::Io(err) => Some(err),
+            _ => None,
+        }
+    }
+}
 
 /// A command line argument that configures the coloring of the output.
 ///
@@ -87,13 +120,13 @@ pub fn emit<'files, F: Files<'files>>(
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
-) -> io::Result<()> {
+) -> Result<(), RenderError> {
     use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
     let mut renderer = Renderer::new(writer, config);
     match config.display_style {
-        DisplayStyle::Rich => RichDiagnostic::new(diagnostic).render(files, &mut renderer),
+        DisplayStyle::Rich => RichDiagnostic::new(diagnostic, config).render(files, &mut renderer),
         DisplayStyle::Medium => ShortDiagnostic::new(diagnostic, true).render(files, &mut renderer),
         DisplayStyle::Short => ShortDiagnostic::new(diagnostic, false).render(files, &mut renderer),
     }

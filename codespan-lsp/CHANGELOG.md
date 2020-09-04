@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2020-07-20
+
+### Changed
+
+-   `codespan-lsp` only requires `codespan-reporting`, removing its `codespan` dependency.
+-   The `lsp-types` dependency was updated to use a version range: `>=0.70,<0.78`,
+    which includes the latest updates in `0.77.0`.
+
 ## [0.9.5] - 2020-06-24
 ## [0.9.4] - 2020-05-18
 
