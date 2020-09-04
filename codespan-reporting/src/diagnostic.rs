@@ -113,7 +113,7 @@ impl<FileId> Label<FileId> {
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 ///
-/// The position of a Diagnostic is considered to be the position of the [`Label`] with a style of [`LabelStyle::primary`] that has the smallest start position.
+/// The position of a Diagnostic is considered to be the position of the [`Label`] that has the earliest starting position and has the highest style which appears in all the labels of the diagnostic.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {

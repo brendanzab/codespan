@@ -569,9 +569,10 @@ mod multiline_overlapping {
                     .with_message("match arms have incompatible types")
                     .with_code("E0308")
                     .with_labels(vec![
+                        // this secondary label is before the primary label to test the locus calculation (see issue #259)
+                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                         Label::primary((), 230..351).with_message("expected enum `Result`, found struct `LineIndexOutOfBoundsError`"),
                         Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
-                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                         Label::secondary((), 167..195).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                     ])
                     .with_notes(vec![unindent::unindent(

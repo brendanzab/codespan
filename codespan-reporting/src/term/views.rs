@@ -119,10 +119,11 @@ where
             {
                 Some(labeled_file) => {
                     // another diagnostic also referenced this file
-                    if labeled_file.start > label.range.start
-                        && labeled_file.max_label_style >= label.style
+                    if labeled_file.max_label_style > label.style
+                        || (labeled_file.max_label_style == label.style
+                            && labeled_file.start > label.range.start)
                     {
-                        // this label indicates an earlier start and has at least the same level of style
+                        // this label has a higher style or has the same style but starts earlier
                         labeled_file.start = label.range.start;
                         labeled_file.location = files
                             .location(label.file_id, label.range.start)
