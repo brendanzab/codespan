@@ -168,7 +168,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // ```text
         // [E0001]
         // ```
-        if let Some(code) = &code {
+        if let Some(code) = &code.filter(|code| code.is_empty()) {
             write!(self, "[{}]", code)?;
         }
 
