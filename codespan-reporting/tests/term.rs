@@ -325,6 +325,32 @@ mod message_and_notes {
     test_emit!(short_no_color);
 }
 
+mod message_errorcode {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+            let files = SimpleFiles::new();
+
+            let diagnostics = vec![
+                Diagnostic::error().with_message("a message").with_code("E0001"),
+                Diagnostic::warning().with_message("a message").with_code("W001"),
+                Diagnostic::note().with_message("a message").with_code("N0815"),
+                Diagnostic::help().with_message("a message").with_code("H4711"),
+                Diagnostic::error().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::warning().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::note().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::help().with_message("where did my errorcode go?").with_code(""),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
+    test_emit!(rich_no_color);
+    test_emit!(short_no_color);
+}
+
 mod empty_ranges {
     use super::*;
 
