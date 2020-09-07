@@ -26,6 +26,17 @@ macro_rules! test_emit {
             insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
+    (medium_color) => {
+        #[test]
+        fn medium_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
+        }
+    };
     (short_color) => {
         #[test]
         fn short_color() {
@@ -42,6 +53,17 @@ macro_rules! test_emit {
         fn rich_no_color() {
             let config = Config {
                 display_style: DisplayStyle::Rich,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+        }
+    };
+    (medium_no_color) => {
+        #[test]
+        fn medium_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
                 ..TEST_CONFIG.clone()
             };
 
@@ -82,8 +104,10 @@ mod empty {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -130,8 +154,10 @@ mod same_line {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -272,8 +298,10 @@ mod overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -296,8 +324,10 @@ mod message {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -320,8 +350,10 @@ mod message_and_notes {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -379,8 +411,10 @@ mod empty_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -405,8 +439,10 @@ mod same_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -489,8 +525,10 @@ mod multifile {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -566,8 +604,10 @@ mod fizz_buzz {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -614,8 +654,10 @@ mod multiline_overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -819,6 +861,7 @@ mod unicode {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -869,6 +912,7 @@ mod unicode_spans {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -904,6 +948,7 @@ mod position_indicator {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
