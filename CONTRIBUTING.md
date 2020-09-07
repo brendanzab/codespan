@@ -43,3 +43,18 @@ Contributions should:
   Include the reasoning behind each change, and the testing done.
 
 [commit-messages]: https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+
+## Release Process
+
+1. Bump the version numbers of each crate appropriately.
+1. Update the changelogs with the new version ranges.
+1. Create a new PR for the release, and if it passes CI merge it.
+1. Create a new tag for the release, pointing to the merge commit.
+1. Run the following commands in order from the root of the repository.
+    Note that doing this too quickly may result in an error,
+    due to a server-side delay in crate publishing:
+    ```
+    cd codespan-reporting && cargo publish; cd ..
+    cd codespan && cargo publish; cd ..
+    cd codespan-lsp && cargo publish; cd ..
+    ```
