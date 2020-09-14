@@ -128,6 +128,8 @@ pub struct Diagnostic<FileId> {
     /// sense on its own, without additional context provided by labels and notes.
     pub message: String,
     /// Source labels that describe the cause of the diagnostic.
+    /// The order of the labels inside the vector does not have any meaning.
+    /// The labels are always arranged in the order they appear in the source code.
     pub labels: Vec<Label<FileId>>,
     /// Notes that are associated with the primary cause of the diagnostic.
     /// These can include line breaks for improved formatting.
