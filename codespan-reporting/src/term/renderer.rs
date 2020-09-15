@@ -25,16 +25,17 @@ pub type SingleLabel<'diagnostic> = (LabelStyle, Range<usize>, &'diagnostic str)
 ///
 /// Locations are relative to the start of where the source code is rendered.
 pub enum MultiLabel<'diagnostic> {
-    /// Left top corner for multi-line labels.
-    ///
-    /// ```text
-    /// ╭
-    /// ```
-    TopLeft,
     /// Multi-line label top.
     ///
     /// ```text
     /// ╭────────────^
+    /// ```
+    ///
+    /// Can also be rendered at the beginning of the line
+    /// if there is only whitespace before the label starts.
+    ///
+    /// /// ```text
+    /// ╭
     /// ```
     Top(RangeTo<usize>),
     /// Left vertical labels for multi-line labels.
@@ -263,7 +264,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 match multi_labels_iter.peek() {
                     Some((label_index, label_style, label)) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft => {
+                            MultiLabel::Top(range)
+                                if range.end <= source.len() - source.trim_start().len() =>
+                            {
                                 self.label_multi_top_left(severity, *label_style)?;
                             }
                             MultiLabel::Top(..) => self.inner_gutter_space()?,
@@ -290,7 +293,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     *ls == LabelStyle::Primary
                         && match label {
                             MultiLabel::Top(range) => column_range.start >= range.end,
-                            MultiLabel::TopLeft | MultiLabel::Left => true,
+                            MultiLabel::Left => true,
                             MultiLabel::Bottom(range, _) => column_range.end <= range.end,
                         }
                 });
@@ -537,7 +540,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // ```
         for (multi_label_index, (_, label_style, label)) in multi_labels.iter().enumerate() {
             let (label_style, range, bottom_message) = match label {
-                MultiLabel::TopLeft | MultiLabel::Left => continue, // no label caret needed
+                MultiLabel::Left => continue, // no label caret needed
+                // no label caret needed if this can be started in front of the line
+                MultiLabel::Top(range_to)
+                    if range_to.end <= source.len() - source.trim_start().len() =>
+                {
+                    continue
+                }
                 MultiLabel::Top(range) => (*label_style, range, None),
                 MultiLabel::Bottom(range, message) => (*label_style, range, Some(message)),
             };
@@ -556,7 +565,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 match multi_labels_iter.peek() {
                     Some((i, (label_index, ls, label))) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft | MultiLabel::Left => {
+                            MultiLabel::Left => {
                                 self.label_multi_left(severity, *ls, underline.map(|(s, _)| s))?;
                             }
                             MultiLabel::Top(..) if multi_label_index > *i => {
@@ -944,7 +953,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         for label_column in 0..num_multi_labels {
             match multi_labels_iter.peek() {
                 Some((label_index, ls, label)) if *label_index == label_column => match label {
-                    MultiLabel::TopLeft | MultiLabel::Left | MultiLabel::Bottom(..) => {
+                    MultiLabel::Left | MultiLabel::Bottom(..) => {
                         self.label_multi_left(severity, *ls, None)?;
                         multi_labels_iter.next();
                     }
