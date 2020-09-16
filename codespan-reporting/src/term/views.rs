@@ -87,11 +87,6 @@ where
 
         // Group labels by file
         for label in &self.diagnostic.labels {
-            let source = files
-                .source(label.file_id)
-                .ok_or(RenderError::FileMissing)?;
-            let source = source.as_ref();
-
             let start_line_index = files
                 .line_index(label.file_id, label.range.start)
                 .ok_or(RenderError::InvalidIndex)?;
@@ -218,7 +213,6 @@ where
 
                 // First labeled line
                 let label_start = label.range.start - start_line_range.start;
-                let prefix_source = &source[start_line_range.start..label.range.start];
 
                 let start_line = labeled_file.get_or_insert_line(
                     start_line_index,
@@ -226,26 +220,11 @@ where
                     start_line_number,
                 );
 
-                start_line
-                    .multi_labels
-                    // TODO: Do this in the `Renderer`?
-                    .push(match prefix_source.trim() {
-                        // Section is prefixed by empty space, so we don't need to take
-                        // up a new line.
-                        //
-                        // ```text
-                        // 4 │ ╭     case (mod num 5) (mod num 3) of
-                        // ```
-                        "" => (label_index, label.style, MultiLabel::TopLeft),
-                        // There's source code in the prefix, so run a label
-                        // underneath it to get to the start of the range.
-                        //
-                        // ```text
-                        // 4 │   fizz₁ num = case (mod num 5) (mod num 3) of
-                        //   │ ╭─────────────^
-                        // ```
-                        _ => (label_index, label.style, MultiLabel::Top(..label_start)),
-                    });
+                start_line.multi_labels.push((
+                    label_index,
+                    label.style,
+                    MultiLabel::Top(label_start),
+                ));
 
                 // The first line has to be rendered so the start of the label is visible.
                 start_line.must_render = true;
@@ -298,7 +277,7 @@ where
                 end_line.multi_labels.push((
                     label_index,
                     label.style,
-                    MultiLabel::Bottom(..label_end, &label.message),
+                    MultiLabel::Bottom(label_end, &label.message),
                 ));
 
                 // The last line has to be rendered so the end of the label is visible.

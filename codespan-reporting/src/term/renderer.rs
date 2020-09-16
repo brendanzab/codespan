@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::ops::{Range, RangeTo};
+use std::ops::Range;
 use termcolor::{ColorSpec, WriteColor};
 
 use crate::diagnostic::{LabelStyle, Severity};
@@ -25,18 +25,20 @@ pub type SingleLabel<'diagnostic> = (LabelStyle, Range<usize>, &'diagnostic str)
 ///
 /// Locations are relative to the start of where the source code is rendered.
 pub enum MultiLabel<'diagnostic> {
-    /// Left top corner for multi-line labels.
-    ///
-    /// ```text
-    /// ╭
-    /// ```
-    TopLeft,
     /// Multi-line label top.
+    /// The contained value indicates where the label starts.
     ///
     /// ```text
     /// ╭────────────^
     /// ```
-    Top(RangeTo<usize>),
+    ///
+    /// Can also be rendered at the beginning of the line
+    /// if there is only whitespace before the label starts.
+    ///
+    /// /// ```text
+    /// ╭
+    /// ```
+    Top(usize),
     /// Left vertical labels for multi-line labels.
     ///
     /// ```text
@@ -44,11 +46,12 @@ pub enum MultiLabel<'diagnostic> {
     /// ```
     Left,
     /// Multi-line label bottom, with an optional message.
+    /// The first value indicates where the label ends.
     ///
     /// ```text
     /// ╰────────────^ blah blah
     /// ```
-    Bottom(RangeTo<usize>, &'diagnostic str),
+    Bottom(usize, &'diagnostic str),
 }
 
 #[derive(Copy, Clone)]
@@ -253,7 +256,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 match multi_labels_iter.peek() {
                     Some((label_index, label_style, label)) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft => {
+                            MultiLabel::Top(start)
+                                if *start <= source.len() - source.trim_start().len() =>
+                            {
                                 self.label_multi_top_left(severity, *label_style)?;
                             }
                             MultiLabel::Top(..) => self.inner_gutter_space()?,
@@ -279,9 +284,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 }) || multi_labels.iter().any(|(_, ls, label)| {
                     *ls == LabelStyle::Primary
                         && match label {
-                            MultiLabel::Top(range) => column_range.start >= range.end,
-                            MultiLabel::TopLeft | MultiLabel::Left => true,
-                            MultiLabel::Bottom(range, _) => column_range.end <= range.end,
+                            MultiLabel::Top(start) => column_range.start >= *start,
+                            MultiLabel::Left => true,
+                            MultiLabel::Bottom(start, _) => column_range.end <= *start,
                         }
                 });
 
@@ -527,7 +532,11 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // ```
         for (multi_label_index, (_, label_style, label)) in multi_labels.iter().enumerate() {
             let (label_style, range, bottom_message) = match label {
-                MultiLabel::TopLeft | MultiLabel::Left => continue, // no label caret needed
+                MultiLabel::Left => continue, // no label caret needed
+                // no label caret needed if this can be started in front of the line
+                MultiLabel::Top(start) if *start <= source.len() - source.trim_start().len() => {
+                    continue
+                }
                 MultiLabel::Top(range) => (*label_style, range, None),
                 MultiLabel::Bottom(range, message) => (*label_style, range, Some(message)),
             };
@@ -546,7 +555,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 match multi_labels_iter.peek() {
                     Some((i, (label_index, ls, label))) if *label_index == label_column => {
                         match label {
-                            MultiLabel::TopLeft | MultiLabel::Left => {
+                            MultiLabel::Left => {
                                 self.label_multi_left(severity, *ls, underline.map(|(s, _)| s))?;
                             }
                             MultiLabel::Top(..) if multi_label_index > *i => {
@@ -836,13 +845,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         label_style: LabelStyle,
         source: &str,
-        range: RangeTo<usize>,
+        start: usize,
     ) -> Result<(), RenderError> {
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
             .char_metrics(source.char_indices())
-            .take_while(|(metrics, _)| metrics.byte_index < range.end + 1)
+            .take_while(|(metrics, _)| metrics.byte_index < start + 1)
         {
             // FIXME: improve rendering of carets between character boundaries
             (0..metrics.unicode_width)
@@ -869,14 +878,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         label_style: LabelStyle,
         source: &str,
-        range: RangeTo<usize>,
+        start: usize,
         message: &str,
     ) -> Result<(), RenderError> {
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
             .char_metrics(source.char_indices())
-            .take_while(|(metrics, _)| metrics.byte_index < range.end)
+            .take_while(|(metrics, _)| metrics.byte_index < start)
         {
             // FIXME: improve rendering of carets between character boundaries
             (0..metrics.unicode_width)
@@ -934,7 +943,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         for label_column in 0..num_multi_labels {
             match multi_labels_iter.peek() {
                 Some((label_index, ls, label)) if *label_index == label_column => match label {
-                    MultiLabel::TopLeft | MultiLabel::Left | MultiLabel::Bottom(..) => {
+                    MultiLabel::Left | MultiLabel::Bottom(..) => {
                         self.label_multi_left(severity, *ls, None)?;
                         multi_labels_iter.next();
                     }
