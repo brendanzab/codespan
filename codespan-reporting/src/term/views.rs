@@ -218,7 +218,7 @@ where
                 start_line.multi_labels.push((
                     label_index,
                     label.style,
-                    MultiLabel::Top(..label_start),
+                    MultiLabel::Top(label_start),
                 ));
 
                 // The first line has to be rendered so the start of the label is visible.
@@ -272,7 +272,7 @@ where
                 end_line.multi_labels.push((
                     label_index,
                     label.style,
-                    MultiLabel::Bottom(..label_end, &label.message),
+                    MultiLabel::Bottom(label_end, &label.message),
                 ));
 
                 // The last line has to be rendered so the end of the label is visible.

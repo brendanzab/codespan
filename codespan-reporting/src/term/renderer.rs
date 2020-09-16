@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::ops::{Range, RangeTo};
+use std::ops::Range;
 use termcolor::{ColorSpec, WriteColor};
 
 use crate::diagnostic::{LabelStyle, Severity};
@@ -26,6 +26,7 @@ pub type SingleLabel<'diagnostic> = (LabelStyle, Range<usize>, &'diagnostic str)
 /// Locations are relative to the start of where the source code is rendered.
 pub enum MultiLabel<'diagnostic> {
     /// Multi-line label top.
+    /// The contained value indicates where the label starts.
     ///
     /// ```text
     /// ╭────────────^
@@ -37,7 +38,7 @@ pub enum MultiLabel<'diagnostic> {
     /// /// ```text
     /// ╭
     /// ```
-    Top(RangeTo<usize>),
+    Top(usize),
     /// Left vertical labels for multi-line labels.
     ///
     /// ```text
@@ -45,11 +46,12 @@ pub enum MultiLabel<'diagnostic> {
     /// ```
     Left,
     /// Multi-line label bottom, with an optional message.
+    /// The first value indicates where the label ends.
     ///
     /// ```text
     /// ╰────────────^ blah blah
     /// ```
-    Bottom(RangeTo<usize>, &'diagnostic str),
+    Bottom(usize, &'diagnostic str),
 }
 
 #[derive(Copy, Clone)]
@@ -264,8 +266,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 match multi_labels_iter.peek() {
                     Some((label_index, label_style, label)) if *label_index == label_column => {
                         match label {
-                            MultiLabel::Top(range)
-                                if range.end <= source.len() - source.trim_start().len() =>
+                            MultiLabel::Top(start)
+                                if *start <= source.len() - source.trim_start().len() =>
                             {
                                 self.label_multi_top_left(severity, *label_style)?;
                             }
@@ -292,9 +294,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 }) || multi_labels.iter().any(|(_, ls, label)| {
                     *ls == LabelStyle::Primary
                         && match label {
-                            MultiLabel::Top(range) => column_range.start >= range.end,
+                            MultiLabel::Top(start) => column_range.start >= *start,
                             MultiLabel::Left => true,
-                            MultiLabel::Bottom(range, _) => column_range.end <= range.end,
+                            MultiLabel::Bottom(start, _) => column_range.end <= *start,
                         }
                 });
 
@@ -542,9 +544,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let (label_style, range, bottom_message) = match label {
                 MultiLabel::Left => continue, // no label caret needed
                 // no label caret needed if this can be started in front of the line
-                MultiLabel::Top(range_to)
-                    if range_to.end <= source.len() - source.trim_start().len() =>
-                {
+                MultiLabel::Top(start) if *start <= source.len() - source.trim_start().len() => {
                     continue
                 }
                 MultiLabel::Top(range) => (*label_style, range, None),
@@ -855,13 +855,13 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         label_style: LabelStyle,
         source: &str,
-        range: RangeTo<usize>,
+        start: usize,
     ) -> Result<(), RenderError> {
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
             .char_metrics(source.char_indices())
-            .take_while(|(metrics, _)| metrics.byte_index < range.end + 1)
+            .take_while(|(metrics, _)| metrics.byte_index < start + 1)
         {
             // FIXME: improve rendering of carets between character boundaries
             (0..metrics.unicode_width)
@@ -888,14 +888,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         label_style: LabelStyle,
         source: &str,
-        range: RangeTo<usize>,
+        start: usize,
         message: &str,
     ) -> Result<(), RenderError> {
         self.set_color(self.styles().label(severity, label_style))?;
 
         for (metrics, _) in self
             .char_metrics(source.char_indices())
-            .take_while(|(metrics, _)| metrics.byte_index < range.end)
+            .take_while(|(metrics, _)| metrics.byte_index < start)
         {
             // FIXME: improve rendering of carets between character boundaries
             (0..metrics.unicode_width)
