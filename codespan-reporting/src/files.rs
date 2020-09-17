@@ -23,6 +23,7 @@
 //!
 //! [`salsa`]: https://crates.io/crates/salsa
 
+use super::term::RenderError;
 use std::ops::Range;
 
 /// A minimal interface for accessing source files when rendering diagnostics.
@@ -40,10 +41,10 @@ pub trait Files<'a> {
     type Source: 'a + AsRef<str>;
 
     /// The user-facing name of a file.
-    fn name(&'a self, id: Self::FileId) -> Option<Self::Name>;
+    fn name(&'a self, id: Self::FileId) -> Result<Self::Name, RenderError>;
 
     /// The source code of a file.
-    fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
+    fn source(&'a self, id: Self::FileId) -> Result<Self::Source, RenderError>;
 
     /// The index of the line at the given byte index.
     ///
@@ -56,7 +57,7 @@ pub trait Files<'a> {
     ///
     /// [`line_starts`]: crate::files::line_starts
     /// [`files`]: crate::files
-    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Option<usize>;
+    fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Result<usize, RenderError>;
 
     /// The user-facing line number at the given line index.
     ///
@@ -68,8 +69,8 @@ pub trait Files<'a> {
     ///
     /// [line-macro]: https://en.cppreference.com/w/c/preprocessor/line
     #[allow(unused_variables)]
-    fn line_number(&'a self, id: Self::FileId, line_index: usize) -> Option<usize> {
-        Some(line_index + 1)
+    fn line_number(&'a self, id: Self::FileId, line_index: usize) -> Result<usize, RenderError> {
+        Ok(line_index + 1)
     }
 
     /// The user-facing column number at the given line index and byte index.
@@ -87,27 +88,31 @@ pub trait Files<'a> {
         id: Self::FileId,
         line_index: usize,
         byte_index: usize,
-    ) -> Option<usize> {
+    ) -> Result<usize, RenderError> {
         let source = self.source(id)?;
         let line_range = self.line_range(id, line_index)?;
         let column_index = column_index(source.as_ref(), line_range, byte_index);
 
-        Some(column_index + 1)
+        Ok(column_index + 1)
     }
 
     /// Convenience method for returning line and column number at the given
     /// byte index in the file.
-    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Option<Location> {
+    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Result<Location, RenderError> {
         let line_index = self.line_index(id, byte_index)?;
 
-        Some(Location {
+        Ok(Location {
             line_number: self.line_number(id, line_index)?,
             column_number: self.column_number(id, line_index, byte_index)?,
         })
     }
 
     /// The byte range of line in the source of the file.
-    fn line_range(&'a self, id: Self::FileId, line_index: usize) -> Option<Range<usize>>;
+    fn line_range(
+        &'a self,
+        id: Self::FileId,
+        line_index: usize,
+    ) -> Result<Range<usize>, RenderError>;
 }
 
 /// A user-facing location in a source file.
@@ -258,26 +263,29 @@ where
     type Name = Name;
     type Source = &'a str;
 
-    fn name(&self, (): ()) -> Option<Name> {
-        Some(self.name.clone())
+    fn name(&self, (): ()) -> Result<Name, RenderError> {
+        Ok(self.name.clone())
     }
 
-    fn source(&self, (): ()) -> Option<&str> {
-        Some(self.source.as_ref())
+    fn source(&self, (): ()) -> Result<&str, RenderError> {
+        Ok(self.source.as_ref())
     }
 
-    fn line_index(&self, (): (), byte_index: usize) -> Option<usize> {
-        match self.line_starts.binary_search(&byte_index) {
-            Ok(line) => Some(line),
-            Err(next_line) => Some(next_line - 1),
-        }
+    fn line_index(&self, (): (), byte_index: usize) -> Result<usize, RenderError> {
+        self.line_starts
+            .binary_search(&byte_index)
+            .or_else(|next_line| Ok(next_line - 1))
     }
 
-    fn line_range(&self, (): (), line_index: usize) -> Option<Range<usize>> {
-        let line_start = self.line_start(line_index)?;
-        let next_line_start = self.line_start(line_index + 1)?;
+    fn line_range(&self, (): (), line_index: usize) -> Result<Range<usize>, RenderError> {
+        let line_start = self
+            .line_start(line_index)
+            .ok_or(RenderError::InvalidIndex)?;
+        let next_line_start = self
+            .line_start(line_index + 1)
+            .ok_or(RenderError::InvalidIndex)?;
 
-        Some(line_start..next_line_start)
+        Ok(line_start..next_line_start)
     }
 }
 
@@ -309,8 +317,8 @@ where
     }
 
     /// Get the file corresponding to the given id.
-    pub fn get(&self, file_id: usize) -> Option<&SimpleFile<Name, Source>> {
-        self.files.get(file_id)
+    pub fn get(&self, file_id: usize) -> Result<&SimpleFile<Name, Source>, RenderError> {
+        self.files.get(file_id).ok_or(RenderError::FileMissing)
     }
 }
 
@@ -323,19 +331,19 @@ where
     type Name = Name;
     type Source = &'a str;
 
-    fn name(&self, file_id: usize) -> Option<Name> {
-        Some(self.get(file_id)?.name().clone())
+    fn name(&self, file_id: usize) -> Result<Name, RenderError> {
+        Ok(self.get(file_id)?.name().clone())
     }
 
-    fn source(&self, file_id: usize) -> Option<&str> {
-        Some(self.get(file_id)?.source().as_ref())
+    fn source(&self, file_id: usize) -> Result<&str, RenderError> {
+        Ok(self.get(file_id)?.source().as_ref())
     }
 
-    fn line_index(&self, file_id: usize, byte_index: usize) -> Option<usize> {
+    fn line_index(&self, file_id: usize, byte_index: usize) -> Result<usize, RenderError> {
         self.get(file_id)?.line_index((), byte_index)
     }
 
-    fn line_range(&self, file_id: usize, line_index: usize) -> Option<Range<usize>> {
+    fn line_range(&self, file_id: usize, line_index: usize) -> Result<Range<usize>, RenderError> {
         self.get(file_id)?.line_range((), line_index)
     }
 }
