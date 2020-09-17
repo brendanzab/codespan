@@ -18,8 +18,11 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum RenderError {
+    /// a required file is not in the file database
     FileMissing,
+    /// the file is present, but does not contain the specified index
     InvalidIndex,
+    /// There was a error while doing IO
     Io(std::io::Error),
 }
 
@@ -115,6 +118,11 @@ impl Into<ColorChoice> for ColorArg {
 }
 
 /// Emit a diagnostic using the given writer, context, config, and files.
+///
+/// The return value covers all error cases. These error case can arise if:
+/// * a file was removed from the file database.
+/// * a file was changed so that it is too small to have an index
+/// * IO fails
 pub fn emit<'files, F: Files<'files>>(
     writer: &mut dyn WriteColor,
     config: &Config,
