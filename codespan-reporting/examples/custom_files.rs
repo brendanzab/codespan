@@ -42,7 +42,6 @@ fn main() -> anyhow::Result<()> {
 /// A module containing the file implementation
 mod files {
     use codespan_reporting::files;
-    use codespan_reporting::term::RenderError;
     use std::ops::Range;
 
     /// A file that is backed by an `Arc<String>`.
@@ -57,17 +56,20 @@ mod files {
     }
 
     impl File {
-        fn line_start(&self, line_index: usize) -> Result<usize, RenderError> {
+        fn line_start(&self, line_index: usize) -> Result<usize, files::Error> {
             use std::cmp::Ordering;
 
             match line_index.cmp(&self.line_starts.len()) {
-                Ordering::Less => self
+                Ordering::Less => Ok(self
                     .line_starts
                     .get(line_index)
-                    .cloned()
-                    .ok_or(RenderError::InvalidIndex),
+                    .expect("failed despite previous check")
+                    .clone()),
                 Ordering::Equal => Ok(self.source.len()),
-                Ordering::Greater => Err(RenderError::InvalidIndex),
+                Ordering::Greater => Err(files::Error::LineTooLarge {
+                    given: line_index,
+                    max: self.line_starts.len() - 1,
+                }),
             }
         }
     }
@@ -111,10 +113,10 @@ mod files {
         }
 
         /// Get the file corresponding to the given id.
-        fn get(&self, file_id: FileId) -> Result<&File, RenderError> {
+        fn get(&self, file_id: FileId) -> Result<&File, files::Error> {
             self.files
                 .get(file_id.0 as usize)
-                .ok_or(RenderError::FileMissing)
+                .ok_or(files::Error::FileMissing)
         }
     }
 
@@ -123,15 +125,15 @@ mod files {
         type Name = &'files str;
         type Source = &'files str;
 
-        fn name(&self, file_id: FileId) -> Result<&str, RenderError> {
+        fn name(&self, file_id: FileId) -> Result<&str, files::Error> {
             Ok(self.get(file_id)?.name.as_ref())
         }
 
-        fn source(&self, file_id: FileId) -> Result<&str, RenderError> {
+        fn source(&self, file_id: FileId) -> Result<&str, files::Error> {
             Ok(&self.get(file_id)?.source)
         }
 
-        fn line_index(&self, file_id: FileId, byte_index: usize) -> Result<usize, RenderError> {
+        fn line_index(&self, file_id: FileId, byte_index: usize) -> Result<usize, files::Error> {
             self.get(file_id)?
                 .line_starts
                 .binary_search(&byte_index)
@@ -142,7 +144,7 @@ mod files {
             &self,
             file_id: FileId,
             line_index: usize,
-        ) -> Result<Range<usize>, RenderError> {
+        ) -> Result<Range<usize>, files::Error> {
             let file = self.get(file_id)?;
             let line_start = file.line_start(line_index)?;
             let next_line_start = file.line_start(line_index + 1)?;

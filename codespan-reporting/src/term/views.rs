@@ -1,9 +1,9 @@
 use std::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
-use crate::files::{Files, Location};
+use crate::files::{Error, Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
-use crate::term::{Config, RenderError};
+use crate::term::Config;
 
 /// Count the number of decimal digits in `n`.
 fn count_digits(mut n: usize) -> usize {
@@ -36,7 +36,7 @@ where
         &self,
         files: &'files impl Files<'files, FileId = FileId>,
         renderer: &mut Renderer<'_, '_>,
-    ) -> Result<(), RenderError>
+    ) -> Result<(), Error>
     where
         FileId: 'files,
     {
@@ -426,7 +426,7 @@ where
         &self,
         files: &'files impl Files<'files, FileId = FileId>,
         renderer: &mut Renderer<'_, '_>,
-    ) -> Result<(), RenderError>
+    ) -> Result<(), Error>
     where
         FileId: 'files,
     {
