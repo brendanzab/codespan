@@ -75,10 +75,8 @@ impl std::error::Error for RenderError {
 ///     pub color: ColorArg,
 /// }
 ///
-/// fn main() {
-///     let opts = Opts::from_args();
-///     let writer = StandardStream::stderr(opts.color.into());
-/// }
+/// let opts = Opts::from_args();
+/// let writer = StandardStream::stderr(opts.color.into());
 /// ```
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ColorArg(pub ColorChoice);
