@@ -2,12 +2,23 @@
 
 ## Contents
 
+- [Introduction](#introduction)
 - [Code of Conduct](#code-of-conduct)
 - [Matrix Room](#matrix-room)
 - [Reporting Bugs and Suggesting Improvements](#reporting-bugs-and-suggesting-improvements)
 - [Contribution Workflow](#contribution-workflow)
 - [Quality Standards](#quality-standards)
 - [Release Process](#release-process)
+
+## Introduction
+
+Hello, and welcome to the contributing guide for Codespan!
+
+Codespan is mostly maintained in the spare time of contributors,
+so immediate reactions are not to be expected!
+By following this guide you'll make it easier for us to address your issues or incorporate your contributions.
+
+We look forward to working with you!
 
 ## Code of Conduct
 
