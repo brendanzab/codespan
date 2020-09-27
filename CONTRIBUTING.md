@@ -5,13 +5,13 @@
 Please note that this project is released with a [Code of Conduct](./CODE_OF_CONDUCT.md).
 By participating in this project you agree to abide by its terms.
 
-## Matrix room
+## Matrix Room
 
 Joining the matrix room at [#codespan:matrix.org][codespan-matrix] is a good way to get in touch with the developers and community.
 
 [codespan-matrix]: https://app.element.io/#/room/#codespan:matrix.org
 
-## Workflow
+## Contribution Workflow
 
 Follow these steps to contribute to the project:
 
