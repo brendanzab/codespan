@@ -1,5 +1,14 @@
 # Contributing
 
+## Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Matrix Room](#matrix-room)
+- [Reporting Bugs and Suggesting Improvements](#reporting-bugs-and-suggesting-improvements)
+- [Contribution Workflow](#contribution-workflow)
+- [Quality Standards](#quality-standards)
+- [Release Process](#release-process)
+
 ## Code of Conduct
 
 Please note that this project is released with a [Code of Conduct](./CODE_OF_CONDUCT.md).
