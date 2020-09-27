@@ -11,6 +11,26 @@ Joining the matrix room at [#codespan:matrix.org][codespan-matrix] is a good way
 
 [codespan-matrix]: https://app.element.io/#/room/#codespan:matrix.org
 
+## Reporting Bugs and Suggesting Improvements
+
+Bugs (unwanted behaviour) and suggested improvements are tracked as [GitHub issues][github-issues].
+Before reporting an issue, please check the following points:
+
+1. The issue is caused by `codespan-reporting` itself and not by how it is used.
+  Have a look at the documentation if you are not sure.
+  If the documentation is not helpful, you can contact the developers at the above matrix chat address or make an issue.
+1. Your issue has not already been reported by someone else.
+  Please look through the open issues in the [issue tracker][github-issues].
+
+When reporting an issue, please add as much relevant information as possible.
+This will help developers and maintainers to resolve your issue. Some things you might consider:
+
+* Use a descriptive title.
+* Describe how a problem can be reproduced. Ideally give a minimal example.
+* Explain what exactly is the problem and what you expect instead. If it is related to rendering, add screenshots or other illustrations.
+
+[github-issues]: https://github.com/brendanzab/codespan/issues
+
 ## Contribution Workflow
 
 Follow these steps to contribute to the project:
