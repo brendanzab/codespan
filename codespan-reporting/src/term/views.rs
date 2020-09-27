@@ -162,7 +162,10 @@ where
                 //   │         ^^ expected `Int` but found `String`
                 // ```
                 let label_start = label.range.start - start_line_range.start;
-                let label_end = label.range.end - start_line_range.start;
+                // Ensure that we print at least one caret, even when we
+                // have a zero-length source range.
+                let label_end =
+                    usize::max(label.range.end - start_line_range.start, label_start + 1);
 
                 let line = labeled_file.get_or_insert_line(
                     start_line_index,
@@ -183,15 +186,8 @@ where
                     Ok(index) | Err(index) => index,
                 };
 
-                // Ensure that we print at least one caret, even when we
-                // have a zero-length source range.
-                let mut label_range = label_start..label_end;
-                if label_range.len() == 0 {
-                    label_range.end = label_range.start + 1;
-                }
-
                 line.single_labels
-                    .insert(index, (label.style, label_range, &label.message));
+                    .insert(index, (label.style, label_start..label_end, &label.message));
 
                 // If this line is not rendered, the SingleLabel is not visible.
                 line.must_render = true;
@@ -293,7 +289,7 @@ where
         renderer.render_header(
             None,
             self.diagnostic.severity,
-            self.diagnostic.code.as_ref().map(String::as_str),
+            self.diagnostic.code.as_deref(),
             self.diagnostic.message.as_str(),
         )?;
 
@@ -480,7 +476,7 @@ where
                         .ok_or(RenderError::InvalidIndex)?,
                 }),
                 self.diagnostic.severity,
-                self.diagnostic.code.as_ref().map(String::as_str),
+                self.diagnostic.code.as_deref(),
                 self.diagnostic.message.as_str(),
             )?;
         }
@@ -494,7 +490,7 @@ where
             renderer.render_header(
                 None,
                 self.diagnostic.severity,
-                self.diagnostic.code.as_ref().map(String::as_str),
+                self.diagnostic.code.as_deref(),
                 self.diagnostic.message.as_str(),
             )?;
         }

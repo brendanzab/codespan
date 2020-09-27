@@ -184,14 +184,14 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(self, ": {}", message)?;
         self.reset()?;
 
-        write!(self, "\n")?;
+        writeln!(self)?;
 
         Ok(())
     }
 
     /// Empty line.
     pub fn render_empty(&mut self) -> Result<(), RenderError> {
-        write!(self, "\n")?;
+        writeln!(self)?;
         Ok(())
     }
 
@@ -215,7 +215,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         write!(self, " ")?;
         self.snippet_locus(&locus)?;
 
-        write!(self, "\n")?;
+        writeln!(self)?;
 
         Ok(())
     }
@@ -307,7 +307,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             if in_primary {
                 self.reset()?;
             }
-            write!(self, "\n")?;
+            writeln!(self)?;
         }
 
         // Write single labels underneath source
@@ -464,7 +464,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 write!(self, "{}", message)?;
                 self.reset()?;
             }
-            write!(self, "\n")?;
+            writeln!(self)?;
 
             // Write hanging labels pointing to carets
             //
@@ -491,7 +491,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     trailing_label,
                     source.char_indices(),
                 )?;
-                write!(self, "\n")?;
+                writeln!(self)?;
 
                 // Write hanging labels pointing to carets
                 //
@@ -519,7 +519,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                     self.set_color(self.styles().label(severity, *label_style))?;
                     write!(self, "{}", message)?;
                     self.reset()?;
-                    write!(self, "\n")?;
+                    writeln!(self)?;
                 }
             }
         }
@@ -583,11 +583,10 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             }
 
             // Finish the top or bottom caret
-            let range = range.clone();
             match bottom_message {
-                None => self.label_multi_top_caret(severity, label_style, source, range)?,
+                None => self.label_multi_top_caret(severity, label_style, source, *range)?,
                 Some(message) => {
-                    self.label_multi_bottom_caret(severity, label_style, source, range, message)?
+                    self.label_multi_bottom_caret(severity, label_style, source, *range, message)?
                 }
             }
         }
@@ -610,7 +609,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.outer_gutter(outer_padding)?;
         self.border_left()?;
         self.inner_gutter(severity, num_multi_labels, multi_labels)?;
-        write!(self, "\n")?;
+        writeln!(self)?;
         Ok(())
     }
 
@@ -629,7 +628,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.outer_gutter(outer_padding)?;
         self.border_left_break()?;
         self.inner_gutter(severity, num_multi_labels, multi_labels)?;
-        write!(self, "\n")?;
+        writeln!(self)?;
         Ok(())
     }
 
@@ -655,8 +654,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 _ => write!(self, " ")?,
             }
             // Write line of message
-            write!(self, " {}", line)?;
-            write!(self, "\n")?;
+            writeln!(self, " {}", line)?;
         }
 
         Ok(())
@@ -864,7 +862,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         };
         write!(self, "{}", caret_start)?;
         self.reset()?;
-        write!(self, "\n")?;
+        writeln!(self)?;
         Ok(())
     }
 
@@ -901,7 +899,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             write!(self, " {}", message)?;
         }
         self.reset()?;
-        write!(self, "\n")?;
+        writeln!(self)?;
         Ok(())
     }
 
