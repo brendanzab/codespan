@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Building the crate on operating systems other than unix/windows
+    with the `serialization` feature enabled.
+
 ## [0.9.5] - 2020-06-24
 
 ### Fixed
