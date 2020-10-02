@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-   All errors now use the error type `codespan_reporting::file::Error`.
+    This type also replaces the custom error type for `codespan-lsp`.
+
 ## [0.9.5] - 2020-06-24
 
 ### Changed
