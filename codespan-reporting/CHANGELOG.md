@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
+and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
+
+### Added
+
+-   If a label spans over multiple lines, not all lines are rendered.
+    The number of lines rendered at beginning and end is configurable separately.
+-   There is now a custom error type.
+-   There now is a medium rendering mode that is like the short rendering mode
+    but also shows notes from the diagnostic.
+
+### Fixed
+
+-   Empty error codes are not rendered.
+-   The locus ("location of the diagnostic") is now computed so it is always at the first
+    primary label, or at the first secondary label if no primary labels are available.
+-   All `unwrap`s outside of tests and examples have been removed.
+-   Some internal improvements, including various code style improvements by using Clippy.
+-   Improved documentation, also mentioning how the ordering of labels is handled.
+
 ## [0.9.5] - 2020-06-24
 
 ### Changed
