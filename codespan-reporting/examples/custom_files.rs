@@ -55,18 +55,6 @@ mod files {
         line_starts: Vec<usize>,
     }
 
-    impl File {
-        fn line_start(&self, line_index: usize) -> Option<usize> {
-            use std::cmp::Ordering;
-
-            match line_index.cmp(&self.line_starts.len()) {
-                Ordering::Less => self.line_starts.get(line_index).cloned(),
-                Ordering::Equal => Some(self.source.len()),
-                Ordering::Greater => None,
-            }
-        }
-    }
-
     /// An opaque file identifier.
     #[derive(Copy, Clone, PartialEq, Eq)]
     pub struct FileId(u32);
@@ -133,8 +121,8 @@ mod files {
 
         fn line_range(&self, file_id: FileId, line_index: usize) -> Option<Range<usize>> {
             let file = self.get(file_id)?;
-            let line_start = file.line_start(line_index)?;
-            let next_line_start = file.line_start(line_index + 1)?;
+            let line_start = file.line_starts.get(line_index).copied()?;
+            let next_line_start = file.line_starts.get(line_index + 1).copied()?;
 
             Some(line_start..next_line_start)
         }

@@ -369,20 +369,17 @@ where
     }
 
     fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, LineIndexOutOfBoundsError> {
-        use std::cmp::Ordering;
-
-        match line_index.cmp(&self.last_line_index()) {
-            Ordering::Less => Ok(self.line_starts[line_index.to_usize()]),
-            Ordering::Equal => Ok(self.source_span().end()),
-            Ordering::Greater => Err(LineIndexOutOfBoundsError {
+        self.line_starts
+            .get(line_index.to_usize())
+            .cloned()
+            .ok_or_else(|| LineIndexOutOfBoundsError {
                 given: line_index,
                 max: self.last_line_index(),
-            }),
-        }
+            })
     }
 
     fn last_line_index(&self) -> LineIndex {
-        LineIndex::from(self.line_starts.len() as RawIndex)
+        LineIndex::from(self.line_starts.len() as RawIndex - 1)
     }
 
     fn line_span(&self, line_index: LineIndex) -> Result<Span, LineIndexOutOfBoundsError> {
@@ -395,8 +392,10 @@ where
     fn line_index(&self, byte_index: ByteIndex) -> LineIndex {
         match self.line_starts.binary_search(&byte_index) {
             // Found the start of a line
-            Ok(line) => LineIndex::from(line as u32),
-            Err(next_line) => LineIndex::from(next_line as u32 - 1),
+            Ok(line) => LineIndex::from(std::cmp::min(line, self.line_starts.len() - 2) as u32),
+            Err(next_line) => {
+                LineIndex::from(std::cmp::min(next_line - 1, self.line_starts.len() - 2) as u32)
+            }
         }
     }
 
@@ -449,7 +448,9 @@ where
 
 // NOTE: this is copied from `codespan_reporting::files::line_starts` and should be kept in sync.
 fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
-    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+    std::iter::once(0)
+        .chain(source.match_indices('\n').map(|(i, _)| i + 1))
+        .chain(std::iter::once(source.len()))
 }
 
 #[cfg(test)]
@@ -470,6 +471,7 @@ mod test {
                 ByteIndex::from(4),  // "bar\r\n"
                 ByteIndex::from(9),  // ""
                 ByteIndex::from(10), // "baz"
+                ByteIndex::from(13), // EOF
             ],
         );
     }

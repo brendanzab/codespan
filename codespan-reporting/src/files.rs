@@ -46,7 +46,7 @@ pub trait Files<'a> {
     fn source(&'a self, id: Self::FileId) -> Option<Self::Source>;
 
     /// The index of the line at the given byte index.
-    /// If the byte index is past the end of the file, returns the maximum line index in the file.
+    /// If the byte index is at or past the end of the file, returns the maximum line index in the file.
     /// This means that this function only fails if the file is not present.
     ///
     /// # Note for trait implementors
@@ -161,6 +161,10 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 
 /// Return the starting byte index of each line in the source string.
 ///
+/// The end of file is also considered to be a linebreak.
+/// This entails returning a Vector with duplicate values
+/// if the source is empty.
+///
 /// This can make it easier to implement [`Files::line_index`] by allowing
 /// implementors of [`Files`] to pre-compute the line starts, then search for
 /// the corresponding line range, as shown in the example below.
@@ -183,6 +187,7 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 ///         4,  // "bar\r\n"
 ///         9,  // ""
 ///         10, // "baz"
+///         13, // EOF
 ///     ],
 /// );
 ///
@@ -197,7 +202,9 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 /// ```
 // NOTE: this is copied in `codespan::file::line_starts` and should be kept in sync.
 pub fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
-    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+    std::iter::once(0)
+        .chain(source.match_indices('\n').map(|(i, _)| i + 1))
+        .chain(std::iter::once(source.len()))
 }
 
 /// A file database that contains a single source file.
@@ -241,16 +248,6 @@ where
     pub fn source(&self) -> &Source {
         &self.source
     }
-
-    fn line_start(&self, line_index: usize) -> Option<usize> {
-        use std::cmp::Ordering;
-
-        match line_index.cmp(&self.line_starts.len()) {
-            Ordering::Less => self.line_starts.get(line_index).cloned(),
-            Ordering::Equal => Some(self.source.as_ref().len()),
-            Ordering::Greater => None,
-        }
-    }
 }
 
 impl<'a, Name, Source> Files<'a> for SimpleFile<Name, Source>
@@ -272,14 +269,15 @@ where
 
     fn line_index(&self, (): (), byte_index: usize) -> Option<usize> {
         match self.line_starts.binary_search(&byte_index) {
-            Ok(line) => Some(line),
-            Err(next_line) => Some(next_line - 1),
+            // never return the last line index, because that is not a "real" line
+            Ok(line) => Some(std::cmp::min(line, self.line_starts.len() - 2)),
+            Err(next_line) => Some(std::cmp::min(next_line - 1, self.line_starts.len() - 2)),
         }
     }
 
     fn line_range(&self, (): (), line_index: usize) -> Option<Range<usize>> {
-        let line_start = self.line_start(line_index)?;
-        let next_line_start = self.line_start(line_index + 1)?;
+        let line_start = self.line_starts.get(line_index).copied()?;
+        let next_line_start = self.line_starts.get(line_index + 1).copied()?;
 
         Some(line_start..next_line_start)
     }
@@ -362,6 +360,7 @@ mod test {
                 4,  // "bar\r\n"
                 9,  // ""
                 10, // "baz"
+                13, // EOF
             ],
         );
     }
