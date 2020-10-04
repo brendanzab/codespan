@@ -15,7 +15,6 @@ mod location;
 mod span;
 
 pub use crate::file::{FileId, Files};
-pub use crate::file::{LineIndexOutOfBoundsError, LocationError, SpanOutOfBoundsError};
 pub use crate::index::{ByteIndex, ByteOffset};
 pub use crate::index::{ColumnIndex, ColumnNumber, ColumnOffset};
 pub use crate::index::{Index, Offset};

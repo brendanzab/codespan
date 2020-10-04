@@ -186,7 +186,7 @@ test
                 character: 3,
             },
         );
-        assert_eq!(result, Ok(5));
+        assert_eq!(result.unwrap(), 5);
 
         let result = position_to_byte_index(
             &files,
@@ -196,7 +196,7 @@ test
                 character: 6,
             },
         );
-        assert_eq!(result, Ok(10));
+        assert_eq!(result.unwrap(), 10);
     }
 
     #[test]
@@ -207,29 +207,29 @@ test
 
         let result = byte_index_to_position(&files, file_id, 5);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 0,
                 character: 3,
-            })
+            }
         );
 
         let result = byte_index_to_position(&files, file_id, 10);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 0,
                 character: 6,
-            })
+            }
         );
 
         let result = byte_index_to_position(&files, file_id2, 11);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 1,
                 character: 6,
-            })
+            }
         );
     }
 }
