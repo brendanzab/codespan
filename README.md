@@ -135,4 +135,13 @@ These are all ultimately inspired by rustc's excellent [error reporting infrastr
 [annotate-snippets]: https://crates.io/crates/annotate-snippets
 [codemap]: https://crates.io/crates/codemap
 [language-reporting]: https://crates.io/crates/language-reporting
-[librustc_errors]: https://github.com/rust-lang/rust/tree/master/src/librustc_errors
+[librustc_errors]: https://github.com/rust-lang/rust/tree/master/compiler/rustc_errors/src
+
+## Contributing
+
+A guide to contributing to codespan-reporting [can be found here](/CONTRIBUTING.md).
+
+## Code of Conduct
+
+Please note that this project is released with a [Code of Conduct](./CODE_OF_CONDUCT.md).
+By participating in this project you agree to abide by its terms.

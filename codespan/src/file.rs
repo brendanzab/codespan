@@ -1,10 +1,10 @@
+use codespan_reporting::files::Error;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::ffi::{OsStr, OsString};
 use std::num::NonZeroU32;
 
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
-use codespan_reporting::files::Error;
 
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -423,9 +423,6 @@ mod test {
             })
             .collect::<Vec<_>>();
 
-        assert_eq!(
-            line_sources,
-            ["foo\n", "bar\r\n", "\n", "baz"],
-        );
+        assert_eq!(line_sources, ["foo\n", "bar\r\n", "\n", "baz"],);
     }
 }

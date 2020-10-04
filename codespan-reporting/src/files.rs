@@ -7,7 +7,7 @@
 //! Simple implementations of this trait are implemented:
 //!
 //! - [`SimpleFile`]: For single-file use-cases
-//! - [`SimpleFiles`]: For single-file use-cases
+//! - [`SimpleFiles`]: For multi-file use-cases
 //!
 //! These data structures provide a pretty minimal API, however,
 //! so end-users are encouraged to create their own implementations for their
@@ -98,6 +98,8 @@ pub trait Files<'a> {
     fn source(&'a self, id: Self::FileId) -> Result<Self::Source, Error>;
 
     /// The index of the line at the given byte index.
+    /// If the byte index is past the end of the file, returns the maximum line index in the file.
+    /// This means that this function only fails if the file is not present.
     ///
     /// # Note for trait implementors
     ///
@@ -111,6 +113,8 @@ pub trait Files<'a> {
     fn line_index(&'a self, id: Self::FileId, byte_index: usize) -> Result<usize, Error>;
 
     /// The user-facing line number at the given line index.
+    /// It is not necessarily checked that the specified line index
+    /// is actually in the file.
     ///
     /// # Note for trait implementors
     ///
@@ -346,6 +350,7 @@ where
 ///
 /// This is useful for simple language tests, but it might be worth creating a
 /// custom implementation when a language scales beyond a certain size.
+/// It is a glorified `Vec<SimpleFile>` that implements the `Files` trait.
 #[derive(Debug, Clone)]
 pub struct SimpleFiles<Name, Source> {
     files: Vec<SimpleFile<Name, Source>>,
