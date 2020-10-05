@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.83`,
     which includes the latest updates in `0.82.0`.
 
+## [0.10.1] - 2020-08-17
+
+### Changed
+
+-   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.80`,
+    which includes the latest updates in `0.79.0`.
+
 ## [0.10.0] - 2020-07-20
 
 ### Changed
