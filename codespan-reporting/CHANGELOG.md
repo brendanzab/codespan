@@ -18,6 +18,11 @@ and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CO
 -   There now is a medium rendering mode that is like the short rendering mode
     but also shows notes from the diagnostic.
 
+### Changed
+
+-   All errors now use the error type `codespan_reporting::file::Error`.
+    This type also replaces the custom error type for `codespan-lsp`.
+
 ### Fixed
 
 -   Empty error codes are not rendered.

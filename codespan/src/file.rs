@@ -1,69 +1,10 @@
+use codespan_reporting::files::Error;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::ffi::{OsStr, OsString};
 use std::num::NonZeroU32;
-use std::{error, fmt};
 
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
-
-#[derive(Debug, PartialEq)]
-pub struct LineIndexOutOfBoundsError {
-    pub given: LineIndex,
-    pub max: LineIndex,
-}
-
-impl error::Error for LineIndexOutOfBoundsError {}
-
-impl fmt::Display for LineIndexOutOfBoundsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Line index out of bounds - given: {}, max: {}",
-            self.given, self.max
-        )
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum LocationError {
-    OutOfBounds { given: ByteIndex, span: Span },
-    InvalidCharBoundary { given: ByteIndex },
-}
-
-impl error::Error for LocationError {}
-
-impl fmt::Display for LocationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LocationError::OutOfBounds { given, span } => write!(
-                f,
-                "Byte index out of bounds - given: {}, span: {}",
-                given, span
-            ),
-            LocationError::InvalidCharBoundary { given } => {
-                write!(f, "Byte index within character boundary - given: {}", given)
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SpanOutOfBoundsError {
-    pub given: Span,
-    pub span: Span,
-}
-
-impl error::Error for SpanOutOfBoundsError {}
-
-impl fmt::Display for SpanOutOfBoundsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Span out of bounds - given: {}, span: {}",
-            self.given, self.span
-        )
-    }
-}
 
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -165,34 +106,30 @@ where
     /// Get the span at the given line index.
     ///
     /// ```rust
-    /// use codespan::{Files, LineIndex, LineIndexOutOfBoundsError, Span};
+    /// use codespan::{Files, LineIndex, Span};
     ///
     /// let mut files = Files::new();
     /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
     ///
-    /// let line_sources = (0..5)
-    ///     .map(|line| files.line_span(file_id, line))
+    /// let line_sources = (0..4)
+    ///     .map(|line| files.line_span(file_id, line).unwrap())
     ///     .collect::<Vec<_>>();
     ///
-    /// assert_eq!(
-    ///     line_sources,
+    /// assert_eq!(line_sources,
     ///     [
-    ///         Ok(Span::new(0, 4)),    // 0: "foo\n"
-    ///         Ok(Span::new(4, 9)),    // 1: "bar\r\n"
-    ///         Ok(Span::new(9, 10)),   // 2: ""
-    ///         Ok(Span::new(10, 13)),  // 3: "baz"
-    ///         Err(LineIndexOutOfBoundsError {
-    ///             given: LineIndex::from(5),
-    ///             max: LineIndex::from(4),
-    ///         }),
+    ///         Span::new(0, 4),    // 0: "foo\n"
+    ///         Span::new(4, 9),    // 1: "bar\r\n"
+    ///         Span::new(9, 10),   // 2: ""
+    ///         Span::new(10, 13),  // 3: "baz"
     ///     ]
     /// );
+    /// assert!(files.line_span(file_id, 4).is_err());
     /// ```
     pub fn line_span(
         &self,
         file_id: FileId,
         line_index: impl Into<LineIndex>,
-    ) -> Result<Span, LineIndexOutOfBoundsError> {
+    ) -> Result<Span, Error> {
         self.get(file_id).line_span(line_index.into())
     }
 
@@ -217,28 +154,22 @@ where
     /// Get the location at the given byte index in the source file.
     ///
     /// ```rust
-    /// use codespan::{ByteIndex, Files, Location, LocationError, Span};
+    /// use codespan::{ByteIndex, Files, Location, Span};
     ///
     /// let mut files = Files::new();
     /// let file_id = files.add("test", "foo\nbar\r\n\nbaz");
     ///
-    /// assert_eq!(files.location(file_id, 0), Ok(Location::new(0, 0)));
-    /// assert_eq!(files.location(file_id, 7), Ok(Location::new(1, 3)));
-    /// assert_eq!(files.location(file_id, 8), Ok(Location::new(1, 4)));
-    /// assert_eq!(files.location(file_id, 9), Ok(Location::new(2, 0)));
-    /// assert_eq!(
-    ///     files.location(file_id, 100),
-    ///     Err(LocationError::OutOfBounds {
-    ///         given: ByteIndex::from(100),
-    ///         span: Span::new(0, 13),
-    ///     }),
-    /// );
+    /// assert_eq!(files.location(file_id, 0).unwrap(), Location::new(0, 0));
+    /// assert_eq!(files.location(file_id, 7).unwrap(), Location::new(1, 3));
+    /// assert_eq!(files.location(file_id, 8).unwrap(), Location::new(1, 4));
+    /// assert_eq!(files.location(file_id, 9).unwrap(), Location::new(2, 0));
+    /// assert!(files.location(file_id, 100).is_err());
     /// ```
     pub fn location(
         &self,
         file_id: FileId,
         byte_index: impl Into<ByteIndex>,
-    ) -> Result<Location, LocationError> {
+    ) -> Result<Location, Error> {
         self.get(file_id).location(byte_index.into())
     }
 
@@ -282,14 +213,10 @@ where
     /// let mut files = Files::new();
     /// let file_id = files.add("test",  "hello world!");
     ///
-    /// assert_eq!(files.source_slice(file_id, Span::new(0, 5)), Ok("hello"));
+    /// assert_eq!(files.source_slice(file_id, Span::new(0, 5)).unwrap(), "hello");
     /// assert!(files.source_slice(file_id, Span::new(0, 100)).is_err());
     /// ```
-    pub fn source_slice(
-        &self,
-        file_id: FileId,
-        span: impl Into<Span>,
-    ) -> Result<&str, SpanOutOfBoundsError> {
+    pub fn source_slice(&self, file_id: FileId, span: impl Into<Span>) -> Result<&str, Error> {
         self.get(file_id).source_slice(span.into())
     }
 }
@@ -303,24 +230,28 @@ where
     type Name = String;
     type Source = &'a str;
 
-    fn name(&self, id: FileId) -> Option<String> {
+    fn name(&self, id: FileId) -> Result<String, Error> {
         use std::path::PathBuf;
 
-        Some(PathBuf::from(self.name(id)).display().to_string())
+        Ok(PathBuf::from(self.name(id)).display().to_string())
     }
 
-    fn source(&'a self, id: FileId) -> Option<&str> {
-        Some(self.source(id).as_ref())
+    fn source(&'a self, id: FileId) -> Result<&str, Error> {
+        Ok(self.source(id).as_ref())
     }
 
-    fn line_index(&self, id: FileId, byte_index: usize) -> Option<usize> {
-        Some(self.line_index(id, byte_index as u32).to_usize())
+    fn line_index(&self, id: FileId, byte_index: usize) -> Result<usize, Error> {
+        Ok(self.line_index(id, byte_index as u32).to_usize())
     }
 
-    fn line_range(&'a self, id: FileId, line_index: usize) -> Option<std::ops::Range<usize>> {
-        let span = self.line_span(id, line_index as u32).ok()?;
+    fn line_range(
+        &'a self,
+        id: FileId,
+        line_index: usize,
+    ) -> Result<std::ops::Range<usize>, Error> {
+        let span = self.line_span(id, line_index as u32)?;
 
-        Some(span.start().to_usize()..span.end().to_usize())
+        Ok(span.start().to_usize()..span.end().to_usize())
     }
 }
 
@@ -368,15 +299,15 @@ where
         &self.name
     }
 
-    fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, LineIndexOutOfBoundsError> {
+    fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, Error> {
         use std::cmp::Ordering;
 
         match line_index.cmp(&self.last_line_index()) {
             Ordering::Less => Ok(self.line_starts[line_index.to_usize()]),
             Ordering::Equal => Ok(self.source_span().end()),
-            Ordering::Greater => Err(LineIndexOutOfBoundsError {
-                given: line_index,
-                max: self.last_line_index(),
+            Ordering::Greater => Err(Error::LineTooLarge {
+                given: line_index.to_usize(),
+                max: self.last_line_index().to_usize(),
             }),
         }
     }
@@ -385,7 +316,7 @@ where
         LineIndex::from(self.line_starts.len() as RawIndex)
     }
 
-    fn line_span(&self, line_index: LineIndex) -> Result<Span, LineIndexOutOfBoundsError> {
+    fn line_span(&self, line_index: LineIndex) -> Result<Span, Error> {
         let line_start = self.line_start(line_index)?;
         let next_line_start = self.line_start(line_index + LineOffset::from(1))?;
 
@@ -400,25 +331,25 @@ where
         }
     }
 
-    fn location(&self, byte_index: ByteIndex) -> Result<Location, LocationError> {
+    fn location(&self, byte_index: ByteIndex) -> Result<Location, Error> {
         let line_index = self.line_index(byte_index);
-        let line_start_index =
-            self.line_start(line_index)
-                .map_err(|_| LocationError::OutOfBounds {
-                    given: byte_index,
-                    span: self.source_span(),
-                })?;
+        let line_start_index = self
+            .line_start(line_index)
+            .map_err(|_| Error::IndexTooLarge {
+                given: byte_index.to_usize(),
+                max: self.source().as_ref().len() - 1,
+            })?;
         let line_src = self
             .source
             .as_ref()
             .get(line_start_index.to_usize()..byte_index.to_usize())
             .ok_or_else(|| {
-                let given = byte_index;
-                if given >= self.source_span().end() {
-                    let span = self.source_span();
-                    LocationError::OutOfBounds { given, span }
+                let given = byte_index.to_usize();
+                let max = self.source().as_ref().len() - 1;
+                if given > max {
+                    Error::IndexTooLarge { given, max }
                 } else {
-                    LocationError::InvalidCharBoundary { given }
+                    Error::InvalidCharBoundary { given }
                 }
             })?;
 
@@ -436,13 +367,16 @@ where
         Span::from_str(self.source.as_ref())
     }
 
-    fn source_slice(&self, span: Span) -> Result<&str, SpanOutOfBoundsError> {
+    fn source_slice(&self, span: Span) -> Result<&str, Error> {
         let start = span.start().to_usize();
         let end = span.end().to_usize();
 
         self.source.as_ref().get(start..end).ok_or_else(|| {
-            let span = Span::from_str(self.source.as_ref());
-            SpanOutOfBoundsError { given: span, span }
+            let max = self.source().as_ref().len() - 1;
+            Error::IndexTooLarge {
+                given: if start > max { start } else { end },
+                max,
+            }
         })
     }
 }
@@ -485,13 +419,10 @@ mod test {
         let line_sources = (0..4)
             .map(|line| {
                 let line_span = files.line_span(file_id, line).unwrap();
-                files.source_slice(file_id, line_span)
+                files.source_slice(file_id, line_span).unwrap()
             })
             .collect::<Vec<_>>();
 
-        assert_eq!(
-            line_sources,
-            [Ok("foo\n"), Ok("bar\r\n"), Ok("\n"), Ok("baz")],
-        );
+        assert_eq!(line_sources, ["foo\n", "bar\r\n", "\n", "baz"],);
     }
 }

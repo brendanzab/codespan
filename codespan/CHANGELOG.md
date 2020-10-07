@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-   This crate now depends on `codespan-reporting` non-optionally
+    because of the new error type.
+
 ### Fixed
 
 -   Building the crate on operating systems other than unix/windows
