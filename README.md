@@ -135,7 +135,7 @@ These are all ultimately inspired by rustc's excellent [error reporting infrastr
 [annotate-snippets]: https://crates.io/crates/annotate-snippets
 [codemap]: https://crates.io/crates/codemap
 [language-reporting]: https://crates.io/crates/language-reporting
-[librustc_errors]: https://github.com/rust-lang/rust/tree/master/src/librustc_errors
+[librustc_errors]: https://github.com/rust-lang/rust/tree/master/compiler/rustc_errors/src
 
 ## Contributing
 

@@ -14,40 +14,6 @@ pub use termcolor;
 
 pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
-/// An enum representing an error that happened while rendering a diagnostic.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum RenderError {
-    FileMissing,
-    InvalidIndex,
-    Io(std::io::Error),
-}
-
-impl From<std::io::Error> for RenderError {
-    fn from(err: std::io::Error) -> RenderError {
-        RenderError::Io(err)
-    }
-}
-
-impl std::fmt::Display for RenderError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RenderError::FileMissing => write!(f, "file missing"),
-            RenderError::InvalidIndex => write!(f, "invalid index"),
-            RenderError::Io(err) => write!(f, "{}", err),
-        }
-    }
-}
-
-impl std::error::Error for RenderError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            RenderError::Io(err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
 /// A command line argument that configures the coloring of the output.
 ///
 /// This can be used with command line argument parsers like [`clap`] or [`structopt`].
@@ -113,12 +79,17 @@ impl Into<ColorChoice> for ColorArg {
 }
 
 /// Emit a diagnostic using the given writer, context, config, and files.
+///
+/// The return value covers all error cases. These error case can arise if:
+/// * a file was removed from the file database.
+/// * a file was changed so that it is too small to have an index
+/// * IO fails
 pub fn emit<'files, F: Files<'files>>(
     writer: &mut dyn WriteColor,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
-) -> Result<(), RenderError> {
+) -> Result<(), super::files::Error> {
     use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 

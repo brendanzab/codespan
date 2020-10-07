@@ -30,7 +30,7 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let writer = StandardStream::stderr(ColorChoice::Always);
-    let config = codespan_reporting::term::Config::default();
+    let config = term::Config::default();
     for message in &messages {
         let writer = &mut writer.lock();
         term::emit(writer, &config, &files, &message.to_diagnostic())?;
@@ -94,8 +94,10 @@ mod files {
         }
 
         /// Get the file corresponding to the given id.
-        fn get(&self, file_id: FileId) -> Option<&File> {
-            self.files.get(file_id.0 as usize)
+        fn get(&self, file_id: FileId) -> Result<&File, files::Error> {
+            self.files
+                .get(file_id.0 as usize)
+                .ok_or(files::Error::FileMissing)
         }
     }
 
@@ -104,27 +106,43 @@ mod files {
         type Name = &'files str;
         type Source = &'files str;
 
-        fn name(&self, file_id: FileId) -> Option<&str> {
-            Some(self.get(file_id)?.name.as_ref())
+        fn name(&self, file_id: FileId) -> Result<&str, files::Error> {
+            Ok(self.get(file_id)?.name.as_ref())
         }
 
-        fn source(&self, file_id: FileId) -> Option<&str> {
-            Some(&self.get(file_id)?.source)
+        fn source(&self, file_id: FileId) -> Result<&str, files::Error> {
+            Ok(&self.get(file_id)?.source)
         }
 
-        fn line_index(&self, file_id: FileId, byte_index: usize) -> Option<usize> {
-            match self.get(file_id)?.line_starts.binary_search(&byte_index) {
-                Ok(line) => Some(line),
-                Err(next_line) => Some(next_line - 1),
-            }
+        fn line_index(&self, file_id: FileId, byte_index: usize) -> Result<usize, files::Error> {
+            self.get(file_id)?
+                .line_starts
+                .binary_search(&byte_index)
+                .or_else(|next_line| Ok(next_line - 1))
         }
 
-        fn line_range(&self, file_id: FileId, line_index: usize) -> Option<Range<usize>> {
+        fn line_range(
+            &self,
+            file_id: FileId,
+            line_index: usize,
+        ) -> Result<Range<usize>, files::Error> {
             let file = self.get(file_id)?;
-            let line_start = file.line_starts.get(line_index).copied()?;
-            let next_line_start = file.line_starts.get(line_index + 1).copied()?;
+            let line_start =
+                file.line_starts
+                    .get(line_index)
+                    .copied()
+                    .ok_or(files::Error::LineTooLarge {
+                        given: line_index,
+                        max: file.line_starts.len() - 1,
+                    })?;
+            let next_line_start = file.line_starts.get(line_index + 1).copied().ok_or(
+                files::Error::LineTooLarge {
+                    given: line_index,
+                    max: file.line_starts.len() - 1,
+                },
+            )?;
 
-            Some(line_start..next_line_start)
+            Ok(line_start..next_line_start)
         }
     }
 }

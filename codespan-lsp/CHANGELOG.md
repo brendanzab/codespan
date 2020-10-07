@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   The error type in `codespan-lsp` is replaced with the error type in the `codespan-reporting` crate.
+    The error type is now `codespan_reporting::file::Error`.
 -   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.83`,
     which includes the latest updates in `0.82.0`.
+
+## [0.10.1] - 2020-08-17
+
+### Changed
+
+-   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.80`,
+    which includes the latest updates in `0.79.0`.
 
 ## [0.10.0] - 2020-07-20
 
@@ -56,8 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.5...HEAD
-[0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/brendanzab/codespan/compare/v0.10.0..v0.10.1
+[0.10.0]: https://github.com/brendanzab/codespan/compare/v0.9.5...v0.10.0
+[0.9.5]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
