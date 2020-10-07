@@ -35,11 +35,6 @@ jobs:
         with:
           command: check
           args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - name: Run cargo test for codespan without codespan-reporting
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan/Cargo.toml" --no-default-features
       - name: Run cargo test for codespan-lsp
         uses: actions-rs/cargo@v1
         with:
