@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
+and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
+
 ### Added
 
 -   If a label spans over multiple lines, not all lines are rendered.
@@ -19,8 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   All errors now use the error type `codespan_reporting::file::Error`.
     This type also replaces the custom error type for `codespan-lsp`.
-There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
-and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
 
 ### Fixed
 
