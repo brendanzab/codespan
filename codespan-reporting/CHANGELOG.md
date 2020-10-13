@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.2] - 2020-10-XX
+
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
 and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
 
@@ -314,8 +316,9 @@ and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CO
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.5...HEAD
-[0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.10.2...HEAD
+[0.10.2]: https://github.com/brendanzab/codespan/compare/v0.9.5...v0.10.2
+[0.9.5]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2
