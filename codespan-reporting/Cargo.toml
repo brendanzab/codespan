@@ -21,7 +21,7 @@ anyhow = "1"
 insta = "1.0"
 lazy_static = "1.4"
 peg = "0.6"
-rustyline = "6"
+rustyline = "7"
 structopt = "0.3"
 unindent = "0.1"
 
