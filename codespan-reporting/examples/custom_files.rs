@@ -55,25 +55,6 @@ mod files {
         line_starts: Vec<usize>,
     }
 
-    impl File {
-        fn line_start(&self, line_index: usize) -> Result<usize, files::Error> {
-            use std::cmp::Ordering;
-
-            match line_index.cmp(&self.line_starts.len()) {
-                Ordering::Less => Ok(self
-                    .line_starts
-                    .get(line_index)
-                    .expect("failed despite previous check")
-                    .clone()),
-                Ordering::Equal => Ok(self.source.len()),
-                Ordering::Greater => Err(files::Error::LineTooLarge {
-                    given: line_index,
-                    max: self.line_starts.len() - 1,
-                }),
-            }
-        }
-    }
-
     /// An opaque file identifier.
     #[derive(Copy, Clone, PartialEq, Eq)]
     pub struct FileId(u32);
@@ -146,8 +127,20 @@ mod files {
             line_index: usize,
         ) -> Result<Range<usize>, files::Error> {
             let file = self.get(file_id)?;
-            let line_start = file.line_start(line_index)?;
-            let next_line_start = file.line_start(line_index + 1)?;
+            let line_start =
+                file.line_starts
+                    .get(line_index)
+                    .copied()
+                    .ok_or(files::Error::LineTooLarge {
+                        given: line_index,
+                        max: file.line_starts.len() - 1,
+                    })?;
+            let next_line_start = file.line_starts.get(line_index + 1).copied().ok_or(
+                files::Error::LineTooLarge {
+                    given: line_index,
+                    max: file.line_starts.len() - 1,
+                },
+            )?;
 
             Ok(line_start..next_line_start)
         }
