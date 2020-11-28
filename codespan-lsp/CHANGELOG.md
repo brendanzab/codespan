@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   The error type in `codespan-lsp` is replaced with the error type in the `codespan-reporting` crate.
     The error type is now `codespan_reporting::file::Error`.
--   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.83`,
-    which includes the latest updates in `0.82.0`.
+-   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.85`,
+    which includes the latest updates in `0.84.0`.
 
 ## [0.10.1] - 2020-08-17
 
