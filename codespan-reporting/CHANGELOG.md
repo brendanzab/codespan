@@ -25,8 +25,6 @@ and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CO
 
 ### Fixed
 
--   Implementations of the `Files` trait are simplified by automatically including the
-    end of file byte index as a "line end".
 -   Empty error codes are not rendered.
 -   The locus ("location of the diagnostic") is now computed so it is always at the first
     primary label, or at the first secondary label if no primary labels are available.
