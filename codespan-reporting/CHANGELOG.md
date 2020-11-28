@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
 and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
 
+Some versions were skipped to sync up with the `codespan-lsp` crate. The release
+process has been changed so this should not happen again.
+
 ### Added
 
 -   If a label spans over multiple lines, not all lines are rendered.

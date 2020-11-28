@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.2] - 2020-10-XX
 
+There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
+and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
+
 ### Changed
 
 -   The error type in `codespan-lsp` is replaced with the error type in the `codespan-reporting` crate.
