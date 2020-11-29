@@ -16,7 +16,7 @@ use std::ops::Range;
 /// assert!(Severity::Warning > Severity::Note);
 /// assert!(Severity::Note > Severity::Help);
 /// ```
-#[derive(Copy, Clone, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -60,7 +60,7 @@ pub enum LabelStyle {
 }
 
 /// A label describing an underlined region of code associated with a diagnostic.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label<FileId> {
     /// The style of the label.
@@ -114,7 +114,7 @@ impl<FileId> Label<FileId> {
 /// warnings to the user.
 ///
 /// The position of a Diagnostic is considered to be the position of the [`Label`] that has the earliest starting position and has the highest style which appears in all the labels of the diagnostic.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {
     /// The overall severity of the diagnostic
