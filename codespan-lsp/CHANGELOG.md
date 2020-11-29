@@ -16,8 +16,9 @@ and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CO
 
 -   The error type in `codespan-lsp` is replaced with the error type in the `codespan-reporting` crate.
     The error type is now `codespan_reporting::file::Error`.
--   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.85`,
-    which includes the latest updates in `0.84.0`.
+-   The `lsp-types` dependency was updated to use a version range: `>=0.84, <0.85`,
+    which includes the latest updates in `0.84.0`. The lower bound was update because there were
+    breaking changes.
 
 ## [0.10.1] - 2020-08-17
 
