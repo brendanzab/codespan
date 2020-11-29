@@ -11,8 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   The error type in `codespan-lsp` is replaced with the error type in the `codespan-reporting` crate.
     The error type is now `codespan_reporting::file::Error`.
--   The `lsp-types` dependency was updated to use a version range: `>=0.70, <0.83`,
-    which includes the latest updates in `0.82.0`.
+-   The `lsp-types` dependency was updated to use the version range: `>=0.84, <0.85`.
+    Compatibility was broken as a result of the [clarified numeric types] that this crate depended on.
+-   The `character_to_line_offset` function was made private to reduce the chance of future public breakages.
+
+[clarified numeric types]: https://github.com/gluon-lang/lsp-types/pull/186
 
 ## [0.10.1] - 2020-08-17
 
