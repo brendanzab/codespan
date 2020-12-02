@@ -1,4 +1,4 @@
-name: Continuous integration
+name: ci
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
@@ -54,7 +54,7 @@ jobs:
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
@@ -92,7 +92,7 @@ jobs:
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
   fmt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
