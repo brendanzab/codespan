@@ -183,27 +183,27 @@ impl<FileId> Diagnostic<FileId> {
         Diagnostic::new(Severity::Help)
     }
 
-    /// Add an error code to the diagnostic.
+    /// Set the error code of the diagnostic.
     pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic<FileId> {
         self.code = Some(code.into());
         self
     }
 
-    /// Add a message to the diagnostic.
+    /// Set the message of the diagnostic.
     pub fn with_message(mut self, message: impl Into<String>) -> Diagnostic<FileId> {
         self.message = message.into();
         self
     }
 
     /// Add some labels to the diagnostic.
-    pub fn with_labels(mut self, labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
-        self.labels = labels;
+    pub fn with_labels(mut self, mut labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
+        self.labels.append(&mut labels);
         self
     }
 
     /// Add some notes to the diagnostic.
-    pub fn with_notes(mut self, notes: Vec<String>) -> Diagnostic<FileId> {
-        self.notes = notes;
+    pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
+        self.notes.append(&mut notes);
         self
     }
 }
