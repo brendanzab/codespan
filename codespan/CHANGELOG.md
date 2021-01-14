@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Removed an erroneous feature gate from the implementation of
+    `codespan_reporting::Files` for `codespan::Files`.
+
 ## [0.11.0] - 2020-11-30
 
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
