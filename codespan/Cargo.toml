@@ -14,5 +14,8 @@ edition = "2018"
 codespan-reporting = { path = "../codespan-reporting", version = "0.11.0" }
 serde = { version = "1", optional = true, features = ["derive"]}
 
+[dev-dependencies]
+termcolor = "1"
+
 [features]
 serialization = ["serde", "codespan-reporting/serialization"]
