@@ -3,7 +3,7 @@
 [![Continuous integration][actions-badge]][actions-url]
 [![Crates.io][crate-badge]][crate-url]
 [![Docs.rs][docs-badge]][docs-url]
-[![Gitter][gitter-badge]][gitter-lobby]
+[![Matrix][matrix-badge]][matrix-lobby]
 
 [actions-badge]: https://img.shields.io/github/workflow/status/brendanzab/codespan/Continuous%20integration
 [actions-url]: https://github.com/brendanzab/codespan/actions
@@ -11,8 +11,8 @@
 [crate-badge]: https://img.shields.io/crates/v/codespan-reporting.svg
 [docs-url]: https://docs.rs/codespan-reporting
 [docs-badge]: https://docs.rs/codespan-reporting/badge.svg
-[gitter-badge]: https://badges.gitter.im/codespan-rs/codespan.svg
-[gitter-lobby]: https://gitter.im/codespan-rs/Lobby
+[matrix-badge]: https://img.shields.io/badge/matrix-%23codespan%3Amatrix.org-blue.svg
+[matrix-lobby]: https://app.element.io/#/room/#codespan:matrix.org
 
 Beautiful diagnostic reporting for text-based programming languages.
 
@@ -135,4 +135,13 @@ These are all ultimately inspired by rustc's excellent [error reporting infrastr
 [annotate-snippets]: https://crates.io/crates/annotate-snippets
 [codemap]: https://crates.io/crates/codemap
 [language-reporting]: https://crates.io/crates/language-reporting
-[librustc_errors]: https://github.com/rust-lang/rust/tree/master/src/librustc_errors
+[librustc_errors]: https://github.com/rust-lang/rust/tree/master/compiler/rustc_errors/src
+
+## Contributing
+
+A guide to contributing to codespan-reporting [can be found here](/CONTRIBUTING.md).
+
+## Code of Conduct
+
+Please note that this project is released with a [Code of Conduct](./CODE_OF_CONDUCT.md).
+By participating in this project you agree to abide by its terms.

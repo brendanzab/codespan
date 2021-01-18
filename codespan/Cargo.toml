@@ -1,6 +1,6 @@
 [package]
 name = "codespan"
-version = "0.9.5"
+version = "0.11.0"
 readme = "README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
@@ -11,10 +11,11 @@ documentation = "https://docs.rs/codespan"
 edition = "2018"
 
 [dependencies]
-codespan-reporting = { path = "../codespan-reporting", version = "0.9.5", optional = true }
+codespan-reporting = { path = "../codespan-reporting", version = "0.11.0" }
 serde = { version = "1", optional = true, features = ["derive"]}
 
+[dev-dependencies]
+termcolor = "1"
+
 [features]
-default = ["reporting"]
-reporting = ["codespan-reporting"]
 serialization = ["serde", "codespan-reporting/serialization"]

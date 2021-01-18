@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2020-11-30
+
+There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
+and a [contributing guide](https://github.com/brendanzab/codespan/blob/master/CONTRIBUTING.md).
+
+Some versions were skipped to sync up with the `codespan-lsp` crate. The release
+process has been changed so this should not happen again.
+
+### Added
+
+-   If a label spans over multiple lines, not all lines are rendered.
+    The number of lines rendered at beginning and end is configurable separately.
+-   There is now a custom error type.
+-   There now is a medium rendering mode that is like the short rendering mode
+    but also shows notes from the diagnostic.
+-   `PartialEq` and `Eq` implementations for the `diagnostic::{Diagnostic, Label, Severity}` types.
+
+### Changed
+
+-   All errors now use the error type `codespan_reporting::file::Error`.
+    This type also replaces the custom error type for `codespan-lsp`.
+
+### Fixed
+
+-   Empty error codes are not rendered.
+-   The locus ("location of the diagnostic") is now computed so it is always at the first
+    primary label, or at the first secondary label if no primary labels are available.
+-   All `unwrap`s outside of tests and examples have been removed.
+-   Some internal improvements, including various code style improvements by using Clippy.
+-   Improved documentation, also mentioning how the ordering of labels is handled.
+
 ## [0.9.5] - 2020-06-24
 
 ### Changed
@@ -289,8 +320,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.9.5...HEAD
-[0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/brendanzab/codespan/compare/v0.9.5...v0.11.0
+[0.9.5]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/brendanzab/codespan/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/brendanzab/codespan/compare/v0.9.1...v0.9.2

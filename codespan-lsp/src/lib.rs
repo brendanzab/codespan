@@ -1,125 +1,14 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
-use std::{error, fmt, ops::Range};
+use std::ops::Range;
 
-use codespan_reporting::files::Files;
+use codespan_reporting::files::{Error, Files};
 
 // WARNING: Be extremely careful when adding new imports here, as it could break
 // the compatible version range that we claim in our `Cargo.toml`. This could
 // potentially break down-stream builds on a `cargo update`. This is an
 // absolute no-no, breaking much of what we enjoy about Cargo!
 use lsp_types::{Position as LspPosition, Range as LspRange};
-
-#[derive(Debug, PartialEq)]
-pub enum Error {
-    ColumnOutOfBounds { given: usize, max: usize },
-    Location(LocationError),
-    LineIndexOutOfBounds(LineIndexOutOfBoundsError),
-    SpanOutOfBounds(SpanOutOfBoundsError),
-    MissingFile,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::ColumnOutOfBounds { given, max } => {
-                write!(f, "Column out of bounds - given: {}, max: {}", given, max)
-            }
-            Error::Location(e) => e.fmt(f),
-            Error::LineIndexOutOfBounds(e) => e.fmt(f),
-            Error::SpanOutOfBounds(e) => e.fmt(f),
-            Error::MissingFile => write!(f, "File does not exit"),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LineIndexOutOfBoundsError {
-    pub given: usize,
-    pub max: usize,
-}
-
-impl error::Error for LineIndexOutOfBoundsError {}
-
-impl fmt::Display for LineIndexOutOfBoundsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Line index out of bounds - given: {}, max: {}",
-            self.given, self.max
-        )
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum LocationError {
-    OutOfBounds { given: usize, span: Range<usize> },
-    InvalidCharBoundary { given: usize },
-}
-
-impl error::Error for LocationError {}
-
-impl fmt::Display for LocationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LocationError::OutOfBounds { given, span } => write!(
-                f,
-                "Byte index out of bounds - given: {}, span: {}..{}",
-                given, span.start, span.end
-            ),
-            LocationError::InvalidCharBoundary { given } => {
-                write!(f, "Byte index within character boundary - given: {}", given)
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SpanOutOfBoundsError {
-    pub given: Range<usize>,
-    pub span: Range<usize>,
-}
-
-impl error::Error for SpanOutOfBoundsError {}
-
-impl fmt::Display for SpanOutOfBoundsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Span out of bounds - given: {}..{}, span: {}..{}",
-            self.given.start, self.given.end, self.span.start, self.span.end
-        )
-    }
-}
-
-impl From<LocationError> for Error {
-    fn from(e: LocationError) -> Error {
-        Error::Location(e)
-    }
-}
-
-impl From<LineIndexOutOfBoundsError> for Error {
-    fn from(e: LineIndexOutOfBoundsError) -> Error {
-        Error::LineIndexOutOfBounds(e)
-    }
-}
-
-impl From<SpanOutOfBoundsError> for Error {
-    fn from(e: SpanOutOfBoundsError) -> Error {
-        Error::SpanOutOfBounds(e)
-    }
-}
-
-impl error::Error for Error {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match self {
-            Error::ColumnOutOfBounds { .. } | Error::MissingFile => None,
-            Error::Location(error) => Some(error),
-            Error::LineIndexOutOfBounds(error) => Some(error),
-            Error::SpanOutOfBounds(error) => Some(error),
-        }
-    }
-}
 
 fn location_to_position(
     line_str: &str,
@@ -131,15 +20,15 @@ fn location_to_position(
         let max = line_str.len();
         let given = column;
 
-        Err(Error::ColumnOutOfBounds { given, max })
+        Err(Error::ColumnTooLarge { given, max })
     } else if !line_str.is_char_boundary(column) {
         let given = byte_index;
 
-        Err(LocationError::InvalidCharBoundary { given }.into())
+        Err(Error::InvalidCharBoundary { given })
     } else {
         let line_utf16 = line_str[..column].encode_utf16();
-        let character = line_utf16.count() as u64;
-        let line = line as u64;
+        let character = line_utf16.count() as u32;
+        let line = line as u32;
 
         Ok(LspPosition { line, character })
     }
@@ -153,23 +42,21 @@ pub fn byte_index_to_position<'a, F>(
 where
     F: Files<'a> + ?Sized,
 {
-    let source = files.source(file_id).ok_or_else(|| Error::MissingFile)?;
+    let source = files.source(file_id)?;
     let source = source.as_ref();
 
-    let line_index =
-        files
-            .line_index(file_id, byte_index)
-            .ok_or_else(|| LineIndexOutOfBoundsError {
-                given: byte_index,
-                max: source.lines().count(),
-            })?;
+    let line_index = files.line_index(file_id, byte_index)?;
     let line_span = files.line_range(file_id, line_index).unwrap();
 
     let line_str = source
         .get(line_span.clone())
-        .ok_or_else(|| SpanOutOfBoundsError {
-            given: line_span.clone(),
-            span: 0..source.len(),
+        .ok_or_else(|| Error::IndexTooLarge {
+            given: if line_span.start >= source.len() {
+                line_span.start
+            } else {
+                line_span.end
+            },
+            max: source.len() - 1,
         })?;
     let column = byte_index - line_span.start;
 
@@ -190,7 +77,7 @@ where
     })
 }
 
-pub fn character_to_line_offset(line: &str, character: u64) -> Result<usize, Error> {
+fn character_to_line_offset(line: &str, character: u32) -> Result<usize, Error> {
     let line_len = line.len();
     let mut character_offset = 0;
 
@@ -203,14 +90,14 @@ pub fn character_to_line_offset(line: &str, character: u64) -> Result<usize, Err
             return Ok(line_len - chars_off - ch_off);
         }
 
-        character_offset += ch.len_utf16() as u64;
+        character_offset += ch.len_utf16() as u32;
     }
 
     // Handle positions after the last character on the line
     if character_offset == character {
         Ok(line_len)
     } else {
-        Err(Error::ColumnOutOfBounds {
+        Err(Error::ColumnTooLarge {
             given: character_offset as usize,
             max: line.len(),
         })
@@ -225,7 +112,7 @@ pub fn position_to_byte_index<'a, F>(
 where
     F: Files<'a> + ?Sized,
 {
-    let source = files.source(file_id).ok_or_else(|| Error::MissingFile)?;
+    let source = files.source(file_id)?;
     let source = source.as_ref();
 
     let line_span = files.line_range(file_id, position.line as usize).unwrap();
@@ -299,7 +186,7 @@ test
                 character: 3,
             },
         );
-        assert_eq!(result, Ok(5));
+        assert_eq!(result.unwrap(), 5);
 
         let result = position_to_byte_index(
             &files,
@@ -309,7 +196,7 @@ test
                 character: 6,
             },
         );
-        assert_eq!(result, Ok(10));
+        assert_eq!(result.unwrap(), 10);
     }
 
     #[test]
@@ -320,29 +207,29 @@ test
 
         let result = byte_index_to_position(&files, file_id, 5);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 0,
                 character: 3,
-            })
+            }
         );
 
         let result = byte_index_to_position(&files, file_id, 10);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 0,
                 character: 6,
-            })
+            }
         );
 
         let result = byte_index_to_position(&files, file_id2, 11);
         assert_eq!(
-            result,
-            Ok(LspPosition {
+            result.unwrap(),
+            LspPosition {
                 line: 1,
                 character: 6,
-            })
+            }
         );
     }
 }

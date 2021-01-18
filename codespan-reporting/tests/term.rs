@@ -26,6 +26,17 @@ macro_rules! test_emit {
             insta::assert_snapshot!(TEST_DATA.emit_color(&config));
         }
     };
+    (medium_color) => {
+        #[test]
+        fn medium_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_color(&config));
+        }
+    };
     (short_color) => {
         #[test]
         fn short_color() {
@@ -42,6 +53,17 @@ macro_rules! test_emit {
         fn rich_no_color() {
             let config = Config {
                 display_style: DisplayStyle::Rich,
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+        }
+    };
+    (medium_no_color) => {
+        #[test]
+        fn medium_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Medium,
                 ..TEST_CONFIG.clone()
             };
 
@@ -82,8 +104,10 @@ mod empty {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -130,8 +154,10 @@ mod same_line {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -272,8 +298,10 @@ mod overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -296,8 +324,10 @@ mod message {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -320,7 +350,35 @@ mod message_and_notes {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
+    test_emit!(short_no_color);
+}
+
+mod message_errorcode {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+            let files = SimpleFiles::new();
+
+            let diagnostics = vec![
+                Diagnostic::error().with_message("a message").with_code("E0001"),
+                Diagnostic::warning().with_message("a message").with_code("W001"),
+                Diagnostic::note().with_message("a message").with_code("N0815"),
+                Diagnostic::help().with_message("a message").with_code("H4711"),
+                Diagnostic::error().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::warning().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::note().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::help().with_message("where did my errorcode go?").with_code(""),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
 }
@@ -353,8 +411,10 @@ mod empty_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -379,8 +439,10 @@ mod same_ranges {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -463,8 +525,10 @@ mod multifile {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -540,8 +604,10 @@ mod fizz_buzz {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -569,9 +635,10 @@ mod multiline_overlapping {
                     .with_message("match arms have incompatible types")
                     .with_code("E0308")
                     .with_labels(vec![
+                        // this secondary label is before the primary label to test the locus calculation (see issue #259)
+                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                         Label::primary((), 230..351).with_message("expected enum `Result`, found struct `LineIndexOutOfBoundsError`"),
                         Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
-                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                         Label::secondary((), 167..195).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                     ])
                     .with_notes(vec![unindent::unindent(
@@ -587,8 +654,10 @@ mod multiline_overlapping {
     }
 
     test_emit!(rich_color);
+    test_emit!(medium_color);
     test_emit!(short_color);
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -792,6 +861,7 @@ mod unicode {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -842,6 +912,7 @@ mod unicode_spans {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
@@ -878,6 +949,7 @@ mod position_indicator {
     }
 
     test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
     test_emit!(short_no_color);
 }
 
