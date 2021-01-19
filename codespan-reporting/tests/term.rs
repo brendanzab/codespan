@@ -1,6 +1,6 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::{SimpleFile, SimpleFiles};
-use codespan_reporting::term::{termcolor::Color, Config, DisplayStyle, Styles};
+use codespan_reporting::term::{termcolor::Color, Chars, Config, DisplayStyle, Styles};
 
 mod support;
 
@@ -81,6 +81,18 @@ macro_rules! test_emit {
             insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
         }
     };
+    (rich_ascii_no_color) => {
+        #[test]
+        fn rich_ascii_no_color() {
+            let config = Config {
+                display_style: DisplayStyle::Rich,
+                chars: Chars::ascii(),
+                ..TEST_CONFIG.clone()
+            };
+
+            insta::assert_snapshot!(TEST_DATA.emit_no_color(&config));
+        }
+    };
 }
 
 mod empty {
@@ -109,6 +121,7 @@ mod empty {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 /// Based on:
@@ -159,6 +172,7 @@ mod same_line {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 /// Based on:
@@ -303,6 +317,7 @@ mod overlapping {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod message {
@@ -329,6 +344,7 @@ mod message {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod message_and_notes {
@@ -355,6 +371,7 @@ mod message_and_notes {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod message_errorcode {
@@ -381,6 +398,7 @@ mod message_errorcode {
 
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod empty_ranges {
@@ -416,6 +434,7 @@ mod empty_ranges {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod same_ranges {
@@ -444,6 +463,7 @@ mod same_ranges {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod multifile {
@@ -530,6 +550,7 @@ mod multifile {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod fizz_buzz {
@@ -609,6 +630,7 @@ mod fizz_buzz {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod multiline_overlapping {
@@ -659,6 +681,7 @@ mod multiline_overlapping {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod tabbed {
@@ -950,6 +973,7 @@ mod position_indicator {
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
     test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
 
 mod multiline_omit {
