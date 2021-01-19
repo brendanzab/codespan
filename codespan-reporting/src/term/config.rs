@@ -195,12 +195,9 @@ impl Default for Styles {
 /// Characters to use when rendering the diagnostic.
 #[derive(Clone, Debug)]
 pub struct Chars {
-    /// The character to use for the top-left border of the source.
-    /// Defaults to: `'┌'`.
-    pub source_border_top_left: char,
-    /// The character to use for the top border of the source.
-    /// Defaults to: `'─'`.
-    pub source_border_top: char,
+    /// The characters to use for the top-left border of the snippet.
+    /// Defaults to: `"┌─"`.
+    pub snippet_start: String,
     /// The character to use for the left border of the source.
     /// Defaults to: `'│'`.
     pub source_border_left: char,
@@ -254,9 +251,18 @@ pub struct Chars {
 
 impl Default for Chars {
     fn default() -> Chars {
+        Chars::box_drawing()
+    }
+}
+
+impl Chars {
+    /// A character set that uses Unicode box drawing characters.
+    ///
+    /// This might not be compatible with all terminals. To switch to an
+    /// ASCII-only variant by default, you can use the `ascii-only` feature.
+    pub fn box_drawing() -> Chars {
         Chars {
-            source_border_top_left: '┌',
-            source_border_top: '─',
+            snippet_start: "┌─".into(),
             source_border_left: '│',
             source_border_left_break: '·',
 
