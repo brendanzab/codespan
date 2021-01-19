@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   The `ascii-only` feature changes the defaults so that rendering uses only ASCII characters
+    (not above U+007F) for use cases that do not allow for box drawing characters, e.g.
+    terminals that do not support them.
+
 ## [0.11.0] - 2020-11-30
 
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
