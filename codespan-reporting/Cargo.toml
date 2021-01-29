@@ -27,3 +27,4 @@ unindent = "0.1"
 
 [features]
 serialization = ["serde", "serde/rc"]
+ascii-only = []
