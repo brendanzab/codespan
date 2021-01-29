@@ -240,15 +240,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // FIXME: Use the number of trimmed placeholders when rendering single line carets
         let source = source.trim_end_matches(['\n', '\r', '\0'].as_ref());
 
-        // count the number of whitespace characters
-        let text_start = source.chars().take_while(|c| c.is_whitespace()).count();
-
         // get the byte index of the first non-whitespace character
-        let text_start = source
-            .char_indices()
-            .nth(text_start)
-            .map(|(index, _)| index)
-            .unwrap_or(0);
+        let text_start = source.find(|c| !char::is_whitespace(c)).unwrap_or(0);
 
         // get the byte index of the first trailing whitespace character
         let text_end = source
