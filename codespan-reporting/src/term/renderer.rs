@@ -208,8 +208,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.outer_gutter(outer_padding)?;
 
         self.set_color(&self.styles().source_border)?;
-        write!(self, "{}", self.chars().source_border_top_left)?;
-        write!(self, "{0}", self.chars().source_border_top)?;
+        write!(self, "{}", self.chars().snippet_start)?;
         self.reset()?;
 
         write!(self, " ")?;
