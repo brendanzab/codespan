@@ -1,5 +1,7 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
+#![forbid(unsafe_code)]
+
 use std::ops::Range;
 
 use codespan_reporting::files::{Error, Files};
