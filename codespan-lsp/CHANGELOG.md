@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-   The `lsp-types` dependency was updated to use a version range: `>=0.84, <0.89`,
+    which includes the latest updates in `0.79.0`.
+
 ## [0.11.0] - 2020-11-30
 
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)

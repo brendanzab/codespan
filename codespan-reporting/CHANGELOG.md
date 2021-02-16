@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (not above U+007F) for use cases that do not allow for box drawing characters, e.g.
     terminals that do not support them.
 
+### Changed
+
+-   The documentation and behaviour of the builder methods of `Diagnostic` have been changed
+    to match more closely. The behaviour only differs if you call the same builder methods
+    multiple times. If you call every builder method once only, nothing should change.
+
 ## [0.11.0] - 2020-11-30
 
 There is now a [code of conduct](https://github.com/brendanzab/codespan/blob/master/CODE_OF_CONDUCT.md)
