@@ -18,7 +18,7 @@ unicode-width = "0.1"
 
 [dev-dependencies]
 anyhow = "1"
-insta = "=1.5.2"
+insta = "=1.6.3"
 lazy_static = "1.4"
 peg = "0.6"
 rustyline = "6"
