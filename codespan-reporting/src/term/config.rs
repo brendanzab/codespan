@@ -20,10 +20,14 @@ pub struct Config {
     /// The minimum number of lines to be shown after the line on which a multiline [`Label`] begins.
     ///
     /// Defaults to: `3`.
+    ///
+    /// [`Label`]: crate::diagnostic::Label
     pub start_context_lines: usize,
     /// The minimum number of lines to be shown before the line on which a multiline [`Label`] ends.
     ///
     /// Defaults to: `1`.
+    ///
+    /// [`Label`]: crate::diagnostic::Label
     pub end_context_lines: usize,
 }
 
@@ -238,7 +242,7 @@ pub struct Chars {
     /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
     pub multi_top: char,
     /// The character to use for the bottom-left corner of a multi-line label.
-    /// Defaults to: `'╰'` or `'\\'` with [`Chars::ascii()`].
+    /// Defaults to: `'╰'` or `'\'` with [`Chars::ascii()`].
     pub multi_bottom_left: char,
     /// The character to use when marking the bottom of a multi-line label.
     /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
