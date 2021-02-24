@@ -254,22 +254,13 @@ pub struct Chars {
 }
 
 impl Default for Chars {
-    #[cfg(not(feature = "ascii-only"))]
     fn default() -> Chars {
         Chars::box_drawing()
-    }
-
-    #[cfg(feature = "ascii-only")]
-    fn default() -> Chars {
-        Chars::ascii()
     }
 }
 
 impl Chars {
     /// A character set that uses Unicode box drawing characters.
-    ///
-    /// This might not be compatible with all terminals. To switch to an
-    /// ASCII-only variant by default, you can use the `ascii-only` feature.
     pub fn box_drawing() -> Chars {
         Chars {
             snippet_start: "┌─".into(),
@@ -300,8 +291,6 @@ impl Chars {
     /// This is useful if your terminal's font does not support box drawing
     /// characters well and results in output that looks similar to rustc's
     /// diagnostic output.
-    ///
-    /// Using the `ascii-only` feature makes this the default.
     pub fn ascii() -> Chars {
         Chars {
             snippet_start: "-->".into(),

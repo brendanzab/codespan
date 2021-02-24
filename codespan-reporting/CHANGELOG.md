@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   The `ascii-only` feature changes the defaults so that rendering uses only ASCII characters
-    (not above U+007F) for use cases that do not allow for box drawing characters, e.g.
-    terminals that do not support them.
+-   Add `Chars::{box_drawing, ascii}` functions, the latter supporting a rustc-style of
+    output that only uses ASCII characters (not above U+007F) for use cases that do not allow
+    for box drawing characters, e.g. terminals that do not support them.
 
 ### Changed
 
