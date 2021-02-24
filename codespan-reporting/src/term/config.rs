@@ -194,19 +194,18 @@ impl Default for Styles {
 
 /// Characters to use when rendering the diagnostic.
 ///
-/// By using the feature `ascii-only` you can switch the defaults to an
-/// ASCII-only format suitable for rendering on terminals that do not support
-/// box drawing characters.
+/// By using [`Chars::ascii()`] you can switch to an ASCII-only format suitable
+/// for rendering on terminals that do not support box drawing characters.
 #[derive(Clone, Debug)]
 pub struct Chars {
     /// The characters to use for the top-left border of the snippet.
-    /// Defaults to: `"┌─"` or `"-->"` with `ascii-only` feature.
+    /// Defaults to: `"┌─"` or `"-->"` with [`Chars::ascii()`].
     pub snippet_start: String,
     /// The character to use for the left border of the source.
-    /// Defaults to: `'│'` or `'|'` with `ascii-only` feature.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
     pub source_border_left: char,
     /// The character to use for the left border break of the source.
-    /// Defaults to: `'·'` or `'.'` with `ascii-only` feature.
+    /// Defaults to: `'·'` or `'.'` with [`Chars::ascii()`].
     pub source_border_left_break: char,
 
     /// The character to use for the note bullet.
@@ -233,23 +232,23 @@ pub struct Chars {
     /// Defaults to: `'\''`.
     pub multi_secondary_caret_end: char,
     /// The character to use for the top-left corner of a multi-line label.
-    /// Defaults to: `'╭'` or `'/'` with `ascii-only` feature.
+    /// Defaults to: `'╭'` or `'/'` with [`Chars::ascii()`].
     pub multi_top_left: char,
     /// The character to use for the top of a multi-line label.
-    /// Defaults to: `'─'` or `'-'` with `ascii-only` feature.
+    /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
     pub multi_top: char,
     /// The character to use for the bottom-left corner of a multi-line label.
-    /// Defaults to: `'╰'` or `'\\'` with `ascii-only` feature.
+    /// Defaults to: `'╰'` or `'\\'` with [`Chars::ascii()`].
     pub multi_bottom_left: char,
     /// The character to use when marking the bottom of a multi-line label.
-    /// Defaults to: `'─'` or `'-'` with `ascii-only` feature.
+    /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
     pub multi_bottom: char,
     /// The character to use for the left of a multi-line label.
-    /// Defaults to: `'│'` or `'|'` with `ascii-only` feature.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
     pub multi_left: char,
 
     /// The character to use for the left of a pointer underneath a caret.
-    /// Defaults to: `'│'` or `'|'` with `ascii-only` feature.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
     pub pointer_left: char,
 }
 
