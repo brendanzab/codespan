@@ -15,8 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--   The documentation and behaviour of the builder methods of `Diagnostic` have been changed
-    to match more closely. The behaviour only differs if you call the same builder methods
+-   `Diagnostic::with_labels` and `Diagnostic::with_notes` now append additional
+    labels rather tan overwriting them, meaning that the documentation and behaviour match
+    more closely. The behaviour will only differ if you call the same builder methods
     multiple times. If you call every builder method once only, nothing should change.
 
 ## [0.11.0] - 2020-11-30
