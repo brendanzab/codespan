@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     labels rather tan overwriting them, meaning that the documentation and behaviour match
     more closely. The behaviour will only differ if you call the same builder methods
     multiple times. If you call every builder method once only, nothing should change.
+-   `config::Chars::snippet_start` is now a String instead of a single `char`.
 
 ## [0.11.0] - 2020-11-30
 
