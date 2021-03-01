@@ -2,8 +2,8 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
+use std::string::ToString;
 use std::ops::Range;
-use std::fmt::Display;
 
 /// A severity level for diagnostic messages.
 ///
@@ -105,7 +105,7 @@ impl<FileId> Label<FileId> {
     }
 
     /// Add a message to the diagnostic.
-    pub fn with_message(mut self, message: impl Display) -> Label<FileId> {
+    pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
         self.message = message.to_string();
         self
     }
@@ -187,7 +187,7 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Add a message to the diagnostic.
-    pub fn with_message(mut self, message: impl Display) -> Diagnostic<FileId> {
+    pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
         self.message = message.to_string();
         self
     }
