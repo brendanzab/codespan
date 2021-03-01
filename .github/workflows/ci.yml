@@ -1,4 +1,4 @@
-name: Continuous integration
+name: ci
 
 on:
   push:
@@ -11,85 +11,103 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Check (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install minimal ${{ matrix.rust }}
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
       # Check each crate individually to work around rust-lang/cargo#4942
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan-reporting
+        uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan
+        uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan-lsp
+        uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan-lsp/Cargo.toml"
-      - name: Switch to minimal `lsp-types` version
+      - name: Switch to minimal lsp-types version for codespan-lsp
         uses: actions-rs/cargo@v1
         with:
           command: update
           # NOTE: Keep up to date with the minimum version of `lsp-types`
           # specified in `codespan-lsp/Cargo.toml`
           args: --precise lsp-types:0.70
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan-lsp
+        uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Test Suite (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install minimal ${{ matrix.rust }}
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
       # Test each crate individually to work around rust-lang/cargo#4942
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan-reporting
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
-      - uses: actions-rs/cargo@v1
+      - name: Run cargo test for codespan
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - uses: actions-rs/cargo@v1
+      - name: Switch to minimal lsp-types version for codespan-lsp
+        uses: actions-rs/cargo@v1
+        with:
+          command: update
+          # NOTE: Keep up to date with the minimum version of `lsp-types`
+          # specified in `codespan-lsp/Cargo.toml`
+          args: --precise lsp-types:0.70
+      - name: Run cargo test for codespan-lsp
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
   fmt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rust: ["1.40.0", "stable", "beta", "nightly"]
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install minimal ${{ matrix.rust }} with rustfmt
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
+          components: rustfmt
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check

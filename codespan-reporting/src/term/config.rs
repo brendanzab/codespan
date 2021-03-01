@@ -1,7 +1,6 @@
-use std::io;
 use termcolor::{Color, ColorSpec};
 
-use crate::diagnostic::Severity;
+use crate::diagnostic::{LabelStyle, Severity};
 
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
@@ -18,6 +17,18 @@ pub struct Config {
     pub styles: Styles,
     /// Characters to use when rendering the diagnostic.
     pub chars: Chars,
+    /// The minimum number of lines to be shown after the line on which a multiline [`Label`] begins.
+    ///
+    /// Defaults to: `3`.
+    ///
+    /// [`Label`]: crate::diagnostic::Label
+    pub start_context_lines: usize,
+    /// The minimum number of lines to be shown before the line on which a multiline [`Label`] ends.
+    ///
+    /// Defaults to: `1`.
+    ///
+    /// [`Label`]: crate::diagnostic::Label
+    pub end_context_lines: usize,
 }
 
 impl Default for Config {
@@ -27,59 +38,9 @@ impl Default for Config {
             tab_width: 4,
             styles: Styles::default(),
             chars: Chars::default(),
+            start_context_lines: 3,
+            end_context_lines: 1,
         }
-    }
-}
-
-impl Config {
-    /// Measure the width of a string, taking into account the tab width.
-    pub fn width(&self, s: &str) -> usize {
-        use unicode_width::UnicodeWidthChar;
-
-        s.chars()
-            .map(|ch| match ch {
-                '\t' => self.tab_width,
-                _ => ch.width().unwrap_or(0),
-            })
-            .sum()
-    }
-
-    /// Construct a source writer using the current config.
-    pub fn source<'a, W: ?Sized>(&self, writer: &'a mut W) -> SourceWriter<&'a mut W> {
-        SourceWriter {
-            writer,
-            tab_width: self.tab_width,
-        }
-    }
-}
-
-/// Writer that replaces tab characters with the configured number of spaces.
-pub struct SourceWriter<W> {
-    writer: W,
-    tab_width: usize,
-}
-
-impl<W: io::Write> io::Write for SourceWriter<W> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut last_term = 0usize;
-        for (i, ch) in buf.iter().enumerate() {
-            if *ch == b'\t' {
-                self.writer.write_all(&buf[last_term..i])?;
-                last_term = i + 1;
-                write!(
-                    self.writer,
-                    "{space: >width$}",
-                    space = "",
-                    width = self.tab_width,
-                )?;
-            }
-        }
-        self.writer.write_all(&buf[last_term..])?;
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
     }
 }
 
@@ -90,19 +51,28 @@ pub enum DisplayStyle {
     ///
     /// ```text
     /// error[E0001]: unexpected type in `+` application
-    ///
-    ///    ┌── test:2:9 ───
-    ///    │
-    ///  2 │ (+ test "")
-    ///    │         ^^ expected `Int` but found `String`
-    ///    │
-    ///    = expected type `Int`
-    ///         found type `String`
+    ///   ┌─ test:2:9
+    ///   │
+    /// 2 │ (+ test "")
+    ///   │         ^^ expected `Int` but found `String`
+    ///   │
+    ///   = expected type `Int`
+    ///        found type `String`
     ///
     /// error[E0002]: Bad config found
     ///
     /// ```
     Rich,
+    /// Output a condensed diagnostic, with a line number, severity, message and notes (if any).
+    ///
+    /// ```text
+    /// test:2:9: error[E0001]: unexpected type in `+` application
+    /// = expected type `Int`
+    ///      found type `String`
+    ///
+    /// error[E0002]: Bad config found
+    /// ```
+    Medium,
     /// Output a short diagnostic, with a line number, severity, and message.
     ///
     /// ```text
@@ -176,15 +146,15 @@ impl Styles {
         }
     }
 
-    /// The style used to mark a primary label at a given severity.
-    pub fn label(&self, severity: Option<Severity>) -> &ColorSpec {
-        match severity {
-            Some(Severity::Bug) => &self.primary_label_bug,
-            Some(Severity::Error) => &self.primary_label_error,
-            Some(Severity::Warning) => &self.primary_label_warning,
-            Some(Severity::Note) => &self.primary_label_note,
-            Some(Severity::Help) => &self.primary_label_help,
-            None => &self.secondary_label,
+    /// The style used to mark a primary or secondary label at a given severity.
+    pub fn label(&self, severity: Severity, label_style: LabelStyle) -> &ColorSpec {
+        match (label_style, severity) {
+            (LabelStyle::Primary, Severity::Bug) => &self.primary_label_bug,
+            (LabelStyle::Primary, Severity::Error) => &self.primary_label_error,
+            (LabelStyle::Primary, Severity::Warning) => &self.primary_label_warning,
+            (LabelStyle::Primary, Severity::Note) => &self.primary_label_note,
+            (LabelStyle::Primary, Severity::Help) => &self.primary_label_help,
+            (LabelStyle::Secondary, _) => &self.secondary_label,
         }
     }
 
@@ -227,19 +197,19 @@ impl Default for Styles {
 }
 
 /// Characters to use when rendering the diagnostic.
+///
+/// By using [`Chars::ascii()`] you can switch to an ASCII-only format suitable
+/// for rendering on terminals that do not support box drawing characters.
 #[derive(Clone, Debug)]
 pub struct Chars {
-    /// The character to use for the top-left border of the source.
-    /// Defaults to: `'┌'`.
-    pub source_border_top_left: char,
-    /// The character to use for the top border of the source.
-    /// Defaults to: `'─'`.
-    pub source_border_top: char,
+    /// The characters to use for the top-left border of the snippet.
+    /// Defaults to: `"┌─"` or `"-->"` with [`Chars::ascii()`].
+    pub snippet_start: String,
     /// The character to use for the left border of the source.
-    /// Defaults to: `'│'`.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
     pub source_border_left: char,
     /// The character to use for the left border break of the source.
-    /// Defaults to: `'·'`.
+    /// Defaults to: `'·'` or `'.'` with [`Chars::ascii()`].
     pub source_border_left_break: char,
 
     /// The character to use for the note bullet.
@@ -266,50 +236,37 @@ pub struct Chars {
     /// Defaults to: `'\''`.
     pub multi_secondary_caret_end: char,
     /// The character to use for the top-left corner of a multi-line label.
-    /// Defaults to: `'╭'`.
+    /// Defaults to: `'╭'` or `'/'` with [`Chars::ascii()`].
     pub multi_top_left: char,
     /// The character to use for the top of a multi-line label.
-    /// Defaults to: `'─'`.
+    /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
     pub multi_top: char,
     /// The character to use for the bottom-left corner of a multi-line label.
-    /// Defaults to: `'╰'`.
+    /// Defaults to: `'╰'` or `'\'` with [`Chars::ascii()`].
     pub multi_bottom_left: char,
     /// The character to use when marking the bottom of a multi-line label.
-    /// Defaults to: `'─'`.
+    /// Defaults to: `'─'` or `'-'` with [`Chars::ascii()`].
     pub multi_bottom: char,
     /// The character to use for the left of a multi-line label.
-    /// Defaults to: `'│'`.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
     pub multi_left: char,
-}
 
-impl Chars {
-    pub fn single_caret_char(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.single_primary_caret,
-            None => self.single_secondary_caret,
-        }
-    }
-
-    pub fn multi_caret_char_start(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.multi_primary_caret_start,
-            None => self.multi_secondary_caret_start,
-        }
-    }
-
-    pub fn multi_caret_char_end(&self, severity: Option<Severity>) -> char {
-        match severity {
-            Some(_) => self.multi_primary_caret_end,
-            None => self.multi_secondary_caret_end,
-        }
-    }
+    /// The character to use for the left of a pointer underneath a caret.
+    /// Defaults to: `'│'` or `'|'` with [`Chars::ascii()`].
+    pub pointer_left: char,
 }
 
 impl Default for Chars {
     fn default() -> Chars {
+        Chars::box_drawing()
+    }
+}
+
+impl Chars {
+    /// A character set that uses Unicode box drawing characters.
+    pub fn box_drawing() -> Chars {
         Chars {
-            source_border_top_left: '┌',
-            source_border_top: '─',
+            snippet_start: "┌─".into(),
             source_border_left: '│',
             source_border_left_break: '·',
 
@@ -327,6 +284,38 @@ impl Default for Chars {
             multi_bottom_left: '╰',
             multi_bottom: '─',
             multi_left: '│',
+
+            pointer_left: '│',
+        }
+    }
+
+    /// A character set that only uses ASCII characters.
+    ///
+    /// This is useful if your terminal's font does not support box drawing
+    /// characters well and results in output that looks similar to rustc's
+    /// diagnostic output.
+    pub fn ascii() -> Chars {
+        Chars {
+            snippet_start: "-->".into(),
+            source_border_left: '|',
+            source_border_left_break: '.',
+
+            note_bullet: '=',
+
+            single_primary_caret: '^',
+            single_secondary_caret: '-',
+
+            multi_primary_caret_start: '^',
+            multi_primary_caret_end: '^',
+            multi_secondary_caret_start: '\'',
+            multi_secondary_caret_end: '\'',
+            multi_top_left: '/',
+            multi_top: '-',
+            multi_bottom_left: '\\',
+            multi_bottom: '-',
+            multi_left: '|',
+
+            pointer_left: '|',
         }
     }
 }

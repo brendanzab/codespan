@@ -79,15 +79,100 @@ fn main() -> anyhow::Result<()> {
     // let mut files = SimpleFiles::new();
     match Opts::from_args() {
         Opts::Svg => {
-            let stdout = std::io::stdout();
-            let mut writer = SvgWriter::new(stdout.lock());
-            let config = codespan_reporting::term::Config::default();
+            let mut buffer = Vec::new();
+            let mut writer = HtmlEscapeWriter::new(SvgWriter::new(&mut buffer));
+            let config = codespan_reporting::term::Config {
+                styles: codespan_reporting::term::Styles::with_blue(Color::Blue),
+                ..codespan_reporting::term::Config::default()
+            };
 
-            write!(writer, "{}", SVG_START)?;
             for diagnostic in &diagnostics {
                 term::emit(&mut writer, &config, &file, &diagnostic)?;
             }
-            write!(writer, "{}", SVG_END)?;
+
+            let num_lines = buffer.iter().filter(|byte| **byte == b'\n').count() + 1;
+
+            let padding = 10;
+            let font_size = 12;
+            let line_spacing = 3;
+            let width = 882;
+            let height = padding + num_lines * (font_size + line_spacing) + padding;
+
+            let stdout = std::io::stdout();
+            let writer = &mut stdout.lock();
+
+            write!(
+                writer,
+                r#"<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* https://github.com/aaron-williamson/base16-alacritty/blob/master/colors/base16-tomorrow-night-256.yml */
+    pre {{
+      background: #1d1f21;
+      margin: 0;
+      padding: {padding}px;
+      border-radius: 6px;
+      color: #ffffff;
+      font: {font_size}px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    }}
+
+    pre .bold {{ font-weight: bold; }}
+
+    pre .fg.black   {{ color: #1d1f21; }}
+    pre .fg.red     {{ color: #cc6666; }}
+    pre .fg.green   {{ color: #b5bd68; }}
+    pre .fg.yellow  {{ color: #f0c674; }}
+    pre .fg.blue    {{ color: #81a2be; }}
+    pre .fg.magenta {{ color: #b294bb; }}
+    pre .fg.cyan    {{ color: #8abeb7; }}
+    pre .fg.white   {{ color: #c5c8c6; }}
+
+    pre .fg.black.bright    {{ color: #969896; }}
+    pre .fg.red.bright      {{ color: #cc6666; }}
+    pre .fg.green.bright    {{ color: #b5bd68; }}
+    pre .fg.yellow.bright   {{ color: #f0c674; }}
+    pre .fg.blue.bright     {{ color: #81a2be; }}
+    pre .fg.magenta.bright  {{ color: #b294bb; }}
+    pre .fg.cyan.bright     {{ color: #8abeb7; }}
+    pre .fg.white.bright    {{ color: #ffffff; }}
+
+    pre .bg.black   {{ background-color: #1d1f21; }}
+    pre .bg.red     {{ background-color: #cc6666; }}
+    pre .bg.green   {{ background-color: #b5bd68; }}
+    pre .bg.yellow  {{ background-color: #f0c674; }}
+    pre .bg.blue    {{ background-color: #81a2be; }}
+    pre .bg.magenta {{ background-color: #b294bb; }}
+    pre .bg.cyan    {{ background-color: #8abeb7; }}
+    pre .bg.white   {{ background-color: #c5c8c6; }}
+
+    pre .bg.black.bright    {{ background-color: #969896; }}
+    pre .bg.red.bright      {{ background-color: #cc6666; }}
+    pre .bg.green.bright    {{ background-color: #b5bd68; }}
+    pre .bg.yellow.bright   {{ background-color: #f0c674; }}
+    pre .bg.blue.bright     {{ background-color: #81a2be; }}
+    pre .bg.magenta.bright  {{ background-color: #b294bb; }}
+    pre .bg.cyan.bright     {{ background-color: #8abeb7; }}
+    pre .bg.white.bright    {{ background-color: #ffffff; }}
+  </style>
+
+  <foreignObject x="0" y="0" width="{width}" height="{height}">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <pre>"#,
+                padding = padding,
+                font_size = font_size,
+                width = width,
+                height = height,
+            )?;
+
+            writer.write_all(&buffer)?;
+
+            write!(
+                writer,
+                "</pre>
+    </div>
+  </foreignObject>
+</svg>
+"
+            )?;
         }
         Opts::Stderr { color } => {
             let writer = StandardStream::stderr(color.into());
@@ -101,65 +186,57 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-const SVG_START: &str = r#"<svg viewBox="0 0 882 440" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    /* https://github.com/aaron-williamson/base16-alacritty/blob/master/colors/base16-tomorrow-night-256.yml */
-    pre {
-      background: #1d1f21;
-      padding: 10px;
-      border-radius: 6px;
-      color: #ffffff;
-      font: 12px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+/// Rudimentary HTML escaper which performs the following conversions:
+///
+/// - `<` ⇒ `&lt;`
+/// - `>` ⇒ `&gt;`
+/// - `&` ⇒ `&amp;`
+pub struct HtmlEscapeWriter<W> {
+    upstream: W,
+}
+
+impl<W> HtmlEscapeWriter<W> {
+    pub fn new(upstream: W) -> HtmlEscapeWriter<W> {
+        HtmlEscapeWriter { upstream }
+    }
+}
+
+impl<W: Write> Write for HtmlEscapeWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let mut last_term = 0usize;
+        for (i, byte) in buf.iter().enumerate() {
+            let escape = match byte {
+                b'<' => &b"&lt;"[..],
+                b'>' => &b"&gt;"[..],
+                b'&' => &b"&amp;"[..],
+                _ => continue,
+            };
+            self.upstream.write_all(&buf[last_term..i])?;
+            last_term = i + 1;
+            self.upstream.write_all(escape)?;
+        }
+        self.upstream.write_all(&buf[last_term..])?;
+        Ok(buf.len())
     }
 
-    pre .bold { font-weight: bold; }
+    fn flush(&mut self) -> io::Result<()> {
+        self.upstream.flush()
+    }
+}
 
-    pre .fg.black   { color: #1d1f21; }
-    pre .fg.red     { color: #cc6666; }
-    pre .fg.green   { color: #b5bd68; }
-    pre .fg.yellow  { color: #f0c674; }
-    pre .fg.blue    { color: #81a2be; }
-    pre .fg.magenta { color: #b294bb; }
-    pre .fg.cyan    { color: #8abeb7; }
-    pre .fg.white   { color: #c5c8c6; }
+impl<W: WriteColor> WriteColor for HtmlEscapeWriter<W> {
+    fn supports_color(&self) -> bool {
+        self.upstream.supports_color()
+    }
 
-    pre .fg.black.bright    { color: #969896; }
-    pre .fg.red.bright      { color: #cc6666; }
-    pre .fg.green.bright    { color: #b5bd68; }
-    pre .fg.yellow.bright   { color: #f0c674; }
-    pre .fg.blue.bright     { color: #81a2be; }
-    pre .fg.magenta.bright  { color: #b294bb; }
-    pre .fg.cyan.bright     { color: #8abeb7; }
-    pre .fg.white.bright    { color: #ffffff; }
+    fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
+        self.upstream.set_color(spec)
+    }
 
-    pre .bg.black   { background-color: #1d1f21; }
-    pre .bg.red     { background-color: #cc6666; }
-    pre .bg.green   { background-color: #b5bd68; }
-    pre .bg.yellow  { background-color: #f0c674; }
-    pre .bg.blue    { background-color: #81a2be; }
-    pre .bg.magenta { background-color: #b294bb; }
-    pre .bg.cyan    { background-color: #8abeb7; }
-    pre .bg.white   { background-color: #c5c8c6; }
-
-    pre .bg.black.bright    { background-color: #969896; }
-    pre .bg.red.bright      { background-color: #cc6666; }
-    pre .bg.green.bright    { background-color: #b5bd68; }
-    pre .bg.yellow.bright   { background-color: #f0c674; }
-    pre .bg.blue.bright     { background-color: #81a2be; }
-    pre .bg.magenta.bright  { background-color: #b294bb; }
-    pre .bg.cyan.bright     { background-color: #8abeb7; }
-    pre .bg.white.bright    { background-color: #ffffff; }
-  </style>
-
-  <foreignObject x="0" y="0" width="882" height="440">
-    <div xmlns="http://www.w3.org/1999/xhtml">
-      <pre>"#;
-
-const SVG_END: &str = "</pre>
-    </div>
-  </foreignObject>
-</svg>
-";
+    fn reset(&mut self) -> io::Result<()> {
+        self.upstream.reset()
+    }
+}
 
 pub struct SvgWriter<W> {
     upstream: W,

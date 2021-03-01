@@ -17,7 +17,7 @@ use std::ops::Range;
 /// assert!(Severity::Warning > Severity::Note);
 /// assert!(Severity::Note > Severity::Help);
 /// ```
-#[derive(Copy, Clone, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -51,7 +51,7 @@ impl PartialOrd for Severity {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// Labels that describe the primary cause of a diagnostic.
@@ -61,14 +61,14 @@ pub enum LabelStyle {
 }
 
 /// A label describing an underlined region of code associated with a diagnostic.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Label<FileId> {
     /// The style of the label.
     pub style: LabelStyle,
     /// The file that we are labelling.
     pub file_id: FileId,
-    /// The range we are going to include in the final snippet.
+    /// The range in bytes we are going to include in the final snippet.
     pub range: Range<usize>,
     /// An optional message to provide some additional information for the
     /// underlined code. These should not include line breaks.
@@ -113,7 +113,9 @@ impl<FileId> Label<FileId> {
 
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
-#[derive(Clone, Debug)]
+///
+/// The position of a Diagnostic is considered to be the position of the [`Label`] that has the earliest starting position and has the highest style which appears in all the labels of the diagnostic.
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {
     /// The overall severity of the diagnostic
@@ -127,6 +129,8 @@ pub struct Diagnostic<FileId> {
     /// sense on its own, without additional context provided by labels and notes.
     pub message: String,
     /// Source labels that describe the cause of the diagnostic.
+    /// The order of the labels inside the vector does not have any meaning.
+    /// The labels are always arranged in the order they appear in the source code.
     pub labels: Vec<Label<FileId>>,
     /// Notes that are associated with the primary cause of the diagnostic.
     /// These can include line breaks for improved formatting.
@@ -180,27 +184,27 @@ impl<FileId> Diagnostic<FileId> {
         Diagnostic::new(Severity::Help)
     }
 
-    /// Add an error code to the diagnostic.
+    /// Set the error code of the diagnostic.
     pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic<FileId> {
         self.code = Some(code.into());
         self
     }
 
-    /// Add a message to the diagnostic.
+    /// Set the message of the diagnostic.
     pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
         self.message = message.to_string();
         self
     }
 
     /// Add some labels to the diagnostic.
-    pub fn with_labels(mut self, labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
-        self.labels = labels;
+    pub fn with_labels(mut self, mut labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
+        self.labels.append(&mut labels);
         self
     }
 
     /// Add some notes to the diagnostic.
-    pub fn with_notes(mut self, notes: Vec<String>) -> Diagnostic<FileId> {
-        self.notes = notes;
+    pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
+        self.notes.append(&mut notes);
         self
     }
 }
