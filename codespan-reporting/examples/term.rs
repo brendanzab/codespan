@@ -128,12 +128,12 @@ fn main() -> anyhow::Result<()> {
             .with_message("`case` clauses have incompatible types")
             .with_code("E0308")
             .with_labels(vec![
-                Label::primary(file_id3, 163..166).with_message("expected `String`, found `Nat`"),
-                Label::secondary(file_id3, 62..166)
+                Label::primary_anon(163..166).with_message("expected `String`, found `Nat`"),
+                Label::secondary_anon(62..166)
                     .with_message("`case` clauses have incompatible types"),
-                Label::secondary(file_id3, 41..47)
-                    .with_message("expected type `String` found here"),
+                Label::secondary_anon(41..47).with_message("expected type `String` found here"),
             ])
+            .with_file(file_id3)
             .with_notes(vec![unindent::unindent(
                 "
                     expected type `String`
@@ -145,18 +145,18 @@ fn main() -> anyhow::Result<()> {
             .with_message("`case` clauses have incompatible types")
             .with_code("E0308")
             .with_labels(vec![
-                Label::primary(file_id3, 328..331).with_message("expected `String`, found `Nat`"),
-                Label::secondary(file_id3, 211..331)
+                Label::primary_anon(328..331).with_message("expected `String`, found `Nat`"),
+                Label::secondary_anon(211..331)
                     .with_message("`case` clauses have incompatible types"),
-                Label::secondary(file_id3, 258..268)
+                Label::secondary_anon(258..268)
                     .with_message("this is found to be of type `String`"),
-                Label::secondary(file_id3, 284..290)
+                Label::secondary_anon(284..290)
                     .with_message("this is found to be of type `String`"),
-                Label::secondary(file_id3, 306..312)
+                Label::secondary_anon(306..312)
                     .with_message("this is found to be of type `String`"),
-                Label::secondary(file_id3, 186..192)
-                    .with_message("expected type `String` found here"),
+                Label::secondary_anon(186..192).with_message("expected type `String` found here"),
             ])
+            .with_file(file_id3)
             .with_notes(vec![unindent::unindent(
                 "
                     expected type `String`
