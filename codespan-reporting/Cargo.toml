@@ -13,7 +13,7 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1", optional = true, features = ["derive"] }
-termcolor = "1"
+termcolor = "1.0.4"
 unicode-width = "0.1"
 
 [dev-dependencies]
