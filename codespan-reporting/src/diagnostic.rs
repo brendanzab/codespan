@@ -2,8 +2,8 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::string::ToString;
 use std::ops::Range;
+use std::string::ToString;
 
 /// A severity level for diagnostic messages.
 ///
