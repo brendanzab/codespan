@@ -185,8 +185,8 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Set the error code of the diagnostic.
-    pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic<FileId> {
-        self.code = Some(code.into());
+    pub fn with_code(mut self, code: impl ToString) -> Diagnostic<FileId> {
+        self.code = Some(code.to_string());
         self
     }
 
