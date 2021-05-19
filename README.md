@@ -121,6 +121,7 @@ More examples of using `codespan-reporting` can be found in the
 - [MDBook LinkCheck](https://github.com/Michael-F-Bryan/mdbook-linkcheck)
 - [Nushell](https://www.nushell.sh/)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
+- [Naga](https://github.com/gfx-rs/naga)
 
 ## Alternatives to codespan-reporting
 
