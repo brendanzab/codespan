@@ -119,6 +119,7 @@ More examples of using `codespan-reporting` can be found in the
 - [Gleam](https://github.com/lpil/gleam/)
 - [Gluon](https://github.com/gluon-lang/gluon)
 - [MDBook LinkCheck](https://github.com/Michael-F-Bryan/mdbook-linkcheck)
+- [mos](https://github.com/datatrash/mos)
 - [Nushell](https://www.nushell.sh/)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 - [Naga](https://github.com/gfx-rs/naga)
