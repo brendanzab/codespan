@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   `Label`s can now be created without specifying a file id and instead later setting
+    the file id on a `Label` or all labels in a `Diagnostic`.
+
 ## [0.11.1] - 2021-01-18
 
 ### Added
