@@ -324,7 +324,7 @@ where
 
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the next line.
-                if let Some((next_line_index, _)) = lines.peek() {
+                if let Some((next_line_index, next_line)) = lines.peek() {
                     match next_line_index.checked_sub(*line_index) {
                         // Consecutive lines
                         Some(1) => {}
@@ -361,7 +361,7 @@ where
                                 outer_padding,
                                 self.diagnostic.severity,
                                 labeled_file.num_multi_labels,
-                                &line.multi_labels,
+                                &next_line.multi_labels,
                             )?;
                         }
                     }
