@@ -135,6 +135,34 @@ where
                 }
             };
 
+            let lines_before = usize::min(start_line_index, self.config.before_label_lines);
+            for offset in (1..lines_before + 1).rev() {
+                let range = files.line_range(label.file_id, start_line_index - offset);
+                if let Ok(range) = range {
+                    let line = labeled_file.get_or_insert_line(
+                        start_line_index - offset,
+                        range,
+                        start_line_number - offset,
+                    );
+                    line.must_render = true;
+                } else {
+                    break;
+                }
+            }
+            for offset in 1..self.config.after_label_lines + 1 {
+                let range = files.line_range(label.file_id, end_line_index + offset);
+                if let Ok(range) = range {
+                    let line = labeled_file.get_or_insert_line(
+                        end_line_index + offset,
+                        range,
+                        end_line_number + offset,
+                    );
+                    line.must_render = true;
+                } else {
+                    break;
+                }
+            }
+
             if start_line_index == end_line_index {
                 // Single line
                 //
