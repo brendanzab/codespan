@@ -5,14 +5,11 @@ use crate::files::{Error, Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 use crate::term::Config;
 
-/// Count the number of decimal digits in `n`.
-fn count_digits(mut n: usize) -> usize {
-    let mut count = 0;
-    while n != 0 {
-        count += 1;
-        n /= 10; // remove last digit
-    }
-    count
+/// Calculate the number of decimal digits in `n`.
+fn count_digits(n: usize) -> usize {
+    // Use a saturating_add because in that edge case the number of digits
+    // will not be changed.
+    (n.saturating_add(1) as f64).log10().ceil() as usize
 }
 
 /// Output a richly formatted diagnostic, with source code previews.
