@@ -29,6 +29,14 @@ pub struct Config {
     ///
     /// [`Label`]: crate::diagnostic::Label
     pub end_context_lines: usize,
+    /// The minimum number of lines before a label that should be included for context.
+    ///
+    /// Defaults to: `0`.
+    pub before_label_lines: usize,
+    /// The minimum number of lines after a label that should be included for context.
+    ///
+    /// Defaults to: `0`.
+    pub after_label_lines: usize,
 }
 
 impl Default for Config {
@@ -40,6 +48,8 @@ impl Default for Config {
             chars: Chars::default(),
             start_context_lines: 3,
             end_context_lines: 1,
+            before_label_lines: 0,
+            after_label_lines: 0,
         }
     }
 }
