@@ -135,28 +135,37 @@ where
                 }
             };
 
-            let lines_before = usize::min(start_line_index, self.config.before_label_lines);
-            for offset in (1..lines_before + 1).rev() {
-                let range = files.line_range(label.file_id, start_line_index - offset);
-                if let Ok(range) = range {
-                    let line = labeled_file.get_or_insert_line(
-                        start_line_index - offset,
-                        range,
-                        start_line_number - offset,
-                    );
+            // insert context lines before label
+            // start from 1 because 0 would be the start of the label itself
+            for offset in 1..self.config.before_label_lines + 1 {
+                let index = if let Some(index) = start_line_index.checked_sub(offset) {
+                    index
+                } else {
+                    // we are going from smallest to largest offset, so if
+                    // the offset can not be subtracted from the start we
+                    // reached the first line
+                    break;
+                };
+
+                if let Ok(range) = files.line_range(label.file_id, index) {
+                    let line =
+                        labeled_file.get_or_insert_line(index, range, start_line_number - offset);
                     line.must_render = true;
                 } else {
                     break;
                 }
             }
+
+            // insert context lines after label
+            // start from 1 because 0 would be the end of the label itself
             for offset in 1..self.config.after_label_lines + 1 {
-                let range = files.line_range(label.file_id, end_line_index + offset);
-                if let Ok(range) = range {
-                    let line = labeled_file.get_or_insert_line(
-                        end_line_index + offset,
-                        range,
-                        end_line_number + offset,
-                    );
+                let index = end_line_index
+                    .checked_add(offset)
+                    .expect("line index too big");
+
+                if let Ok(range) = files.line_range(label.file_id, index) {
+                    let line =
+                        labeled_file.get_or_insert_line(index, range, end_line_number + offset);
                     line.must_render = true;
                 } else {
                     break;
