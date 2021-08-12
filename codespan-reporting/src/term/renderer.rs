@@ -212,7 +212,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.reset()?;
 
         write!(self, " ")?;
-        self.snippet_locus(&locus)?;
+        self.snippet_locus(locus)?;
 
         writeln!(self)?;
 
