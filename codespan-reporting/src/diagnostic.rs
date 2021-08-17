@@ -17,7 +17,7 @@ use std::string::ToString;
 /// assert!(Severity::Warning > Severity::Note);
 /// assert!(Severity::Note > Severity::Help);
 /// ```
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
     /// An unexpected bug.
@@ -30,25 +30,6 @@ pub enum Severity {
     Note,
     /// A help message.
     Help,
-}
-
-impl Severity {
-    /// We want bugs to be the maximum severity, errors next, etc...
-    fn to_cmp_int(self) -> u8 {
-        match self {
-            Severity::Bug => 5,
-            Severity::Error => 4,
-            Severity::Warning => 3,
-            Severity::Note => 2,
-            Severity::Help => 1,
-        }
-    }
-}
-
-impl PartialOrd for Severity {
-    fn partial_cmp(&self, other: &Severity) -> Option<std::cmp::Ordering> {
-        u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
-    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
