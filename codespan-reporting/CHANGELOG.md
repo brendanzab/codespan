@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Add the option to display a configurable amount of lines in front of and after any label.
+-   The `Severity` enum now implements full `Ord`. (#335)
 
 ### Changed
 

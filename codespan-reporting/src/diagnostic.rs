@@ -20,16 +20,16 @@ use std::string::ToString;
 #[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
-    /// An unexpected bug.
-    Bug,
-    /// An error.
-    Error,
-    /// A warning.
-    Warning,
-    /// A note.
-    Note,
     /// A help message.
     Help,
+    /// A note.
+    Note,
+    /// A warning.
+    Warning,
+    /// An error.
+    Error,
+    /// An unexpected bug.
+    Bug,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
