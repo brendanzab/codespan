@@ -5,14 +5,12 @@ use crate::files::{Error, Files, Location};
 use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 use crate::term::Config;
 
-/// Count the number of decimal digits in `n`.
-fn count_digits(mut n: usize) -> usize {
-    let mut count = 0;
-    while n != 0 {
-        count += 1;
-        n /= 10; // remove last digit
-    }
-    count
+/// Calculate the number of decimal digits in `n`.
+// TODO: simplify after https://github.com/rust-lang/rust/issues/70887 resolves
+fn count_digits(n: usize) -> usize {
+    // Use a saturating_add because in that edge case the number of digits
+    // will not be changed.
+    (n.saturating_add(1) as f64).log10().ceil() as usize
 }
 
 /// Output a richly formatted diagnostic, with source code previews.
@@ -134,6 +132,43 @@ where
                         .expect("just pushed an element that disappeared")
                 }
             };
+
+            // insert context lines before label
+            // start from 1 because 0 would be the start of the label itself
+            for offset in 1..self.config.before_label_lines + 1 {
+                let index = if let Some(index) = start_line_index.checked_sub(offset) {
+                    index
+                } else {
+                    // we are going from smallest to largest offset, so if
+                    // the offset can not be subtracted from the start we
+                    // reached the first line
+                    break;
+                };
+
+                if let Ok(range) = files.line_range(label.file_id, index) {
+                    let line =
+                        labeled_file.get_or_insert_line(index, range, start_line_number - offset);
+                    line.must_render = true;
+                } else {
+                    break;
+                }
+            }
+
+            // insert context lines after label
+            // start from 1 because 0 would be the end of the label itself
+            for offset in 1..self.config.after_label_lines + 1 {
+                let index = end_line_index
+                    .checked_add(offset)
+                    .expect("line index too big");
+
+                if let Ok(range) = files.line_range(label.file_id, index) {
+                    let line =
+                        labeled_file.get_or_insert_line(index, range, end_line_number + offset);
+                    line.must_render = true;
+                } else {
+                    break;
+                }
+            }
 
             if start_line_index == end_line_index {
                 // Single line
@@ -324,7 +359,7 @@ where
 
                 // Check to see if we need to render any intermediate stuff
                 // before rendering the next line.
-                if let Some((next_line_index, _)) = lines.peek() {
+                if let Some((next_line_index, next_line)) = lines.peek() {
                     match next_line_index.checked_sub(*line_index) {
                         // Consecutive lines
                         Some(1) => {}
@@ -361,7 +396,7 @@ where
                                 outer_padding,
                                 self.diagnostic.severity,
                                 labeled_file.num_multi_labels,
-                                &line.multi_labels,
+                                &next_line.multi_labels,
                             )?;
                         }
                     }

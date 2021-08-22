@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The minimum supported rustc version is now `1.46.0` (was `1.40.0`).
+This is because dependencies of `codespan-lsp` now require this Rust version.
+
 ### Fixed
 
 -   Removed an erroneous feature gate from the implementation of
@@ -64,7 +67,8 @@ process has been changed so this should not happen again.
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/brendanzab/codespan/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/brendanzab/codespan/compare/v0.9.5...v0.11.0
 [0.9.5]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4

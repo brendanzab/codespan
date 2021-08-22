@@ -9,6 +9,8 @@
 //! - **serialization** - Adds `Serialize` and `Deserialize` implementations
 //!   for use with `serde`
 
+#![forbid(unsafe_code)]
+
 mod file;
 mod index;
 mod location;

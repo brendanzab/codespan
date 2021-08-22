@@ -3,6 +3,7 @@
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
+use std::string::ToString;
 
 /// A severity level for diagnostic messages.
 ///
@@ -16,38 +17,19 @@ use std::ops::Range;
 /// assert!(Severity::Warning > Severity::Note);
 /// assert!(Severity::Note > Severity::Help);
 /// ```
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum Severity {
-    /// An unexpected bug.
-    Bug,
-    /// An error.
-    Error,
-    /// A warning.
-    Warning,
-    /// A note.
-    Note,
     /// A help message.
     Help,
-}
-
-impl Severity {
-    /// We want bugs to be the maximum severity, errors next, etc...
-    fn to_cmp_int(self) -> u8 {
-        match self {
-            Severity::Bug => 5,
-            Severity::Error => 4,
-            Severity::Warning => 3,
-            Severity::Note => 2,
-            Severity::Help => 1,
-        }
-    }
-}
-
-impl PartialOrd for Severity {
-    fn partial_cmp(&self, other: &Severity) -> Option<std::cmp::Ordering> {
-        u8::partial_cmp(&self.to_cmp_int(), &other.to_cmp_int())
-    }
+    /// A note.
+    Note,
+    /// A warning.
+    Warning,
+    /// An error.
+    Error,
+    /// An unexpected bug.
+    Bug,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
@@ -104,8 +86,8 @@ impl<FileId> Label<FileId> {
     }
 
     /// Add a message to the diagnostic.
-    pub fn with_message(mut self, message: impl Into<String>) -> Label<FileId> {
-        self.message = message.into();
+    pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
+        self.message = message.to_string();
         self
     }
 }
@@ -184,14 +166,14 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Set the error code of the diagnostic.
-    pub fn with_code(mut self, code: impl Into<String>) -> Diagnostic<FileId> {
-        self.code = Some(code.into());
+    pub fn with_code(mut self, code: impl ToString) -> Diagnostic<FileId> {
+        self.code = Some(code.to_string());
         self
     }
 
     /// Set the message of the diagnostic.
-    pub fn with_message(mut self, message: impl Into<String>) -> Diagnostic<FileId> {
-        self.message = message.into();
+    pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
+        self.message = message.to_string();
         self
     }
 

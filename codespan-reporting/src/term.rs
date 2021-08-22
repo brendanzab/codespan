@@ -72,9 +72,9 @@ impl FromStr for ColorArg {
     }
 }
 
-impl Into<ColorChoice> for ColorArg {
-    fn into(self) -> ColorChoice {
-        self.0
+impl From<ColorArg> for ColorChoice {
+    fn from(x: ColorArg) -> Self {
+        x.0
     }
 }
 

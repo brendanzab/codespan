@@ -63,7 +63,7 @@ where
     /// refer to it again.
     pub fn add(&mut self, name: impl Into<OsString>, source: Source) -> FileId {
         let file_id = FileId::new(self.files.len());
-        self.files.push(File::new(name.into(), source.into()));
+        self.files.push(File::new(name.into(), source));
         file_id
     }
 
@@ -72,7 +72,7 @@ where
     /// This will mean that any outstanding byte indexes will now point to
     /// invalid locations.
     pub fn update(&mut self, file_id: FileId, source: Source) {
-        self.get_mut(file_id).update(source.into())
+        self.get_mut(file_id).update(source)
     }
 
     /// Get a the source file using the file id.
@@ -381,7 +381,7 @@ where
 }
 
 // NOTE: this is copied from `codespan_reporting::files::line_starts` and should be kept in sync.
-fn line_starts<'source>(source: &'source str) -> impl 'source + Iterator<Item = usize> {
+fn line_starts(source: &str) -> impl '_ + Iterator<Item = usize> {
     std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 

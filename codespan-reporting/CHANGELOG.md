@@ -7,11 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The minimum supported rustc version is now `1.46.0` (was `1.40.0`).
+This is because some testing dependencies now require this Rust version.
+
 ### Added
 
--   The `ascii-only` feature changes the defaults so that rendering uses only ASCII characters
-    (not above U+007F) for use cases that do not allow for box drawing characters, e.g.
-    terminals that do not support them.
+-   Add the option to display a configurable amount of lines in front of and after any label.
+-   The `Severity` enum now implements full `Ord`. (#335)
+
+### Changed
+
+-   Broken lines are now rendered properly with multiline spans.
+
+    We used to render the wrong lines in the gutter when there were multiline spans
+    and there were breaks in the file.
+
+    <details>
+    <summary>Example</summary>
+
+    Before:
+
+    ```text
+    error[0001]: oh noes, a cupcake has occurred!
+       ┌─ test:4:1
+       │
+     4 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
+     5 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
+       │ ╭─│─────────'
+       ·   │
+    10 │ │ │ Muffin danish chocolate soufflé pastry icing bonbon oat cake.
+    11 │ │ │ Powder cake jujubes oat cake. Lemon drops tootsie roll marshmallow
+       │ │ ╰─────────────────────────────' blah blah
+       · │ │
+    19 │ │   soufflé marzipan. Chocolate bar oat cake jujubes lollipop pastry
+    20 │ │   cupcake. Candy canes cupcake toffee gingerbread candy canes muffin
+       │ ╰──────────' blah blah
+    ```
+
+    After:
+
+    ```text
+    error[0001]: oh noes, a cupcake has occurred!
+       ┌─ test:4:1
+       │
+     4 │   ╭ Cupcake ipsum dolor. Sit amet marshmallow topping cheesecake
+     5 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
+       │ ╭─│─────────'
+       · │ │
+    10 │ │ │ Muffin danish chocolate soufflé pastry icing bonbon oat cake.
+    11 │ │ │ Powder cake jujubes oat cake. Lemon drops tootsie roll marshmallow
+       │ │ ╰─────────────────────────────' blah blah
+       · │
+    19 │ │   soufflé marzipan. Chocolate bar oat cake jujubes lollipop pastry
+    20 │ │   cupcake. Candy canes cupcake toffee gingerbread candy canes muffin
+       │ ╰──────────' blah blah
+    ```
+
+    </details>
+
+## [0.11.1] - 2021-01-18
+
+### Added
+
+-   Add `Chars::{box_drawing, ascii}` functions, the latter supporting a rustc-style of
+    output that only uses ASCII characters (not above U+007F) for use cases that do not allow
+    for box drawing characters, e.g. terminals that do not support them.
+
+### Changed
+
+-   `Diagnostic::with_labels` and `Diagnostic::with_notes` now append additional
+    labels rather tan overwriting them, meaning that the documentation and behaviour match
+    more closely. The behaviour will only differ if you call the same builder methods
+    multiple times. If you call every builder method once only, nothing should change.
+-   `config::Chars::snippet_start` is now a String instead of a single `char`.
 
 ## [0.11.0] - 2020-11-30
 
@@ -53,9 +121,15 @@ process has been changed so this should not happen again.
 -   Tab stops are now rendered properly.
 
     We used to just render `\t` characters in source snippets with the same
-    number of spaces. For example, when rendering with a tab width of `3` we
+    number of spaces.
+
+    <details>
+    <summary>Example</summary>
+
+    For example, when rendering with a tab width of `3` we
     would print:
-    ```
+
+    ```text
     warning: tab test
       ┌─ tab_columns:1:2
       │
@@ -74,8 +148,10 @@ process has been changed so this should not happen again.
     7 │ ∙∙∙∙∙∙   hello
       │          ^^^^^
     ```
+
     Now we properly take into account the column of the tab character:
-    ```
+
+    ```text
     warning: tab test
       ┌─ tab_columns:1:2
       │
@@ -95,14 +171,22 @@ process has been changed so this should not happen again.
       │          ^^^^^
     ```
 
+    </details>
+
 ## [0.9.4] - 2020-05-18
 
 ### Changed
 
 -   We have made the caret rendering easier to read when there are multiple
     labels on the same line. We also avoid printing trailing borders on the
-    final source source snippet if no notes are present. Instead of this:
-    ```
+    final source source snippet if no notes are present.
+
+    <details>
+    <summary>Example</summary>
+
+    Instead of this:
+
+    ```text
        ┌─ one_line.rs:3:5
        │
      3 │     v.push(v.pop().unwrap());
@@ -111,8 +195,10 @@ process has been changed so this should not happen again.
        │            ^ second mutable borrow occurs here
        │
     ```
+
     …we now render the following:
-    ```
+
+    ```text
        ┌─ one_line.rs:3:5
        │
      3 │     v.push(v.pop().unwrap());
@@ -121,6 +207,8 @@ process has been changed so this should not happen again.
        │     │ first mutable borrow occurs here
        │     first borrow later used by call
     ```
+
+    </details>
 
 ### Fixed
 
@@ -135,8 +223,12 @@ process has been changed so this should not happen again.
 -   Labels that marked the same span were originally rendered in reverse order.
     This was a mistake! We've now fixed this.
 
+    <details>
+    <summary>Example</summary>
+
     For example, this diagnostic:
-    ```
+
+    ```text
        ┌─ same_range:1:7
        │
      1 │ ::S { }
@@ -144,8 +236,10 @@ process has been changed so this should not happen again.
        │     ^ Unexpected '{'
        │
     ```
+
     …will now be rendered as:
-    ```
+
+    ```text
        ┌─ same_range:1:7
        │
      1 │ ::S { }
@@ -153,14 +247,20 @@ process has been changed so this should not happen again.
        │     - Expected '('
        │
     ```
+
+    </details>
 
 -   We've reduced the prominence of the 'locus' on source snippets by
     simplifying the border and reducing the spacing around it. This is to help
     focus attention on the underlined source snippet and error messages, rather
     than the location, which should be a secondary focus.
 
+    <details>
+    <summary>Example</summary>
+
     For example we originally rendered this:
-    ```
+
+    ```text
     error: unknown builtin: `NATRAL`
 
        ┌── Data/Nat.fun:7:13 ───
@@ -171,8 +271,10 @@ process has been changed so this should not happen again.
        = there is a builtin with a similar name: `NATURAL`
 
     ```
+
     …and now we render this:
-    ```
+
+    ```text
     error: unknown builtin: `NATRAL`
       ┌─ Data/Nat.fun:7:13
       │
@@ -183,14 +285,20 @@ process has been changed so this should not happen again.
 
     ```
 
+    </details>
+
 ## [0.9.2] - 2020-03-29
 
 ### Changed
 
 -   Render overlapping multiline marks on the same lines of source code.
 
+    <details>
+    <summary>Example</summary>
+
     For example:
-    ```
+
+    ```text
     error[E0308]: match arms have incompatible types
 
        ┌── codespan/src/file.rs:1:9 ───
@@ -219,8 +327,10 @@ process has been changed so this should not happen again.
        = expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
             found type `LineIndexOutOfBoundsError`
     ```
+
     …is now rendered as:
-    ```
+
+    ```text
     error[E0308]: match arms have incompatible types
 
        ┌── codespan/src/file.rs:1:9 ───
@@ -243,6 +353,8 @@ process has been changed so this should not happen again.
             found type `LineIndexOutOfBoundsError`
     ```
 
+    </details>
+
 ## [0.9.1] - 2020-03-23
 
 ### Added
@@ -253,8 +365,12 @@ process has been changed so this should not happen again.
 
 -   Single-line labels are now rendered together, under the same source line.
 
+    <details>
+    <summary>Example</summary>
+
     For example:
-    ```
+
+    ```text
        ┌── one_line.rs:3:5 ───
        │
      3 │     v.push(v.pop().unwrap());
@@ -267,8 +383,10 @@ process has been changed so this should not happen again.
        │            ^ second mutable borrow occurs here
        │
     ```
+
     …is now rendered as:
-    ```
+
+    ```text
        ┌── one_line.rs:3:5 ───
        │
      3 │     v.push(v.pop().unwrap());
@@ -277,6 +395,8 @@ process has been changed so this should not happen again.
        │            ^ second mutable borrow occurs here
        │
     ```
+
+    </details>
 
 ## [0.9.0] - 2020-03-11
 
@@ -326,7 +446,8 @@ process has been changed so this should not happen again.
 ## [0.2.1] - 2019-02-26
 ## [0.2.0] - 2018-10-11
 
-[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/brendanzab/codespan/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/brendanzab/codespan/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/brendanzab/codespan/compare/v0.9.5...v0.11.0
 [0.9.5]: https://github.com/brendanzab/codespan/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/brendanzab/codespan/compare/v0.9.3...v0.9.4

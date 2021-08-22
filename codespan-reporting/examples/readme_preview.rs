@@ -87,7 +87,7 @@ fn main() -> anyhow::Result<()> {
             };
 
             for diagnostic in &diagnostics {
-                term::emit(&mut writer, &config, &file, &diagnostic)?;
+                term::emit(&mut writer, &config, &file, diagnostic)?;
             }
 
             let num_lines = buffer.iter().filter(|byte| **byte == b'\n').count() + 1;
@@ -178,7 +178,7 @@ fn main() -> anyhow::Result<()> {
             let writer = StandardStream::stderr(color.into());
             let config = codespan_reporting::term::Config::default();
             for diagnostic in &diagnostics {
-                term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
+                term::emit(&mut writer.lock(), &config, &file, diagnostic)?;
             }
         }
     }
@@ -294,7 +294,7 @@ impl<W: Write> WriteColor for SvgWriter<W> {
             }
 
             Ok(false)
-        };
+        }
 
         fn write_color<W: Write>(color: &Color, writer: &mut SvgWriter<W>) -> io::Result<()> {
             match color {
@@ -309,7 +309,7 @@ impl<W: Write> WriteColor for SvgWriter<W> {
                 // TODO: other colors
                 _ => Ok(()),
             }
-        };
+        }
 
         if let Some(fg) = spec.fg() {
             first = write_first(first, self)?;

@@ -60,11 +60,10 @@ mod files {
             use std::cmp::Ordering;
 
             match line_index.cmp(&self.line_starts.len()) {
-                Ordering::Less => Ok(self
+                Ordering::Less => Ok(*self
                     .line_starts
                     .get(line_index)
-                    .expect("failed despite previous check")
-                    .clone()),
+                    .expect("failed despite previous check")),
                 Ordering::Equal => Ok(self.source.len()),
                 Ordering::Greater => Err(files::Error::LineTooLarge {
                     given: line_index,
