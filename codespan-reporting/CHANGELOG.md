@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The minimum supported rustc version is now `1.46.0` (was `1.40.0`).
+This is because some testing dependencies now require this Rust version.
+
 ### Added
 
 -   Add the option to display a configurable amount of lines in front of and after any label.

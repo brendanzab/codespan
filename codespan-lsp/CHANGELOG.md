@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The minimum supported rustc version is now `1.46.0` (was `1.40.0`).
+This is because some dependencies now require this Rust version.
+
 ### Changed
 
 -   The `lsp-types` dependency was updated to use a version range: `>=0.84, <0.90`,
