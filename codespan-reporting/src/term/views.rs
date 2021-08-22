@@ -431,7 +431,7 @@ pub struct ShortDiagnostic<'diagnostic, FileId> {
 
 impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
 where
-    FileId: Copy + PartialEq,
+    FileId: Copy + Ord,
 {
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
