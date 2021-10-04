@@ -25,17 +25,17 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       # Check each crate individually to work around rust-lang/cargo#4942
-      - name: Run cargo test for codespan-reporting
+      - name: Run cargo check for codespan-reporting
         uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
-      - name: Run cargo test for codespan
+      - name: Run cargo check for codespan
         uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - name: Run cargo test for codespan-lsp
+      - name: Run cargo check for codespan-lsp
         uses: actions-rs/cargo@v1
         with:
           command: check
