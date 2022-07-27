@@ -1,0 +1,17 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_color(&config)
+---
+{fg:Red bold bright}error{bold bright}: cycle detected when evaluating constant `A`{/}
+  {fg:Blue}┌─{/} one_line.rs:1:1
+  {fg:Blue}│{/}
+{fg:Blue}1{/} {fg:Blue}│{/} {fg:Red}const A: u32 = B;{/}
+  {fg:Blue}│{/} {fg:Red}^^^^^^^^^^^^^^^^^{/}
+  {fg:Blue}│{/}
+  {fg:Blue}={/} ...which requires evaluating constant `B`...
+  {fg:Blue}┌─{/} one_line.rs:2:1
+  {fg:Blue}│{/}
+{fg:Blue}2{/} {fg:Blue}│{/} const B: u32 = A;
+  {fg:Blue}│{/} {fg:Blue}-----------------{/}
+
+

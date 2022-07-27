@@ -7,7 +7,7 @@
 //! cargo run --example peg_calculator
 //! ```
 
-use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::diagnostic::{Diagnostic, Label, Note};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
@@ -59,7 +59,7 @@ fn main() -> anyhow::Result<()> {
                     .with_labels(vec![
                         Label::primary((), start..start).with_message("parse error")
                     ])
-                    .with_notes(vec![format!("expected: {}", error.expected)]);
+                    .with_notes(vec![Note::new(format!("expected: {}", error.expected))]);
 
                 term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
             }

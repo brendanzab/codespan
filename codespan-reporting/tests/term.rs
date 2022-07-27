@@ -1,4 +1,4 @@
-use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::diagnostic::{Diagnostic, Label, Note};
 use codespan_reporting::files::{SimpleFile, SimpleFiles};
 use codespan_reporting::term::{termcolor::Color, Chars, Config, DisplayStyle, Styles};
 
@@ -158,7 +158,7 @@ mod same_line {
                 Diagnostic::error()
                     .with_message("aborting due to previous error")
                     .with_notes(vec![
-                        "For more information about this error, try `rustc --explain E0499`.".to_owned(),
+                        Note::new("For more information about this error, try `rustc --explain E0499`.".to_owned()),
                     ]),
             ];
 
@@ -294,16 +294,16 @@ mod overlapping {
                             .with_message("required by this bound in `std::thread::spawn`"),
                     ])
                     .with_notes(vec![
-                        "help: within `[closure@no_send_res_ports.rs:29:19: 33:6 x:main::Foo]`, the trait `std::marker::Send` is not implemented for `std::rc::Rc<()>`".to_owned(),
-                        "note: required because it appears within the type `Port<()>`".to_owned(),
-                        "note: required because it appears within the type `main::Foo`".to_owned(),
-                        "note: required because it appears within the type `[closure@no_send_res_ports.rs:29:19: 33:6 x:main::Foo]`".to_owned(),
+                        Note::new("help: within `[closure@no_send_res_ports.rs:29:19: 33:6 x:main::Foo]`, the trait `std::marker::Send` is not implemented for `std::rc::Rc<()>`".to_owned()),
+                        Note::new("note: required because it appears within the type `Port<()>`".to_owned()),
+                        Note::new("note: required because it appears within the type `main::Foo`".to_owned()),
+                        Note::new("note: required because it appears within the type `[closure@no_send_res_ports.rs:29:19: 33:6 x:main::Foo]`".to_owned()),
                     ]),
                 Diagnostic::error()
                     .with_message("aborting due 5 previous errors")
                     .with_notes(vec![
-                        "Some errors have detailed explanations: E0121, E0277, E0666.".to_owned(),
-                        "For more information about an error, try `rustc --explain E0121`.".to_owned(),
+                        Note::new("Some errors have detailed explanations: E0121, E0277, E0666.".to_owned()),
+                        Note::new("For more information about an error, try `rustc --explain E0121`.".to_owned()),
                     ]),
             ];
 
@@ -355,10 +355,10 @@ mod message_and_notes {
             let files = SimpleFiles::new();
 
             let diagnostics = vec![
-                Diagnostic::error().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::warning().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::note().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::help().with_message("a message").with_notes(vec!["a note".to_owned()]),
+                Diagnostic::error().with_message("a message").with_notes(vec![Note::new("a note".to_owned())]),
+                Diagnostic::warning().with_message("a message").with_notes(vec![Note::new("a note".to_owned())]),
+                Diagnostic::note().with_message("a message").with_notes(vec![Note::new("a note".to_owned())]),
+                Diagnostic::help().with_message("a message").with_notes(vec![Note::new("a note".to_owned())]),
             ];
 
             TestData { files, diagnostics }
@@ -517,13 +517,13 @@ mod multifile {
                     .with_message("unknown builtin: `NATRAL`")
                     .with_labels(vec![Label::primary(file_id1, 96..102).with_message("unknown builtin")])
                     .with_notes(vec![
-                        "there is a builtin with a similar name: `NATURAL`".to_owned(),
+                        Note::new("there is a builtin with a similar name: `NATURAL`".to_owned()),
                     ]),
                 // Unused parameter warning
                 Diagnostic::warning()
                     .with_message("unused parameter pattern: `n₂`")
                     .with_labels(vec![Label::primary(file_id1, 285..289).with_message("unused parameter")])
-                    .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
+                    .with_notes(vec![Note::new("consider using a wildcard pattern: `_`".to_owned())]),
                 // Unexpected type error
                 Diagnostic::error()
                     .with_message("unexpected type in application of `_+_`")
@@ -532,12 +532,12 @@ mod multifile {
                         Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
                         Label::secondary(file_id1, 130..155).with_message("based on the definition of `_+_`"),
                     ])
-                    .with_notes(vec![unindent::unindent(
+                    .with_notes(vec![Note::new(unindent::unindent(
                         "
                             expected type `Nat`
                                found type `String`
                         ",
-                    )]),
+                    ))]),
             ];
 
             TestData { files, diagnostics }
@@ -594,12 +594,12 @@ mod fizz_buzz {
                         Label::secondary(file_id, 62..166).with_message("`case` clauses have incompatible types"),
                         Label::secondary(file_id, 41..47).with_message("expected type `String` found here"),
                     ])
-                    .with_notes(vec![unindent::unindent(
+                    .with_notes(vec![Note::new(unindent::unindent(
                         "
                             expected type `String`
                                found type `Nat`
                         ",
-                    )]),
+                    ))]),
                 // Incompatible match clause error
                 Diagnostic::error()
                     .with_message("`case` clauses have incompatible types")
@@ -612,12 +612,12 @@ mod fizz_buzz {
                         Label::secondary(file_id, 306..312).with_message("this is found to be of type `String`"),
                         Label::secondary(file_id, 186..192).with_message("expected type `String` found here"),
                     ])
-                    .with_notes(vec![unindent::unindent(
+                    .with_notes(vec![Note::new(unindent::unindent(
                         "
                             expected type `String`
                                found type `Nat`
                         ",
-                    )]),
+                    ))]),
             ];
 
             TestData { files, diagnostics }
@@ -663,12 +663,12 @@ mod multiline_overlapping {
                         Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
                         Label::secondary((), 167..195).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
                     ])
-                    .with_notes(vec![unindent::unindent(
+                    .with_notes(vec![Note::new(unindent::unindent(
                         "
                             expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
                                found type `LineIndexOutOfBoundsError`
                         ",
-                    )]),
+                    ))]),
             ];
 
             TestData { files: file, diagnostics }
@@ -847,7 +847,7 @@ mod unicode {
                         Label::primary((), prefix.len()..(prefix.len() + abi.len()))
                             .with_message("invalid ABI"),
                     ])
-                    .with_notes(vec![unindent::unindent(
+                    .with_notes(vec![Note::new(unindent::unindent(
                         "
                             valid ABIs:
                               - aapcs
@@ -871,11 +871,11 @@ mod unicode {
                               - win64
                               - x86-interrupt
                         ",
-                    )]),
+                    ))]),
                 Diagnostic::error()
                     .with_message("aborting due to previous error")
                     .with_notes(vec![
-                        "For more information about this error, try `rustc --explain E0703`.".to_owned(),
+                        Note::new("For more information about this error, try `rustc --explain E0703`.".to_owned()),
                     ]),
             ];
 
@@ -1041,7 +1041,7 @@ mod multiline_omit {
                         Label::secondary(file_id2, 55..55).with_message("missing whitespace"),
                     ])
                     .with_notes(vec![
-                        "note:\texpected type `()`\n\tfound type `{integer}`".to_owned()
+                        Note::new("note:\texpected type `()`\n\tfound type `{integer}`".to_owned())
                     ]),
             ];
 
@@ -1105,4 +1105,46 @@ mod surrounding_lines {
     }
 
     test_emit!(rich_no_color);
+}
+
+mod note_with_labels {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
+            let mut files = SimpleFiles::new();
+
+            let file_id = files.add(
+                "one_line.rs",
+                unindent::unindent(r#"
+                    const A: u32 = B;
+                    const B: u32 = A;
+                "#),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("cycle detected when evaluating constant `A`")
+                    .with_labels(vec![
+                        Label::primary(file_id, 0..17),
+                    ])
+                    .with_notes(vec![
+                        Note::new("...which requires evaluating constant `B`...".to_owned())
+                            .with_labels(vec![
+                                Label::secondary(file_id, 18..35)
+                            ]),
+                    ]),
+            ];
+
+            TestData { files, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
+    test_emit!(medium_color);
+    test_emit!(short_color);
+    test_emit!(rich_no_color);
+    test_emit!(medium_no_color);
+    test_emit!(short_no_color);
+    test_emit!(rich_ascii_no_color);
 }
