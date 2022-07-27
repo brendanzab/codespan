@@ -4,4 +4,5 @@ expression: TEST_DATA.emit_color(&config)
 ---
 one_line.rs:1:1: {fg:Red bold bright}error{bold bright}: cycle detected when evaluating constant `A`{/}
  {fg:Blue}={/} ...which requires evaluating constant `B`...
+ {fg:Blue}={/} ...which requires evaluating constant `A`
 

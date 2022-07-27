@@ -13,5 +13,11 @@ error: cycle detected when evaluating constant `A`
   │
 2 │ const B: u32 = A;
   │ -----------------
+  │
+  = ...which requires evaluating constant `A`
+  ┌─ one_line.rs:1:1
+  │
+1 │ const A: u32 = B;
+  │ -----------------
 
 

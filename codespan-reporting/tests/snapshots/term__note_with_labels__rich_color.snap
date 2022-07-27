@@ -13,5 +13,11 @@ expression: TEST_DATA.emit_color(&config)
   {fg:Blue}│{/}
 {fg:Blue}2{/} {fg:Blue}│{/} const B: u32 = A;
   {fg:Blue}│{/} {fg:Blue}-----------------{/}
+  {fg:Blue}│{/}
+  {fg:Blue}={/} ...which requires evaluating constant `A`
+  {fg:Blue}┌─{/} one_line.rs:1:1
+  {fg:Blue}│{/}
+{fg:Blue}1{/} {fg:Blue}│{/} const A: u32 = B;
+  {fg:Blue}│{/} {fg:Blue}-----------------{/}
 
 

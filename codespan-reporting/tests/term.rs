@@ -1133,6 +1133,10 @@ mod note_with_labels {
                             .with_labels(vec![
                                 Label::secondary(file_id, 18..35)
                             ]),
+                        Note::new("...which requires evaluating constant `A`".to_owned())
+                            .with_labels(vec![
+                                Label::secondary(file_id, 0..17)
+                            ]),
                     ]),
             ];
 
