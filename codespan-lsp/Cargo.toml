@@ -1,6 +1,6 @@
 [package]
-name = "codespan-lsp"
-version = "0.11.1"
+name = "rspck-codespan-lsp"
+version = "0.11.2"
 license = "Apache-2.0"
 authors = ["Markus Westerlind <marwes91@gmail.com>"]
 description = "Conversions between codespan types and Language Server Protocol types"
@@ -10,7 +10,7 @@ documentation = "https://docs.rs/codespan-lsp"
 edition = "2018"
 
 [dependencies]
-codespan-reporting = { version = "0.11.1", path = "../codespan-reporting" }
+codespan-reporting = { version = "0.11.2", path = "../codespan-reporting", package = "rspack-codespan-reporting" }
 # WARNING: Be extremely careful when expanding this version range.
 # We should be confident that all of the uses of `lsp-types` in `codespan-lsp`
 # will be valid for all the versions in this range. Getting this range wrong
