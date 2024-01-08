@@ -16,32 +16,33 @@ pub use self::config::{Chars, Config, DisplayStyle, Styles};
 
 /// A command line argument that configures the coloring of the output.
 ///
-/// This can be used with command line argument parsers like [`clap`] or [`structopt`].
+/// This can be used with command line argument parsers like [`clap`] or [`Parser`].
 ///
 /// [`clap`]: https://crates.io/crates/clap
-/// [`structopt`]: https://crates.io/crates/structopt
+/// [`Parser`]: https://crates.io/crates/Parser
 ///
 /// # Example
 ///
 /// ```rust
-/// use codespan_reporting::term::termcolor::StandardStream;
+/// use clap::{builder::TypedValueParser as _, Parser};
 /// use codespan_reporting::term::ColorArg;
-/// use structopt::StructOpt;
+/// use codespan_reporting::term::termcolor::StandardStream;
+/// use std::str::FromStr as _;
 ///
-/// #[derive(Debug, StructOpt)]
-/// #[structopt(name = "groovey-app")]
+/// #[derive(Debug, Parser)]
+/// #[clap(name = "groovey-app")]
 /// pub struct Opts {
 ///     /// Configure coloring of output
-///     #[structopt(
+///     #[clap(
 ///         long = "color",
 ///         default_value = "auto",
-///         possible_values = ColorArg::VARIANTS,
-///         case_insensitive = true,
+///         value_parser = clap::builder::PossibleValuesParser::new(ColorArg::VARIANTS)
+///             .map(|s| ColorArg::from_str(&s)).map(Result::unwrap),
 ///     )]
 ///     pub color: ColorArg,
 /// }
 ///
-/// let opts = Opts::from_args();
+/// let opts = Opts::parse();
 /// let writer = StandardStream::stderr(opts.color.into());
 /// ```
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -50,11 +51,10 @@ pub struct ColorArg(pub ColorChoice);
 impl ColorArg {
     /// Allowed values the argument.
     ///
-    /// This is useful for generating documentation via [`clap`] or `structopt`'s
-    /// `possible_values` configuration.
+    /// This is useful for generating documentation via [`clap`]'s
+    /// `value_parser = clap::builder::PossibleValuesParser::new` configuration.
     ///
     /// [`clap`]: https://crates.io/crates/clap
-    /// [`structopt`]: https://crates.io/crates/structopt
     pub const VARIANTS: &'static [&'static str] = &["auto", "always", "ansi", "never"];
 }
 
