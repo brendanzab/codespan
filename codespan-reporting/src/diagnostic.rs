@@ -177,9 +177,21 @@ impl<FileId> Diagnostic<FileId> {
         self
     }
 
+    /// Add a label to the diagnostic.
+    pub fn with_label(mut self, label: Label<FileId>) -> Diagnostic<FileId> {
+        self.labels.push(label);
+        self
+    }
+
     /// Add some labels to the diagnostic.
     pub fn with_labels(mut self, mut labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
         self.labels.append(&mut labels);
+        self
+    }
+
+    /// Add a note to the diagnostic.
+    pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
+        self.notes.push(note.to_string());
         self
     }
 
