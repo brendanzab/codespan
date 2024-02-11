@@ -20,10 +20,10 @@ unicode-width = "0.1"
 anyhow = "1"
 insta = "1.6.3"
 lazy_static = "1.4"
-peg = "0.7"
-rustyline = "6"
+peg = "0.8"
+rustyline = "11"
 structopt = "0.3"
-unindent = "0.1"
+unindent = "0.2"
 
 [features]
 serialization = ["serde", "serde/rc"]
