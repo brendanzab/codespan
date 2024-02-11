@@ -46,7 +46,7 @@ jobs:
           command: update
           # NOTE: Keep up to date with the minimum version of `lsp-types`
           # specified in `codespan-lsp/Cargo.toml`
-          args: --precise 0.84.0 lsp-types
+          args: --precise 0.84.0 -p lsp-types
       - name: Run cargo test for codespan-lsp
         uses: actions-rs/cargo@v1
         with:
