@@ -9,7 +9,7 @@
 //! cargo run --example custom_files
 //! ```
 
-use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::diagnostic::{Diagnostic, Label, Note};
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use std::ops::Range;
@@ -177,8 +177,8 @@ impl Message {
                         .collect(),
                 )
                 .with_notes(vec![
-                    "found greetings!".to_owned(),
-                    "pleas no greetings :(".to_owned(),
+                    Note::new("found greetings!".to_owned()),
+                    Note::new("pleas no greetings :(".to_owned()),
                 ]),
             Message::OverTheTopExclamations { exclamations } => Diagnostic::error()
                 .with_message("over-the-top exclamations")
@@ -190,7 +190,7 @@ impl Message {
                         })
                         .collect(),
                 )
-                .with_notes(vec!["ridiculous!".to_owned()]),
+                .with_notes(vec![Note::new("ridiculous!".to_owned())]),
         }
     }
 }

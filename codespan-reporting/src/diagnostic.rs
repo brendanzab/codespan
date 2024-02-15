@@ -92,6 +92,33 @@ impl<FileId> Label<FileId> {
     }
 }
 
+/// A note that is associated with the primary cause of the diagnostic.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
+pub struct Note<FileId> {
+    /// A message that provides additional information about the diagnostic.
+    /// This can include line breaks for improved formatting.
+    pub message: String,
+    /// An optional label showing the cause of the note.
+    pub labels: Vec<Label<FileId>>,
+}
+
+impl<FileId> Note<FileId> {
+    /// Create a new note without a label.
+    pub fn new(message: String) -> Note<FileId> {
+        Note {
+            message,
+            labels: Vec::new(),
+        }
+    }
+
+    /// Add a label to the note.
+    pub fn with_labels(mut self, mut labels: Vec<Label<FileId>>) -> Note<FileId> {
+        self.labels.append(&mut labels);
+        self
+    }
+}
+
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 ///
@@ -115,7 +142,7 @@ pub struct Diagnostic<FileId> {
     pub labels: Vec<Label<FileId>>,
     /// Notes that are associated with the primary cause of the diagnostic.
     /// These can include line breaks for improved formatting.
-    pub notes: Vec<String>,
+    pub notes: Vec<Note<FileId>>,
 }
 
 impl<FileId> Diagnostic<FileId> {
@@ -184,7 +211,7 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Add some notes to the diagnostic.
-    pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
+    pub fn with_notes(mut self, mut notes: Vec<Note<FileId>>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
         self
     }
