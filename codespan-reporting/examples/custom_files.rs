@@ -74,7 +74,7 @@ mod files {
     }
 
     /// An opaque file identifier.
-    #[derive(Copy, Clone, PartialEq, Eq)]
+    #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub struct FileId(u32);
 
     #[derive(Debug, Clone)]

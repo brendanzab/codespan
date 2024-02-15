@@ -21,7 +21,7 @@ pub struct RichDiagnostic<'diagnostic, 'config, FileId> {
 
 impl<'diagnostic, 'config, FileId> RichDiagnostic<'diagnostic, 'config, FileId>
 where
-    FileId: Copy + PartialEq,
+    FileId: Copy + Ord,
 {
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
@@ -42,12 +42,10 @@ where
 
         struct LabeledFile<'diagnostic, FileId> {
             file_id: FileId,
-            start: usize,
             name: String,
             location: Location,
             num_multi_labels: usize,
             lines: BTreeMap<usize, Line<'diagnostic>>,
-            max_label_style: LabelStyle,
         }
 
         impl<'diagnostic, FileId> LabeledFile<'diagnostic, FileId> {
@@ -83,6 +81,8 @@ where
         // snippets of source code.
         let mut outer_padding = 0;
 
+        let locuses = self.diagnostic.locuses();
+
         // Group labels by file
         for label in &self.diagnostic.labels {
             let start_line_index = files.line_index(label.file_id, label.range.start)?;
@@ -102,29 +102,19 @@ where
                 .iter_mut()
                 .find(|labeled_file| label.file_id == labeled_file.file_id)
             {
-                Some(labeled_file) => {
-                    // another diagnostic also referenced this file
-                    if labeled_file.max_label_style > label.style
-                        || (labeled_file.max_label_style == label.style
-                            && labeled_file.start > label.range.start)
-                    {
-                        // this label has a higher style or has the same style but starts earlier
-                        labeled_file.start = label.range.start;
-                        labeled_file.location = files.location(label.file_id, label.range.start)?;
-                        labeled_file.max_label_style = label.style;
-                    }
-                    labeled_file
-                }
+                Some(labeled_file) => labeled_file,
                 None => {
+                    let location = *locuses
+                        .get(&label.file_id)
+                        .expect("file missing from locuses");
+
                     // no other diagnostic referenced this file yet
                     labeled_files.push(LabeledFile {
                         file_id: label.file_id,
-                        start: label.range.start,
                         name: files.name(label.file_id)?.to_string(),
-                        location: files.location(label.file_id, label.range.start)?,
+                        location: files.location(label.file_id, location)?,
                         num_multi_labels: 0,
                         lines: BTreeMap::new(),
-                        max_label_style: label.style,
                     });
                     // this unwrap should never fail because we just pushed an element
                     labeled_files
@@ -441,7 +431,7 @@ pub struct ShortDiagnostic<'diagnostic, FileId> {
 
 impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
 where
-    FileId: Copy + PartialEq,
+    FileId: Copy + Ord,
 {
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
