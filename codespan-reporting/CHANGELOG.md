@@ -64,6 +64,8 @@ This is because some testing dependencies now require this Rust version.
     ```
 
     </details>
+-   `Label`s can now be created without specifying a file id and instead later setting
+    the file id on a `Label` or all labels in a `Diagnostic`.
 
 ## [0.11.1] - 2021-01-18
 
