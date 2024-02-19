@@ -219,6 +219,33 @@ where
     pub fn source_slice(&self, file_id: FileId, span: impl Into<Span>) -> Result<&str, Error> {
         self.get(file_id).source_slice(span.into())
     }
+
+    /// Returns an iterator over the files contained in this database.
+    ///
+    /// The iterator yields tuples of (FileId, name(OsStr), Source).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use codespan::{Files, Span};
+    ///
+    /// let name = "test";
+    /// let source = "hello world!";
+    ///
+    /// let mut files = Files::new();
+    /// let file_id = files.add(name, source);
+    ///
+    /// let mut iter = files.iter();
+    ///
+    /// assert_eq!(iter.next(), Some((file_id, &name.into(), &source)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter(&self) -> impl Iterator<Item = (FileId, &OsString, &Source)> {
+        self.files
+            .iter()
+            .enumerate()
+            .map(|(id, file)| (FileId::new(id), &file.name, &file.source))
+    }
 }
 
 impl<'a, Source> codespan_reporting::files::Files<'a> for Files<Source>
