@@ -1,19 +1,19 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self, ColorArg};
+use codespan_reporting::term::{self};
 use std::ops::Range;
 
 #[derive(Debug)]
 pub struct Opts {
-    color: ColorArg,
+    color: ColorChoice,
 }
 
 fn parse_args() -> Result<Opts, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
     let color = pargs
         .opt_value_from_str("--color")?
-        .unwrap_or(ColorArg(ColorChoice::Auto));
+        .unwrap_or(ColorChoice::Auto);
     Ok(Opts { color })
 }
 

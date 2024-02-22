@@ -12,7 +12,7 @@ use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{
     Color, ColorChoice, ColorSpec, StandardStream, WriteColor,
 };
-use codespan_reporting::term::{self, ColorArg};
+use codespan_reporting::term::{self};
 use std::io::{self, Write};
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ pub enum Opts {
     /// Render Stderr output
     Stderr {
         /// Configure coloring of output
-        color: ColorArg,
+        color: ColorChoice,
     },
 }
 
@@ -34,7 +34,7 @@ fn parse_args() -> Result<Opts, pico_args::Error> {
             "stderr" => {
                 let color = pargs
                     .opt_value_from_str("--color")?
-                    .unwrap_or(ColorArg(ColorChoice::Auto));
+                    .unwrap_or(ColorChoice::Auto);
                 Ok(Opts::Stderr { color })
             }
             _ => Err(pico_args::Error::Utf8ArgumentParsingFailed {
