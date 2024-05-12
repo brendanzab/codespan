@@ -38,7 +38,7 @@ impl FileId {
 /// [`Arc<str>`]: std::sync::Arc
 #[derive(Clone, Debug)]
 pub struct Files<Source> {
-    files: Vec<File<Source>>,
+    pub files: Vec<File<Source>>,
 }
 
 impl<Source> Default for Files<Source>
@@ -261,20 +261,20 @@ where
     all(feature = "serialization", any(windows, unix)),
     derive(Deserialize, Serialize)
 )]
-struct File<Source> {
+pub struct File<Source> {
     /// The name of the file.
-    name: OsString,
+    pub name: OsString,
     /// The source code of the file.
-    source: Source,
+    pub source: Source,
     /// The starting byte indices in the source code.
-    line_starts: Vec<ByteIndex>,
+    pub line_starts: Vec<ByteIndex>,
 }
 
 impl<Source> File<Source>
 where
     Source: AsRef<str>,
 {
-    fn new(name: OsString, source: Source) -> Self {
+    pub fn new(name: OsString, source: Source) -> Self {
         let line_starts = line_starts(source.as_ref())
             .map(|i| ByteIndex::from(i as u32))
             .collect();
@@ -286,7 +286,7 @@ where
         }
     }
 
-    fn update(&mut self, source: Source) {
+    pub fn update(&mut self, source: Source) {
         let line_starts = line_starts(source.as_ref())
             .map(|i| ByteIndex::from(i as u32))
             .collect();
@@ -294,11 +294,11 @@ where
         self.line_starts = line_starts;
     }
 
-    fn name(&self) -> &OsStr {
+    pub fn name(&self) -> &OsStr {
         &self.name
     }
 
-    fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, Error> {
+    pub fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, Error> {
         use std::cmp::Ordering;
 
         match line_index.cmp(&self.last_line_index()) {
@@ -311,18 +311,18 @@ where
         }
     }
 
-    fn last_line_index(&self) -> LineIndex {
+    pub fn last_line_index(&self) -> LineIndex {
         LineIndex::from(self.line_starts.len() as RawIndex)
     }
 
-    fn line_span(&self, line_index: LineIndex) -> Result<Span, Error> {
+    pub fn line_span(&self, line_index: LineIndex) -> Result<Span, Error> {
         let line_start = self.line_start(line_index)?;
         let next_line_start = self.line_start(line_index + LineOffset::from(1))?;
 
         Ok(Span::new(line_start, next_line_start))
     }
 
-    fn line_index(&self, byte_index: ByteIndex) -> LineIndex {
+    pub fn line_index(&self, byte_index: ByteIndex) -> LineIndex {
         match self.line_starts.binary_search(&byte_index) {
             // Found the start of a line
             Ok(line) => LineIndex::from(line as u32),
@@ -330,7 +330,7 @@ where
         }
     }
 
-    fn location(&self, byte_index: ByteIndex) -> Result<Location, Error> {
+    pub fn location(&self, byte_index: ByteIndex) -> Result<Location, Error> {
         let line_index = self.line_index(byte_index);
         let line_start_index = self
             .line_start(line_index)
@@ -358,15 +358,15 @@ where
         })
     }
 
-    fn source(&self) -> &Source {
+    pub fn source(&self) -> &Source {
         &self.source
     }
 
-    fn source_span(&self) -> Span {
+    pub fn source_span(&self) -> Span {
         Span::from_str(self.source.as_ref())
     }
 
-    fn source_slice(&self, span: Span) -> Result<&str, Error> {
+    pub fn source_slice(&self, span: Span) -> Result<&str, Error> {
         let start = span.start().to_usize();
         let end = span.end().to_usize();
 
