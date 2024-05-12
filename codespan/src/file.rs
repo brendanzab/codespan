@@ -1,9 +1,9 @@
-use codespan_reporting::files::Error;
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
 use std::ffi::{OsStr, OsString};
 use std::num::NonZeroU32;
 
+use crate::files::Error;
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
 
 /// A handle that points to a file in the database.
@@ -221,7 +221,7 @@ where
     }
 }
 
-impl<'a, Source> codespan_reporting::files::Files<'a> for Files<Source>
+impl<'a, Source> crate::files::Files<'a> for Files<Source>
 where
     Source: AsRef<str>,
 {
@@ -425,26 +425,4 @@ mod test {
         assert_eq!(line_sources, ["foo\n", "bar\r\n", "\n", "baz"],);
     }
 
-    #[test]
-    fn interoperability() {
-        extern crate termcolor;
-        use codespan_reporting::{diagnostic::*, term::emit};
-        use termcolor::{ColorChoice, StandardStream};
-
-        let mut files = Files::<String>::new();
-        let file_id = files.add("test", TEST_SOURCE.to_owned());
-
-        let diagnostic = Diagnostic::note()
-            .with_message("middle")
-            .with_labels(vec![Label::primary(file_id, 4..7).with_message("middle")]);
-
-        let config = codespan_reporting::term::Config::default();
-        emit(
-            &mut StandardStream::stdout(ColorChoice::Auto),
-            &config,
-            &files,
-            &diagnostic,
-        )
-        .unwrap();
-    }
 }

@@ -12,6 +12,7 @@
 #![forbid(unsafe_code)]
 
 mod file;
+pub mod files;
 mod index;
 mod location;
 mod span;

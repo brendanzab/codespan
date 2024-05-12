@@ -189,7 +189,7 @@ pub struct Location {
 /// # Example
 ///
 /// ```rust
-/// use codespan_reporting::files;
+/// use codespan::files;
 ///
 /// let source = "\n\n🗻∈🌏\n\n";
 ///
@@ -223,7 +223,7 @@ pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -
 /// # Example
 ///
 /// ```rust
-/// use codespan_reporting::files;
+/// use codespan::files;
 ///
 /// let source = "foo\nbar\r\n\nbaz";
 /// let line_starts: Vec<_> = files::line_starts(source).collect();
