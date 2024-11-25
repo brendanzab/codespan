@@ -123,6 +123,7 @@ More examples of using `codespan-reporting` can be found in the
 - [Nushell](https://www.nushell.sh/)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
 - [Naga](https://github.com/gfx-rs/naga)
+- [Spade](https://gitlab.com/spade-lang/spade), a better hardware description language.
 
 ## Alternatives to codespan-reporting
 
