@@ -5,7 +5,7 @@
 //! cargo run --example term
 //! ```
 
-use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::diagnostic::{Diagnostic, Label, Note};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
@@ -99,7 +99,7 @@ fn main() -> anyhow::Result<()> {
                 Label::primary(file_id1, 96..102).with_message("unknown builtin")
             ])
             .with_notes(vec![
-                "there is a builtin with a similar name: `NATURAL`".to_owned()
+                Note::new("there is a builtin with a similar name: `NATURAL`".to_owned())
             ]),
         // Unused parameter warning
         Diagnostic::warning()
@@ -107,7 +107,7 @@ fn main() -> anyhow::Result<()> {
             .with_labels(vec![
                 Label::primary(file_id1, 285..289).with_message("unused parameter")
             ])
-            .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
+            .with_notes(vec![Note::new("consider using a wildcard pattern: `_`".to_owned())]),
         // Unexpected type error
         Diagnostic::error()
             .with_message("unexpected type in application of `_+_`")
@@ -117,12 +117,12 @@ fn main() -> anyhow::Result<()> {
                 Label::secondary(file_id1, 130..155)
                     .with_message("based on the definition of `_+_`"),
             ])
-            .with_notes(vec![unindent::unindent(
+            .with_notes(vec![Note::new(unindent::unindent(
                 "
                     expected type `Nat`
                        found type `String`
                 ",
-            )]),
+            ))]),
         // Incompatible match clause error
         Diagnostic::error()
             .with_message("`case` clauses have incompatible types")
@@ -134,12 +134,12 @@ fn main() -> anyhow::Result<()> {
                 Label::secondary(file_id3, 41..47)
                     .with_message("expected type `String` found here"),
             ])
-            .with_notes(vec![unindent::unindent(
+            .with_notes(vec![Note::new(unindent::unindent(
                 "
                     expected type `String`
                        found type `Nat`
                 ",
-            )]),
+            ))]),
         // Incompatible match clause error
         Diagnostic::error()
             .with_message("`case` clauses have incompatible types")
@@ -157,12 +157,12 @@ fn main() -> anyhow::Result<()> {
                 Label::secondary(file_id3, 186..192)
                     .with_message("expected type `String` found here"),
             ])
-            .with_notes(vec![unindent::unindent(
+            .with_notes(vec![Note::new(unindent::unindent(
                 "
                     expected type `String`
                        found type `Nat`
                 ",
-            )]),
+            ))]),
     ];
 
     let writer = StandardStream::stderr(color.into());

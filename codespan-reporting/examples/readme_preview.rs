@@ -7,7 +7,7 @@
 //! cargo run --example readme_preview svg > codespan-reporting/assets/readme_preview.svg
 //! ```
 
-use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::diagnostic::{Diagnostic, Label, Note};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{
     Color, ColorChoice, ColorSpec, StandardStream, WriteColor,
@@ -82,12 +82,12 @@ fn main() -> anyhow::Result<()> {
             Label::secondary((), 306..312).with_message("this is found to be of type `String`"),
             Label::secondary((), 186..192).with_message("expected type `String` found here"),
         ])
-        .with_notes(vec![unindent::unindent(
+        .with_notes(vec![Note::new(unindent::unindent(
             "
                 expected type `String`
                    found type `Nat`
             ",
-        )])];
+        ))])];
 
     match parse_args()? {
         Opts::Svg => {
