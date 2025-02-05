@@ -5,7 +5,7 @@
 [![Docs.rs][docs-badge]][docs-url]
 [![Matrix][matrix-badge]][matrix-lobby]
 
-[actions-badge]: https://img.shields.io/github/workflow/status/brendanzab/codespan/Continuous%20integration
+[actions-badge]: https://img.shields.io/github/actions/workflow/status/brendanzab/codespan/ci.yml?branch=master
 [actions-url]: https://github.com/brendanzab/codespan/actions
 [crate-url]: https://crates.io/crates/codespan-reporting
 [crate-badge]: https://img.shields.io/crates/v/codespan-reporting.svg
