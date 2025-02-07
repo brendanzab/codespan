@@ -16,5 +16,5 @@ codespan-reporting = { version = "0.11.1", path = "../codespan-reporting" }
 # will be valid for all the versions in this range. Getting this range wrong
 # could potentially break down-stream builds on a `cargo update`. This is an
 # absolute no-no, breaking much of what we enjoy about Cargo!
-lsp-types = ">=0.84, <0.92"
+lsp-types = ">=0.84, <0.94"
 url = "2"
