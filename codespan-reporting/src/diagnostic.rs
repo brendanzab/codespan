@@ -2,6 +2,7 @@
 
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::ops::Range;
 use std::string::ToString;
 
@@ -32,7 +33,7 @@ pub enum Severity {
     Bug,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub enum LabelStyle {
     /// Labels that describe the primary cause of a diagnostic.
@@ -95,7 +96,9 @@ impl<FileId> Label<FileId> {
 /// Represents a diagnostic message that can provide information like errors and
 /// warnings to the user.
 ///
-/// The position of a Diagnostic is considered to be the position of the [`Label`] that has the earliest starting position and has the highest style which appears in all the labels of the diagnostic.
+/// The position of a Diagnostic is considered to be the position of the
+/// [`Label`] that has the earliest starting position and has the highest style
+/// which appears in all the labels of the diagnostic.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serialization", derive(Serialize, Deserialize))]
 pub struct Diagnostic<FileId> {
@@ -199,5 +202,37 @@ impl<FileId> Diagnostic<FileId> {
     pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
         self
+    }
+
+    /// Calculate the locus of this diagnostic.
+    ///
+    /// If this Diagnostic covers multple files, a Vec with multiple values
+    /// will be returned. Or contrary, if there are no labels in the
+    /// Diagnostic, an empty Vec will be returned.
+    pub fn locuses(&self) -> BTreeMap<FileId, usize>
+    where
+        FileId: Copy + Ord,
+    {
+        let mut labels = self
+            .labels
+            .iter()
+            .map(|label| (label.file_id, label.style, label.range.start))
+            .collect::<Vec<_>>();
+
+        labels.sort_unstable_by(|a, b| {
+            a.0.partial_cmp(&b.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.1.cmp(&b.1))
+                .then_with(|| a.2.cmp(&b.2))
+                // reverse the sorting so we can use `Extend` to deduplicate
+                .reverse()
+        });
+
+        labels
+            .drain(..)
+            // the label style was only needed for sorting
+            .map(|(file, _, start)| (file, start))
+            // this also deduplicates
+            .collect()
     }
 }

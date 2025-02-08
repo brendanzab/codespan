@@ -64,6 +64,7 @@ This is because some testing dependencies now require this Rust version.
     ```
 
     </details>
+-   `FileId`s must now implement `Ord` instead of just `PartialEq`.
 
 ## [0.11.1] - 2021-01-18
 
