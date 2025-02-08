@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let Opts { color } = parse_args()?;
-    let writer = StandardStream::stderr(color.into());
+    let writer = StandardStream::stderr(color);
     let config = codespan_reporting::term::Config::default();
     for diagnostic in errors.iter().map(Error::report) {
         term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;

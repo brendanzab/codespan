@@ -1,6 +1,6 @@
 [workspace]
-members = [
-    "./codespan",
-    "./codespan-reporting",
-    "./codespan-lsp",
-]
+members = ["./codespan", "./codespan-reporting", "./codespan-lsp"]
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }

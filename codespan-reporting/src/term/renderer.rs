@@ -957,7 +957,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 }
 
-impl<'writer, 'config> Write for Renderer<'writer, 'config> {
+impl Write for Renderer<'_, '_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.writer.write(buf)
     }
@@ -967,7 +967,7 @@ impl<'writer, 'config> Write for Renderer<'writer, 'config> {
     }
 }
 
-impl<'writer, 'config> WriteColor for Renderer<'writer, 'config> {
+impl WriteColor for Renderer<'_, '_> {
     fn supports_color(&self) -> bool {
         self.writer.supports_color()
     }
