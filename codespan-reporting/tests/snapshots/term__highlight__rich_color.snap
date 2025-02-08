@@ -1,0 +1,36 @@
+---
+source: codespan-reporting/tests/term.rs
+expression: TEST_DATA.emit_color(&config)
+---
+{fg:Green bold bright}note{bold bright}: not highlighted{/}
+  {fg:Blue}┌─{/} test.txt:1:1
+  {fg:Blue}│{/}
+{fg:Blue}1{/} {fg:Blue}│{/} This is some text.
+  {fg:Blue}│{/} {fg:Green}^^^^^^^^^^^^^^^^^^{/}
+{fg:Blue}2{/} {fg:Blue}│{/}     This is some indented text.
+  {fg:Blue}│{/}     {fg:Green}^^^^^^^^^^^^^^^^^^^^^^^^^^^{/}
+{fg:Blue}3{/} {fg:Blue}│{/}     This is some indented text with trailing whitespace.    
+  {fg:Blue}│{/}     {fg:Green}^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^{/}
+
+{fg:Green bold bright}note{bold bright}: also not highlighted{/}
+  {fg:Blue}┌─{/} test.txt:2:1
+  {fg:Blue}│{/}
+{fg:Blue}2{/} {fg:Blue}│{/}     This is some indented text.
+  {fg:Blue}│{/} {fg:Green}^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^{/}
+{fg:Blue}3{/} {fg:Blue}│{/}     This is some indented text with trailing whitespace.    
+  {fg:Blue}│{/} {fg:Green}^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^{/}
+
+{fg:Green bold bright}note{bold bright}: highlighted{/}
+  {fg:Blue}┌─{/} test.txt:1:1
+  {fg:Blue}│{/}  
+{fg:Blue}1{/} {fg:Blue}│{/}   {fg:Green}This is some text{/}.
+  {fg:Blue}│{/}   {fg:Green}^^^^^^^^^^^^^^^^^{/}
+{fg:Blue}2{/} {fg:Blue}│{/}       T{fg:Green}his is some indented text.{/}
+  {fg:Blue}│{/}        {fg:Green}^^^^^^^^^^^^^^^^^^^^^^^^^^{/}
+{fg:Blue}3{/} {fg:Blue}│{/}       {fg:Green}This{/} is some indented text with trailing whitespace.    
+  {fg:Blue}│{/}       {fg:Green}^^^^{/}
+{fg:Blue}4{/} {fg:Blue}│{/} {fg:Green}╭{/} This is some multiline text.
+{fg:Blue}5{/} {fg:Blue}│{/} {fg:Green}│{/} This is some more multiline text.
+  {fg:Blue}│{/} {fg:Green}╰{/}{fg:Green}─────────────────────────────────^{/}
+
+

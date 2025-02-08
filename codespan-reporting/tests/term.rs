@@ -940,6 +940,7 @@ mod unicode_spans {
 }
 
 mod position_indicator {
+
     use super::*;
 
     lazy_static::lazy_static! {
@@ -1050,6 +1051,53 @@ mod multiline_omit {
     }
 
     test_emit!(rich_no_color);
+}
+
+mod highlight {
+    use super::*;
+
+    lazy_static::lazy_static! {
+        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
+            let file = SimpleFile::new(
+                "test.txt",
+                [
+                    "This is some text.",
+                    "\tThis is some indented text.",
+                    "\tThis is some indented text with trailing whitespace. \t",
+                    "This is some multiline text.",
+                    "This is some more multiline text.",
+                ]
+                .join("\n"),
+            );
+
+            let diagnostics = vec![
+                Diagnostic::note()
+                    .with_message("not highlighted")
+                    .with_labels(vec![
+                        Label::primary((), 0..18),
+                        Label::primary((), 20..47),
+                        Label::primary((), 49..101),
+                    ]),
+                Diagnostic::note()
+                    .with_message("also not highlighted")
+                    .with_labels(vec![
+                        Label::primary((), 19..47),
+                        Label::primary((), 48..103),
+                    ]),
+                Diagnostic::note()
+                    .with_message("highlighted")
+                    .with_labels(vec![
+                        Label::primary((), 0..17),
+                        Label::primary((), 21..47),
+                        Label::primary((), 49..53),
+                        Label::primary((), 104..166),
+                    ]),
+            ];
+            TestData{files: file, diagnostics }
+        };
+    }
+
+    test_emit!(rich_color);
 }
 
 mod surrounding_lines {

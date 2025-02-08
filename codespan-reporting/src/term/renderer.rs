@@ -239,6 +239,20 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // FIXME: Use the number of trimmed placeholders when rendering single line carets
         let source = source.trim_end_matches(['\n', '\r', '\0'].as_ref());
 
+        // get the byte index of the first non-whitespace character
+        let text_start = source.find(|c| !char::is_whitespace(c)).unwrap_or(0);
+
+        // get the byte index of the first trailing whitespace character
+        let text_end = source
+            .char_indices()
+            .rev()
+            .take_while(|(_, c)| c.is_whitespace())
+            .last()
+            .map(|(index, _)| index)
+            .unwrap_or_else(|| source.len());
+
+        let text_range = text_start..text_end;
+
         // Write source line
         //
         // ```text
@@ -273,37 +287,43 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
             // Write source text
             write!(self, " ")?;
-            let mut in_primary = false;
+            let mut highlighted = false;
+
+            // iterate over all characters of source code
             for (metrics, ch) in self.char_metrics(source.char_indices()) {
                 let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
 
-                // Check if we are overlapping a primary label
-                let is_primary = single_labels.iter().any(|(ls, range, _)| {
-                    *ls == LabelStyle::Primary && is_overlapping(range, &column_range)
-                }) || multi_labels.iter().any(|(_, ls, label)| {
+                /*
+                A character should be highlighted only if it is part of a primary single label which does not span the whole line
+                A label already spans the whole line if it does not cover leading/trailing whitespace.
+                */
+                let should_highlight = single_labels.iter().any(|(ls, range, _)| {
                     *ls == LabelStyle::Primary
-                        && match label {
-                            MultiLabel::Top(start) => column_range.start >= *start,
-                            MultiLabel::Left => true,
-                            MultiLabel::Bottom(start, _) => column_range.end <= *start,
-                        }
+                        // is this at the current position
+                        && is_overlapping(range, &column_range)
+                        // is this not a whole line label
+                        && !(
+                            range.start <= text_range.start
+                            && range.end >= text_range.end
+                        )
                 });
 
                 // Set the source color if we are in a primary label
-                if is_primary && !in_primary {
+                if should_highlight && !highlighted {
                     self.set_color(self.styles().label(severity, LabelStyle::Primary))?;
-                    in_primary = true;
-                } else if !is_primary && in_primary {
+                    highlighted = true;
+                } else if !should_highlight && highlighted {
                     self.reset()?;
-                    in_primary = false;
+                    highlighted = false;
                 }
 
+                // actually write the character
                 match ch {
                     '\t' => (0..metrics.unicode_width).try_for_each(|_| write!(self, " "))?,
                     _ => write!(self, "{}", ch)?,
                 }
             }
-            if in_primary {
+            if highlighted {
                 self.reset()?;
             }
             writeln!(self)?;
