@@ -187,7 +187,7 @@ fn main() -> anyhow::Result<()> {
             )?;
         }
         Opts::Stderr { color } => {
-            let writer = StandardStream::stderr(color.into());
+            let writer = StandardStream::stderr(color);
             let config = codespan_reporting::term::Config::default();
             for diagnostic in &diagnostics {
                 term::emit(&mut writer.lock(), &config, &file, diagnostic)?;
