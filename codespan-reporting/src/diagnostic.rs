@@ -1,9 +1,13 @@
 //! Diagnostic data structures.
 
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::ops::Range;
+
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::ops::Range;
-use std::string::ToString;
 
 /// A severity level for diagnostic messages.
 ///

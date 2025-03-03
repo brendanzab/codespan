@@ -1,9 +1,10 @@
-#[cfg(feature = "serialization")]
-use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::Range;
+use core::fmt;
+use core::ops::Range;
 
 use crate::{ByteIndex, RawIndex};
+
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
@@ -61,7 +62,7 @@ impl Span {
     /// assert_eq!(Span::merge(span1, span2), Span::new(0, 16));
     /// ```
     pub fn merge(self, other: Span) -> Span {
-        use std::cmp::{max, min};
+        use core::cmp::{max, min};
 
         let start = min(self.start, other.start);
         let end = max(self.end, other.end);

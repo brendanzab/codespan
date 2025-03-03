@@ -1,10 +1,22 @@
+use alloc::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
+use core::num::NonZeroU32;
+
 use codespan_reporting::files::Error;
-#[cfg(feature = "serialization")]
-use serde::{Deserialize, Serialize};
-use std::ffi::{OsStr, OsString};
-use std::num::NonZeroU32;
 
 use crate::{ByteIndex, ColumnIndex, LineIndex, LineOffset, Location, RawIndex, Span};
+
+#[cfg(feature = "serialization")]
+use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "std")]
+use std::ffi::{OsStr, OsString};
+
+#[cfg(not(feature = "std"))]
+use {alloc::string::String as OsString, core::primitive::str as OsStr};
 
 /// A handle that points to a file in the database.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -33,9 +45,9 @@ impl FileId {
 /// `Files` take ownership of all source text. Smart pointer types such as [`Cow<'_, str>`],
 /// [`Rc<str>`] or [`Arc<str>`] can be used to share the source text with the rest of the program.
 ///
-/// [`Cow<'_, str>`]: std::borrow::Cow
-/// [`Rc<str>`]: std::rc::Rc
-/// [`Arc<str>`]: std::sync::Arc
+/// [`Cow<'_, str>`]: alloc::borrow::Cow
+/// [`Rc<str>`]: alloc::rc::Rc
+/// [`Arc<str>`]: alloc::sync::Arc
 #[derive(Clone, Debug)]
 pub struct Files<Source> {
     files: Vec<File<Source>>,
@@ -230,12 +242,20 @@ where
     type Source = &'a str;
 
     fn name(&self, id: FileId) -> Result<String, Error> {
-        use std::path::PathBuf;
+        #[cfg(feature = "std")]
+        {
+            use std::path::PathBuf;
 
-        Ok(PathBuf::from(self.name(id)).display().to_string())
+            Ok(PathBuf::from(self.name(id)).display().to_string())
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            Ok(self.name(id).to_string())
+        }
     }
 
-    fn source(&'a self, id: FileId) -> Result<&str, Error> {
+    fn source(&'a self, id: FileId) -> Result<&'a str, Error> {
         Ok(self.source(id).as_ref())
     }
 
@@ -247,7 +267,7 @@ where
         &'a self,
         id: FileId,
         line_index: usize,
-    ) -> Result<std::ops::Range<usize>, Error> {
+    ) -> Result<core::ops::Range<usize>, Error> {
         let span = self.line_span(id, line_index as u32)?;
 
         Ok(span.start().to_usize()..span.end().to_usize())
@@ -299,7 +319,7 @@ where
     }
 
     fn line_start(&self, line_index: LineIndex) -> Result<ByteIndex, Error> {
-        use std::cmp::Ordering;
+        use core::cmp::Ordering;
 
         match line_index.cmp(&self.last_line_index()) {
             Ordering::Less => Ok(self.line_starts[line_index.to_usize()]),
@@ -382,11 +402,13 @@ where
 
 // NOTE: this is copied from `codespan_reporting::files::line_starts` and should be kept in sync.
 fn line_starts(source: &str) -> impl '_ + Iterator<Item = usize> {
-    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
+    core::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1))
 }
 
 #[cfg(test)]
 mod test {
+    use alloc::borrow::ToOwned;
+    
     use super::*;
 
     const TEST_SOURCE: &str = "foo\nbar\r\n\nbaz";
@@ -410,7 +432,7 @@ mod test {
     #[test]
     fn line_span_sources() {
         // Also make sure we can use `Arc` for source
-        use std::sync::Arc;
+        use alloc::sync::Arc;
 
         let mut files = Files::<Arc<str>>::new();
         let file_id = files.add("test", TEST_SOURCE.into());

@@ -1,15 +1,21 @@
-use std::io::{self, Write};
-use std::ops::Range;
-use termcolor::{ColorSpec, WriteColor};
+use alloc::string::String;
+use core::ops::Range;
 
 use crate::diagnostic::{LabelStyle, Severity};
 use crate::files::{Error, Location};
-use crate::term::{Chars, Config, Styles};
+use crate::term::{Chars, Config};
+
 #[cfg(feature = "termcolor")]
 use {
     crate::term::Styles,
     termcolor::{ColorSpec, WriteColor},
 };
+
+#[cfg(feature = "std")]
+use std::io::{self, Write};
+
+#[cfg(not(feature = "std"))]
+use core::fmt::{Arguments, Write};
 
 /// The 'location focus' of a source code snippet.
 pub struct Locus {
@@ -387,8 +393,8 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 if !message.is_empty() {
                     num_messages += 1;
                 }
-                max_label_start = std::cmp::max(max_label_start, range.start);
-                max_label_end = std::cmp::max(max_label_end, range.end);
+                max_label_start = core::cmp::max(max_label_start, range.start);
+                max_label_end = core::cmp::max(max_label_end, range.end);
                 // This is a candidate for the trailing label, so let's record it.
                 if range.end == max_label_end {
                     if message.is_empty() {
@@ -437,7 +443,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 // 1 │ Hello world!
                 //   │             ^
                 // ```
-                .chain(std::iter::once((placeholder_metrics, '\0')))
+                .chain(core::iter::once((placeholder_metrics, '\0')))
             {
                 // Find the current label style at this column
                 let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
@@ -1009,6 +1015,21 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl Write for Renderer<'_, '_> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.writer.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.writer.write_char(c)
+    }
+
+    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+        self.writer.write_fmt(args)
+    }
+}
+
 #[cfg(feature = "std")]
 impl Write for Renderer<'_, '_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -1046,8 +1067,8 @@ struct Metrics {
 
 /// Check if two ranges overlap
 fn is_overlapping(range0: &Range<usize>, range1: &Range<usize>) -> bool {
-    let start = std::cmp::max(range0.start, range1.start);
-    let end = std::cmp::min(range0.end, range1.end);
+    let start = core::cmp::max(range0.start, range1.start);
+    let end = core::cmp::min(range0.end, range1.end);
     start < end
 }
 

@@ -27,6 +27,7 @@ pub use self::config::Styles;
 pub fn emit<'files, F: Files<'files>>(
     #[cfg(feature = "termcolor")] writer: &mut dyn WriteColor,
     #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
+    #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
@@ -44,6 +45,8 @@ pub fn emit<'files, F: Files<'files>>(
 
 #[cfg(all(test, feature = "termcolor"))]
 mod tests {
+    use alloc::{vec, vec::Vec};
+
     use super::*;
 
     use crate::diagnostic::Label;
