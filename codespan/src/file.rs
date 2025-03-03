@@ -408,7 +408,7 @@ fn line_starts(source: &str) -> impl '_ + Iterator<Item = usize> {
 #[cfg(test)]
 mod test {
     use alloc::borrow::ToOwned;
-    
+
     use super::*;
 
     const TEST_SOURCE: &str = "foo\nbar\r\n\nbaz";
