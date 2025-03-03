@@ -40,6 +40,7 @@ impl Span {
     ///
     /// assert_eq!(span, Span::new(0, 5));
     /// ```
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Span {
         Span::new(0, s.len() as u32)
     }
