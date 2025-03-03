@@ -6,11 +6,8 @@ use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 use crate::term::Config;
 
 /// Calculate the number of decimal digits in `n`.
-// TODO: simplify after https://github.com/rust-lang/rust/issues/70887 resolves
 fn count_digits(n: usize) -> usize {
-    // Use a saturating_add because in that edge case the number of digits
-    // will not be changed.
-    (n.saturating_add(1) as f64).log10().ceil() as usize
+    n.ilog10() as usize + 1
 }
 
 /// Output a richly formatted diagnostic, with source code previews.
