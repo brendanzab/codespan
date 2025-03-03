@@ -10,6 +10,7 @@ repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-reporting"
 exclude = ["assets/**"]
 edition = "2021"
+rust-version = "1.67"
 
 [dependencies]
 serde = { version = "1", default-features = false, optional = true, features = ["derive", "alloc"] }
