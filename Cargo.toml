@@ -4,3 +4,4 @@ members = [
     "./codespan-reporting",
     "./codespan-lsp",
 ]
+resolver = "2"

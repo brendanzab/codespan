@@ -8,7 +8,7 @@ description = "Data structures for tracking locations in source code"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 codespan-reporting = { path = "../codespan-reporting", version = "0.11.1" }
