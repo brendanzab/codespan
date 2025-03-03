@@ -85,10 +85,57 @@ impl<FileId> Label<FileId> {
         Label::new(LabelStyle::Secondary, file_id, range)
     }
 
-    /// Add a message to the diagnostic.
+    /// Set the message for the diagnostic. The old message (if any) is discarded.
     pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
         self.message = message.to_string();
         self
+    }
+
+    /// Set the file id. The old file id (if any) is discarded.
+    pub fn with_file<NewFileId>(self, file_id: NewFileId) -> Label<NewFileId> {
+        Label {
+            style: self.style,
+            file_id,
+            range: self.range,
+            message: self.message,
+        }
+    }
+}
+
+// use a separate impl so we do not have to specify the type like this in e.g.
+// `primary_anon`:
+// ```
+// Label::<()>::new_anon(..)
+// ```
+impl Label<()> {
+    /// Create a new label without specifying a [`file_id`].
+    ///
+    /// [`file_id`]: Label::file_id
+    pub fn new_anon(style: LabelStyle, range: impl Into<Range<usize>>) -> Label<()> {
+        Label {
+            style,
+            file_id: (),
+            range: range.into(),
+            message: String::new(),
+        }
+    }
+
+    /// Create a new label with a style of [`LabelStyle::Primary`] and without
+    /// specifying a [`file_id`].
+    ///
+    /// [`LabelStyle::Primary`]: LabelStyle::Primary
+    /// [`file_id`]: Label::file_id
+    pub fn primary_anon(range: impl Into<Range<usize>>) -> Label<()> {
+        Label::new_anon(LabelStyle::Primary, range)
+    }
+
+    /// Create a new label with a style of [`LabelStyle::Secondary`] and without
+    /// specifying a [`file_id`].
+    ///
+    /// [`LabelStyle::Secondary`]: LabelStyle::Secondary
+    /// [`file_id`]: Label::file_id
+    pub fn secondary_anon(range: impl Into<Range<usize>>) -> Label<()> {
+        Label::new_anon(LabelStyle::Secondary, range)
     }
 }
 
@@ -199,5 +246,21 @@ impl<FileId> Diagnostic<FileId> {
     pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
         self
+    }
+
+    /// Set the file id for all labels in this Diagnostic by calling
+    /// [`Label::with_file`] on each label.
+    pub fn with_file<NewFileId: Clone>(mut self, file_id: NewFileId) -> Diagnostic<NewFileId> {
+        Diagnostic {
+            severity: self.severity,
+            code: self.code,
+            message: self.message,
+            labels: self
+                .labels
+                .drain(..)
+                .map(|label| label.with_file(file_id.clone()))
+                .collect(),
+            notes: self.notes,
+        }
     }
 }
