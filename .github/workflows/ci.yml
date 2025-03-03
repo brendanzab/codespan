@@ -53,6 +53,32 @@ jobs:
           command: check
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
+  check-no-std:
+    name: Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - ["1.82.0", "stable", "beta", "nightly"]
+        target:
+          - ["x86_64-unknown-none", "wasm32v1-none", "thumbv6m-none-eabi"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - name: Run cargo check for codespan-reporting
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path "codespan-reporting/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+      - name: Run cargo check for codespan
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+
   test:
     runs-on: ubuntu-20.04
     strategy:
