@@ -896,8 +896,8 @@ mod unicode_spans {
             let moon_phases = r#"🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄"#.to_string();
             let invalid_start = 1;
             let invalid_end = "🐄".len() - 1;
-            assert_eq!(moon_phases.is_char_boundary(invalid_start), false);
-            assert_eq!(moon_phases.is_char_boundary(invalid_end), false);
+            assert!(!moon_phases.is_char_boundary(invalid_start));
+            assert!(!moon_phases.is_char_boundary(invalid_end));
             assert_eq!("🐄".len(), 4);
             let file = SimpleFile::new(
                 "moon_jump.rs",
