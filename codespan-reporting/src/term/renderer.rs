@@ -225,6 +225,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     /// 10 │   │ muffin. Halvah croissant candy canes bonbon candy. Apple pie jelly
     ///    │ ╭─│─────────^
     /// ```
+    #[allow(clippy::too_many_arguments)]
     pub fn render_snippet_source(
         &mut self,
         outer_padding: usize,
