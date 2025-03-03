@@ -12,8 +12,8 @@ exclude = ["assets/**"]
 edition = "2021"
 
 [dependencies]
-serde = { version = "1", optional = true, features = ["derive"] }
-termcolor = "1.0.4"
+serde = { version = "1", default-features = false, optional = true, features = ["derive", "alloc"] }
+termcolor = { version = "1.0.4", optional = true }
 unicode-width = ">=0.1,<0.3"
 
 [dev-dependencies]
@@ -26,6 +26,9 @@ rustyline = "6"
 unindent = "0.1"
 
 [features]
+default = ["std", "termcolor"]
+std = ["serde?/std"]
+termcolor = ["std", "dep:termcolor"]
 serialization = ["serde", "serde/rc"]
 ascii-only = []
 
