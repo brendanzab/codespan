@@ -196,7 +196,7 @@ impl<FileId> Diagnostic<FileId> {
     }
     
     /// Add some notes to the diagnostic.
-    pub fn with_notes_iter(mut self, notes: impl IntoIterator<Item = String>>) -> Diagnostic<FileId> {
+    pub fn with_notes_iter(mut self, notes: impl IntoIterator<Item = String>) -> Diagnostic<FileId> {
         self.notes.extend(notes);
         self
     }
