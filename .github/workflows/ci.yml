@@ -57,6 +57,7 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         rust: 
           - "1.84.0"
