@@ -192,9 +192,12 @@ impl<FileId> Diagnostic<FileId> {
         self.labels.append(&mut labels);
         self
     }
-    
+
     /// Add some labels to the diagnostic.
-    pub fn with_labels_iter(mut self, labels: impl IntoIterator<Item = Label<FileId>>) -> Diagnostic<FileId> {
+    pub fn with_labels_iter(
+        mut self,
+        labels: impl IntoIterator<Item = Label<FileId>>,
+    ) -> Diagnostic<FileId> {
         self.labels.extend(labels);
         self
     }
@@ -210,9 +213,12 @@ impl<FileId> Diagnostic<FileId> {
         self.notes.append(&mut notes);
         self
     }
-    
+
     /// Add some notes to the diagnostic.
-    pub fn with_notes_iter(mut self, notes: impl IntoIterator<Item = String>) -> Diagnostic<FileId> {
+    pub fn with_notes_iter(
+        mut self,
+        notes: impl IntoIterator<Item = String>,
+    ) -> Diagnostic<FileId> {
         self.notes.extend(notes);
         self
     }
