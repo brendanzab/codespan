@@ -24,6 +24,11 @@ lsp-types = ">=0.84, <0.92"
 url = "2"
 
 [lints.clippy]
+# Certain items from `core` are re-exported in `alloc` and `std`, and likewise `alloc` has items
+# re-exported in `std`.
+# `core` is available on all platforms, `alloc` is available on almost all, and `std` is only
+# available on some.
+# These lints ensure we don't import from a "less available" crate without reason.
 alloc_instead_of_core = "warn"
 std_instead_of_alloc = "warn"
 std_instead_of_core = "warn"
