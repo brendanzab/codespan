@@ -30,7 +30,7 @@ unindent = "0.1"
 default = ["std", "termcolor"]
 std = ["serde?/std"]
 termcolor = ["std", "dep:termcolor"]
-serialization = ["serde", "serde/rc"]
+serialization = ["serde"]
 ascii-only = []
 
 [lints.clippy]
