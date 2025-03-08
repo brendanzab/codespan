@@ -34,7 +34,7 @@ where
 
     pub fn render<'files>(
         &self,
-        files: &'files impl Files<'files, FileId = FileId>,
+        files: &'files (impl Files<'files, FileId = FileId> + ?Sized),
         renderer: &mut Renderer<'_, '_>,
     ) -> Result<(), Error>
     where
@@ -457,7 +457,7 @@ where
 
     pub fn render<'files>(
         &self,
-        files: &'files impl Files<'files, FileId = FileId>,
+        files: &'files (impl Files<'files, FileId = FileId> + ?Sized),
         renderer: &mut Renderer<'_, '_>,
     ) -> Result<(), Error>
     where

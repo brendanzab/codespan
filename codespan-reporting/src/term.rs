@@ -24,7 +24,7 @@ pub use self::config::Styles;
 /// * a file was removed from the file database.
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
-pub fn emit<'files, F: Files<'files>>(
+pub fn emit<'files, F: Files<'files> + ?Sized>(
     #[cfg(feature = "termcolor")] writer: &mut dyn WriteColor,
     #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
     #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
