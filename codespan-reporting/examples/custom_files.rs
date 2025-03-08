@@ -12,7 +12,7 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use std::ops::Range;
+use core::ops::Range;
 
 fn main() -> anyhow::Result<()> {
     let mut files = files::Files::new();
@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
 /// A module containing the file implementation
 mod files {
     use codespan_reporting::files;
-    use std::ops::Range;
+    use core::ops::Range;
 
     /// A file that is backed by an `Arc<String>`.
     #[derive(Debug, Clone)]
@@ -57,7 +57,7 @@ mod files {
 
     impl File {
         fn line_start(&self, line_index: usize) -> Result<usize, files::Error> {
-            use std::cmp::Ordering;
+            use core::cmp::Ordering;
 
             match line_index.cmp(&self.line_starts.len()) {
                 Ordering::Less => Ok(*self
@@ -95,7 +95,7 @@ mod files {
             name: impl Into<String>,
             source: impl Into<String>,
         ) -> Option<FileId> {
-            use std::convert::TryFrom;
+            use core::convert::TryFrom;
 
             let file_id = FileId(u32::try_from(self.files.len()).ok()?);
             let name = name.into();

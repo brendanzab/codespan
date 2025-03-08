@@ -2,7 +2,7 @@ use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term::{self};
-use std::ops::Range;
+use core::ops::Range;
 
 #[derive(Debug)]
 pub struct Opts {
@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let Opts { color } = parse_args()?;
-    let writer = StandardStream::stderr(color.into());
+    let writer = StandardStream::stderr(color);
     let config = codespan_reporting::term::Config::default();
     for diagnostic in errors.iter().map(Error::report) {
         term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;

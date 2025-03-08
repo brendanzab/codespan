@@ -165,7 +165,7 @@ fn main() -> anyhow::Result<()> {
             )]),
     ];
 
-    let writer = StandardStream::stderr(color.into());
+    let writer = StandardStream::stderr(color);
     let config = codespan_reporting::term::Config::default();
     for diagnostic in &diagnostics {
         term::emit(&mut writer.lock(), &config, &files, diagnostic)?;

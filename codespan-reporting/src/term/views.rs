@@ -1,4 +1,9 @@
-use std::ops::Range;
+use alloc::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
+use core::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
 use crate::files::{Error, Files, Location};
@@ -6,11 +11,8 @@ use crate::term::renderer::{Locus, MultiLabel, Renderer, SingleLabel};
 use crate::term::Config;
 
 /// Calculate the number of decimal digits in `n`.
-// TODO: simplify after https://github.com/rust-lang/rust/issues/70887 resolves
 fn count_digits(n: usize) -> usize {
-    // Use a saturating_add because in that edge case the number of digits
-    // will not be changed.
-    (n.saturating_add(1) as f64).log10().ceil() as usize
+    n.ilog10() as usize + 1
 }
 
 /// Output a richly formatted diagnostic, with source code previews.
@@ -38,7 +40,7 @@ where
     where
         FileId: 'files,
     {
-        use std::collections::BTreeMap;
+        use alloc::collections::BTreeMap;
 
         struct LabeledFile<'diagnostic, FileId> {
             file_id: FileId,
@@ -70,7 +72,7 @@ where
 
         struct Line<'diagnostic> {
             number: usize,
-            range: std::ops::Range<usize>,
+            range: core::ops::Range<usize>,
             // TODO: How do we reuse these allocations?
             single_labels: Vec<SingleLabel<'diagnostic>>,
             multi_labels: Vec<(usize, LabelStyle, MultiLabel<'diagnostic>)>,
@@ -92,8 +94,8 @@ where
             let end_line_number = files.line_number(label.file_id, end_line_index)?;
             let end_line_range = files.line_range(label.file_id, end_line_index)?;
 
-            outer_padding = std::cmp::max(outer_padding, count_digits(start_line_number));
-            outer_padding = std::cmp::max(outer_padding, count_digits(end_line_number));
+            outer_padding = core::cmp::max(outer_padding, count_digits(start_line_number));
+            outer_padding = core::cmp::max(outer_padding, count_digits(end_line_number));
 
             // NOTE: This could be made more efficient by using an associative
             // data structure like a hashmap or B-tree,  but we use a vector to
@@ -252,7 +254,7 @@ where
                     let line_range = files.line_range(label.file_id, line_index)?;
                     let line_number = files.line_number(label.file_id, line_index)?;
 
-                    outer_padding = std::cmp::max(outer_padding, count_digits(line_number));
+                    outer_padding = core::cmp::max(outer_padding, count_digits(line_number));
 
                     let line = labeled_file.get_or_insert_line(line_index, line_range, line_number);
 

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-The minimum supported rustc version is now `1.46.0` (was `1.40.0`).
+The minimum supported rustc version is now `1.67.0` (was `1.40.0`).
 This is because dependencies of `codespan-lsp` now require this Rust version.
 
 ### Fixed
