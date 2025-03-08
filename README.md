@@ -113,16 +113,19 @@ More examples of using `codespan-reporting` can be found in the
 
 `codespan-reporting` is currently used in the following projects:
 
-- [Arret](https://arret-lang.org)
 - [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
+- [cargo-about](https://github.com/EmbarkStudios/cargo-about)
 - [CXX](https://github.com/dtolnay/cxx)
-- [Gleam](https://github.com/lpil/gleam/)
+- [full_moon](https://github.com/Kampfkarren/full-moon)
+- [Gleam](https://github.com/gleam-lang/gleam)
 - [Gluon](https://github.com/gluon-lang/gluon)
 - [MDBook LinkCheck](https://github.com/Michael-F-Bryan/mdbook-linkcheck)
 - [mos](https://github.com/datatrash/mos)
-- [Nushell](https://www.nushell.sh/)
 - [Pikelet](https://github.com/pikelet-lang/pikelet)
-- [Naga](https://github.com/gfx-rs/naga)
+- [Naga](https://github.com/gfx-rs/wgpu/tree/trunk/naga)
+- [Spade](https://gitlab.com/spade-lang/spade)
+ 
+ ... [any many more](https://crates.io/crates/codespan-reporting/reverse_dependencies)
 
 ## Alternatives to codespan-reporting
 
