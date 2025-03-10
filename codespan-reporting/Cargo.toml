@@ -22,7 +22,7 @@ pico-args = "0.5.0"
 anyhow = "1"
 insta = "1.6.3"
 lazy_static = "1.4"
-peg = "0.7"
+peg = "0.8"
 rustyline = "6"
 unindent = "0.1"
 
