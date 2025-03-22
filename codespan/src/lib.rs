@@ -10,6 +10,12 @@
 //!   for use with `serde`
 
 #![forbid(unsafe_code)]
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
+
+extern crate alloc;
 
 mod file;
 mod index;

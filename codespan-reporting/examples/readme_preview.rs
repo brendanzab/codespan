@@ -94,6 +94,7 @@ fn main() -> anyhow::Result<()> {
             let mut buffer = Vec::new();
             let mut writer = HtmlEscapeWriter::new(SvgWriter::new(&mut buffer));
             let config = codespan_reporting::term::Config {
+                #[cfg(feature = "termcolor")]
                 styles: codespan_reporting::term::Styles::with_blue(Color::Blue),
                 ..codespan_reporting::term::Config::default()
             };

@@ -1,9 +1,13 @@
 //! Diagnostic data structures.
 
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::ops::Range;
+
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::ops::Range;
-use std::string::ToString;
 
 /// A severity level for diagnostic messages.
 ///
@@ -189,6 +193,15 @@ impl<FileId> Diagnostic<FileId> {
         self
     }
 
+    /// Add some labels to the diagnostic.
+    pub fn with_labels_iter(
+        mut self,
+        labels: impl IntoIterator<Item = Label<FileId>>,
+    ) -> Diagnostic<FileId> {
+        self.labels.extend(labels);
+        self
+    }
+
     /// Add a note to the diagnostic.
     pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
         self.notes.push(note.to_string());
@@ -198,6 +211,15 @@ impl<FileId> Diagnostic<FileId> {
     /// Add some notes to the diagnostic.
     pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
+        self
+    }
+
+    /// Add some notes to the diagnostic.
+    pub fn with_notes_iter(
+        mut self,
+        notes: impl IntoIterator<Item = String>,
+    ) -> Diagnostic<FileId> {
+        self.notes.extend(notes);
         self
     }
 }

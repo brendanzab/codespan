@@ -1,8 +1,12 @@
 //! Utilities for translating from codespan types into Language Server Protocol (LSP) types
 
 #![forbid(unsafe_code)]
+#![no_std]
 
-use std::ops::Range;
+#[cfg(test)]
+extern crate alloc;
+
+use core::ops::Range;
 
 use codespan_reporting::files::{Error, Files};
 
@@ -139,6 +143,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use codespan_reporting::files::{Location, SimpleFiles};
 
     use super::*;

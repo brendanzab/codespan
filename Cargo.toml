@@ -1,5 +1,6 @@
 [workspace]
 members = ["./codespan", "./codespan-reporting", "./codespan-lsp"]
+resolver = "2"
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }

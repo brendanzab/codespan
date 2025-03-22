@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        rust: ["1.46.0", "stable", "beta", "nightly"]
+        rust: ["1.67.0", "stable", "beta", "nightly"]
     name: Check (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -53,11 +53,43 @@ jobs:
           command: check
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
+  check-no-std:
+    name: Check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: 
+          - "1.84.0"
+          - "stable"
+          - "beta"
+          - "nightly"
+        target:
+          - "x86_64-unknown-none"
+          - "wasm32v1-none"
+          - "thumbv6m-none-eabi"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - name: Run cargo check for codespan-reporting
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path "codespan-reporting/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+      - name: Run cargo check for codespan
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+
   test:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        rust: ["1.46.0", "stable", "beta", "nightly"]
+        rust: ["1.67.0", "stable", "beta", "nightly"]
     name: Test Suite (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -95,7 +127,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        rust: ["1.46.0", "stable", "beta", "nightly"]
+        rust: ["1.67.0", "stable", "beta", "nightly"]
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2

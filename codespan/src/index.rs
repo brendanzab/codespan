@@ -1,9 +1,10 @@
 //! Wrapper types that specify positions in a source file
 
+use core::fmt;
+use core::ops::{Add, AddAssign, Neg, Sub, SubAssign};
+
 #[cfg(feature = "serialization")]
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 /// The raw, untyped index. We use a 32-bit integer here for space efficiency,
 /// assuming we won't be working with sources larger than 4GB.
@@ -13,7 +14,7 @@ pub type RawIndex = u32;
 pub type RawOffset = i64;
 
 /// A zero-indexed line offset into a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct LineIndex(pub RawIndex);
 
@@ -77,7 +78,7 @@ impl fmt::Display for LineNumber {
 }
 
 /// A line offset in a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct LineOffset(pub RawOffset);
 
@@ -96,7 +97,7 @@ impl fmt::Display for LineOffset {
 }
 
 /// A zero-indexed column offset into a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct ColumnIndex(pub RawIndex);
 
@@ -153,7 +154,7 @@ impl fmt::Display for ColumnNumber {
 }
 
 /// A column offset in a source file
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct ColumnOffset(pub RawOffset);
 
@@ -172,7 +173,7 @@ impl fmt::Display for ColumnOffset {
 }
 
 /// A byte position in a source file.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub struct ByteIndex(pub RawIndex);
 
