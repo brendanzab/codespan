@@ -90,6 +90,7 @@ jobs:
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
+      fail-fast: false
     name: Test Suite (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -128,6 +129,7 @@ jobs:
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
+      fail-fast: false
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -149,6 +151,7 @@ jobs:
     strategy:
       matrix:
         rust: ["stable"]
+      fail-fast: false
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
