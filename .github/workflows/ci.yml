@@ -143,3 +143,24 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+
+  lint:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        rust: ["stable"]
+    name: Rustfmt (${{ matrix.rust }})
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install minimal ${{ matrix.rust }} with rustfmt
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all

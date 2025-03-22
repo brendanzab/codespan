@@ -1,0 +1,48 @@
+name: Publish crates on crates.io
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "major/minor/patch or semver"
+        required: false
+        default: "patch"
+      lsp-version:
+        description: "major/minor/patch or semver for codespan-lsp crate (or none if not releasing derive crate)"
+        required: false
+        default: "none"
+      reporting-version:
+        description: "major/minor/patch or semver for codespan-reporting crate (or none if not releasing derive crate)"
+        required: false
+        default: "none"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set git credentials
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+      - name: Crates publish
+        uses: kaleidawave/crates-release-gh-action@main
+        id: release
+        with:
+          version: |
+            {
+              "codespan": "${{ github.event.inputs.version }}", 
+              "codespan-reporting": "${{ github.event.inputs.lsp-version }}",
+              "codespan-lsp": "${{ github.event.inputs.reporting-version }}"
+            }
+          crates-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Push updated Cargo.toml
+        run: |
+          git add .
+          git commit -m "Release: ${{ steps.release.outputs.new-versions-description }}"
+          echo '${{ steps.release.outputs.new-versions }}' | jq -r '.[]' | while read -r update; do
+            git tag "release/$update"
+          done
+          git push --tags origin main
