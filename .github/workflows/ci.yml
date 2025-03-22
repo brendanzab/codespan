@@ -90,6 +90,7 @@ jobs:
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
+      fail-fast: false
     name: Test Suite (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -128,6 +129,7 @@ jobs:
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
+      fail-fast: false
     name: Rustfmt (${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v2
@@ -143,3 +145,25 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+
+  lint:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        rust: ["stable"]
+      fail-fast: false
+    name: Rustfmt (${{ matrix.rust }})
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install minimal ${{ matrix.rust }} with rustfmt
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all
