@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "anyhow"
-version = "1.0.0"
+version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9ff2deb543832ee7b1a08060c38cc6af5816e96d3fcb6fc2e99bd15634e5c7f"
+checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "base64"
@@ -46,7 +46,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "codespan"
-version = "0.11.1"
+version = "0.12.0"
 dependencies = [
  "codespan-reporting",
  "serde",
@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "codespan-reporting"
-version = "0.11.1"
+version = "0.12.0"
 dependencies = [
  "anyhow",
  "insta",
