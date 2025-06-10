@@ -15,7 +15,7 @@ rust-version = "1.67"
 [dependencies]
 serde = { version = "1", default-features = false, optional = true, features = ["derive", "alloc"] }
 termcolor = { version = "1.0.4", optional = true }
-unicode-width = ">=0.1,<0.3"
+unicode-width = ">=0.1, <0.3"
 
 [dev-dependencies]
 pico-args = "0.5.0"
