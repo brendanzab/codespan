@@ -8,6 +8,7 @@ use crate::term::{Chars, Config};
 #[cfg(feature = "std")]
 use std::io::{self, Write};
 
+#[cfg(feature = "termcolor")]
 pub trait WriteStyle: io::Write {
     fn set_header(&mut self, severity: Severity) -> io::Result<()>;
 
