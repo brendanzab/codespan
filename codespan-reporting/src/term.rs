@@ -1,5 +1,6 @@
 //! Terminal back-end for emitting diagnostics.
 
+use config::StylesWriter;
 #[cfg(feature = "termcolor")]
 use termcolor::WriteColor;
 
@@ -29,13 +30,16 @@ pub fn emit<'files, F: Files<'files> + ?Sized>(
     #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
     #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
     config: &Config,
+    style: &Styles,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> Result<(), super::files::Error> {
     use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
-    let mut renderer = Renderer::new(writer, config);
+    let mut writer = StylesWriter::new(writer, style);
+
+    let mut renderer = Renderer::new(&mut writer, config);
     match config.display_style {
         DisplayStyle::Rich => RichDiagnostic::new(diagnostic, config).render(files, &mut renderer),
         DisplayStyle::Medium => ShortDiagnostic::new(diagnostic, true).render(files, &mut renderer),
