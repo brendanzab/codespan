@@ -18,6 +18,8 @@ pub use self::config::{Chars, Config, DisplayStyle};
 
 #[cfg(feature = "termcolor")]
 pub use self::config::Styles;
+#[cfg(feature = "termcolor")]
+pub use self::renderer::WriteStyle;
 
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
