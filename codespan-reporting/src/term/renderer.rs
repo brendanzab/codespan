@@ -521,7 +521,6 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 //   │     first borrow later used by call
                 //   │     help: some help here
                 // ```
-                #[cfg_attr(not(feature = "termcolor"), allow(unused))]
                 for (label_style, range, message) in
                     hanging_labels(single_labels, trailing_label).rev()
                 {
