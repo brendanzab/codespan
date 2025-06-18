@@ -7,8 +7,10 @@ mod config;
 mod renderer;
 mod views;
 
+use config::StylesWriter;
 #[cfg(feature = "termcolor")]
 pub use termcolor;
+use termcolor::WriteColor;
 
 pub use self::config::{Chars, Config, DisplayStyle};
 
@@ -18,6 +20,7 @@ pub use self::config::Styles;
 pub use self::renderer::WriteStyle;
 
 pub use self::renderer::Renderer;
+pub use self::views::{RichDiagnostic, ShortDiagnostic};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
@@ -26,16 +29,16 @@ pub use self::renderer::Renderer;
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
 pub fn emit<'files, F: Files<'files> + ?Sized>(
-    #[cfg(feature = "termcolor")] writer: &mut dyn WriteStyle,
+    #[cfg(feature = "termcolor")] writer: &mut dyn WriteColor,
     #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
     #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
+    #[cfg(feature = "termcolor")] style: &Styles,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> Result<(), super::files::Error> {
-    use self::views::{RichDiagnostic, ShortDiagnostic};
-
-    let mut renderer = Renderer::new(writer, config);
+    let mut writer = StylesWriter::new(writer, style);
+    let mut renderer = Renderer::new(&mut writer, config);
     match config.display_style {
         DisplayStyle::Rich => RichDiagnostic::new(diagnostic, config).render(files, &mut renderer),
         DisplayStyle::Medium => ShortDiagnostic::new(diagnostic, true).render(files, &mut renderer),
@@ -60,8 +63,13 @@ mod tests {
         let mut writer = termcolor::NoColor::new(Vec::<u8>::new());
         let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
 
-        let mut writer = StylesWriter::new(writer, &Styles::default());
-
-        emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();
+        emit(
+            &mut writer,
+            &Config::default(),
+            &Styles::default(),
+            &files,
+            &diagnostic,
+        )
+        .unwrap();
     }
 }
