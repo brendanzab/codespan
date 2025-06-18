@@ -1,9 +1,5 @@
 //! Terminal back-end for emitting diagnostics.
 
-use config::StylesWriter;
-#[cfg(feature = "termcolor")]
-use termcolor::WriteColor;
-
 use crate::diagnostic::Diagnostic;
 use crate::files::Files;
 
@@ -21,6 +17,8 @@ pub use self::config::Styles;
 #[cfg(feature = "termcolor")]
 pub use self::renderer::WriteStyle;
 
+pub use self::renderer::Renderer;
+
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
 /// The return value covers all error cases. These error case can arise if:
@@ -28,20 +26,16 @@ pub use self::renderer::WriteStyle;
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
 pub fn emit<'files, F: Files<'files> + ?Sized>(
-    #[cfg(feature = "termcolor")] writer: &mut dyn WriteColor,
+    #[cfg(feature = "termcolor")] writer: &mut dyn WriteStyle,
     #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
     #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
     config: &Config,
-    style: &Styles,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> Result<(), super::files::Error> {
-    use self::renderer::Renderer;
     use self::views::{RichDiagnostic, ShortDiagnostic};
 
-    let mut writer = StylesWriter::new(writer, style);
-
-    let mut renderer = Renderer::new(&mut writer, config);
+    let mut renderer = Renderer::new(writer, config);
     match config.display_style {
         DisplayStyle::Rich => RichDiagnostic::new(diagnostic, config).render(files, &mut renderer),
         DisplayStyle::Medium => ShortDiagnostic::new(diagnostic, true).render(files, &mut renderer),
@@ -65,6 +59,8 @@ mod tests {
         let id = files.add("test", "");
         let mut writer = termcolor::NoColor::new(Vec::<u8>::new());
         let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
+
+        let mut writer = StylesWriter::new(writer, &Styles::default());
 
         emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();
     }
