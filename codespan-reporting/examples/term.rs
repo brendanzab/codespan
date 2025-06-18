@@ -7,8 +7,8 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use codespan_reporting::term::{self, Styles, StylesWriter};
 
 #[derive(Debug)]
 pub struct Opts {
@@ -165,10 +165,12 @@ fn main() -> anyhow::Result<()> {
             )]),
     ];
 
+    let styles = Styles::default();
     let writer = StandardStream::stderr(color);
     let config = codespan_reporting::term::Config::default();
     for diagnostic in &diagnostics {
-        term::emit(&mut writer.lock(), &config, &files, diagnostic)?;
+        let mut styles_writer = StylesWriter::new(writer.lock(), &styles);
+        term::emit(&mut styles_writer, &config, &files, diagnostic)?;
     }
 
     Ok(())

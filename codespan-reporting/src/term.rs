@@ -58,10 +58,8 @@ mod tests {
         let mut files = SimpleFiles::new();
 
         let id = files.add("test", "");
-        let mut writer = StylesWriter::new(
-            termcolor::NoColor::new(Vec::<u8>::new()),
-            &Styles::default(),
-        );
+        let style = Styles::default();
+        let mut writer = StylesWriter::new(termcolor::NoColor::new(Vec::<u8>::new()), &style);
         let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
 
         emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();

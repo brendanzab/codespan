@@ -461,12 +461,9 @@ mod test {
             .with_labels(vec![Label::primary(file_id, 4..7).with_message("middle")]);
 
         let config = codespan_reporting::term::Config::default();
-        emit(
-            &mut StandardStream::stdout(ColorChoice::Auto),
-            &config,
-            &files,
-            &diagnostic,
-        )
-        .unwrap();
+        let style = codespan_reporting::term::Styles::default();
+        let color_writer = StandardStream::stdout(ColorChoice::Auto);
+        let mut writer = codespan_reporting::term::StylesWriter::new(color_writer.lock(), &style);
+        emit(&mut writer, &config, &files, &diagnostic).unwrap();
     }
 }
