@@ -15,9 +15,9 @@ pub use self::config::{Chars, Config, DisplayStyle};
 #[cfg(feature = "termcolor")]
 pub use self::config::Styles;
 #[cfg(feature = "termcolor")]
-pub use self::renderer::WriteStyle;
-#[cfg(feature = "termcolor")]
 pub use config::StylesWriter;
+
+pub use self::renderer::WriteStyle;
 
 pub use self::renderer::Renderer;
 pub use self::views::{RichDiagnostic, ShortDiagnostic};
@@ -29,9 +29,7 @@ pub use self::views::{RichDiagnostic, ShortDiagnostic};
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
 pub fn emit<'files, F: Files<'files> + ?Sized>(
-    #[cfg(feature = "termcolor")] writer: &mut dyn WriteStyle,
-    #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
-    #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
+    writer: &mut dyn WriteStyle,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,

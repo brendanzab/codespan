@@ -1,6 +1,5 @@
 use alloc::string::String;
 
-#[cfg(feature = "termcolor")]
 use super::renderer::WriteStyle;
 
 #[cfg(feature = "termcolor")]
@@ -249,6 +248,7 @@ impl<'a, W> StylesWriter<'a, W> {
     }
 }
 
+#[cfg(feature = "termcolor")]
 #[cfg(feature = "std")]
 impl<'a, W: WriteColor> io::Write for StylesWriter<'a, W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
