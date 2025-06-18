@@ -1,7 +1,10 @@
 use alloc::string::String;
-use termcolor::WriteColor;
 
+#[cfg(feature = "termcolor")]
 use super::renderer::WriteStyle;
+
+#[cfg(feature = "termcolor")]
+use termcolor::WriteColor;
 
 #[cfg(feature = "termcolor")]
 use {
