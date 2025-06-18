@@ -1,9 +1,10 @@
 use alloc::string::String;
 
-use super::renderer::WriteStyle;
-
 #[cfg(feature = "termcolor")]
 use termcolor::WriteColor;
+
+#[cfg(feature = "termcolor")]
+use super::renderer::WriteStyle;
 
 #[cfg(feature = "termcolor")]
 use {
@@ -11,6 +12,8 @@ use {
     termcolor::{Color, ColorSpec},
 };
 
+#[cfg(not(feature = "std"))]
+use core::fmt::{Arguments, Result as WriteResult, Write};
 #[cfg(feature = "std")]
 use std::io;
 
@@ -257,6 +260,22 @@ impl<'a, W: WriteColor> io::Write for StylesWriter<'a, W> {
 
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
+    }
+}
+
+#[cfg(feature = "termcolor")]
+#[cfg(not(feature = "std"))]
+impl Write for StylesWriter<'_, '_> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.writer.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.writer.write_char(c)
+    }
+
+    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+        self.writer.write_fmt(args)
     }
 }
 
