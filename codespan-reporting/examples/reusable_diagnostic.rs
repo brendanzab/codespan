@@ -1,7 +1,7 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self, Styles, StylesWriter};
+use codespan_reporting::term::{self};
 use core::ops::Range;
 
 #[derive(Debug)]
@@ -39,12 +39,10 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let Opts { color } = parse_args()?;
-    let styles = Styles::default();
     let writer = StandardStream::stderr(color);
     let config = codespan_reporting::term::Config::default();
     for diagnostic in errors.iter().map(Error::report) {
-        let mut styles_writer = StylesWriter::new(writer.lock(), &styles);
-        term::emit(&mut styles_writer, &config, &file, &diagnostic)?;
+        term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
     }
 
     Ok(())

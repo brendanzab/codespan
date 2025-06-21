@@ -11,7 +11,7 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self, Styles, StylesWriter};
+use codespan_reporting::term::{self};
 use core::ops::Range;
 
 fn main() -> anyhow::Result<()> {
@@ -29,13 +29,11 @@ fn main() -> anyhow::Result<()> {
         },
     ];
 
-    let styles = Styles::default();
     let writer = StandardStream::stderr(ColorChoice::Always);
-    let mut styles_writer = StylesWriter::new(writer.lock(), &styles);
     let config = term::Config::default();
     for message in &messages {
         term::emit(
-            &mut styles_writer,
+            &mut writer.lock(),
             &config,
             &files,
             &message.to_diagnostic(),

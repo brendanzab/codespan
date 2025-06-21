@@ -10,7 +10,7 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label, LabelStyle, Severity};
 use codespan_reporting::files::SimpleFile;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self, Styles, StylesWriter};
+use codespan_reporting::term::{self};
 use std::io::{self, Write};
 
 #[derive(Debug)]
@@ -206,13 +206,9 @@ fn main() -> anyhow::Result<()> {
         }
         Opts::Stderr { color } => {
             let writer = StandardStream::stderr(color);
-            #[cfg(feature = "termcolor")]
-            let style = Styles::default();
-            #[cfg(feature = "termcolor")]
-            let mut writer = StylesWriter::new(writer.lock(), &style);
             let config = codespan_reporting::term::Config::default();
             for diagnostic in &diagnostics {
-                term::emit(&mut writer, &config, &file, diagnostic)?;
+                term::emit(&mut writer.lock(), &config, &file, diagnostic)?;
             }
         }
     }
