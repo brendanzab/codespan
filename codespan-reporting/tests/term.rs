@@ -1,18 +1,19 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::{SimpleFile, SimpleFiles};
 use codespan_reporting::term::{termcolor::Color, Chars, Config, DisplayStyle, Styles};
+use std::sync::LazyLock;
 
 mod support;
 
 use self::support::TestData;
 
-lazy_static::lazy_static! {
-    static ref TEST_CONFIG: Config = Config {
-        // Always use blue so tests are consistent across platforms
-        styles: Styles::with_blue(Color::Blue),
-        ..Config::default()
-    };
-}
+static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
+    // Always use blue so tests are consistent across platforms
+    styles: Styles::with_blue(Color::Blue),
+    ..Config::default()
+});
+
+type LazyTestData<'a, T> = LazyLock<TestData<'a, T>>;
 
 macro_rules! test_emit {
     (rich_color) => {
@@ -98,8 +99,8 @@ macro_rules! test_emit {
 mod empty {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let files = SimpleFiles::new();
 
             let diagnostics = vec![
@@ -112,8 +113,7 @@ mod empty {
             ];
 
             TestData { files, diagnostics }
-        };
-    }
+        });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -129,42 +129,43 @@ mod empty {
 mod same_line {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id1 = files.add(
-                "one_line.rs",
-                unindent::unindent(r#"
+        let file_id1 = files.add(
+            "one_line.rs",
+            unindent::unindent(
+                r#"
                     fn main() {
                         let mut v = vec![Some("foo"), Some("bar")];
                         v.push(v.pop().unwrap());
                     }
-                "#),
-            );
+                "#,
+            ),
+        );
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_code("E0499")
-                    .with_message("cannot borrow `v` as mutable more than once at a time")
-                    .with_labels(vec![
-                        Label::primary(file_id1, 71..72)
-                            .with_message("second mutable borrow occurs here"),
-                        Label::secondary(file_id1, 64..65)
-                            .with_message("first borrow later used by call"),
-                        Label::secondary(file_id1, 66..70)
-                            .with_message("first mutable borrow occurs here"),
-                    ]),
-                Diagnostic::error()
-                    .with_message("aborting due to previous error")
-                    .with_notes(vec![
-                        "For more information about this error, try `rustc --explain E0499`.".to_owned(),
-                    ]),
-            ];
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_code("E0499")
+                .with_message("cannot borrow `v` as mutable more than once at a time")
+                .with_labels(vec![
+                    Label::primary(file_id1, 71..72)
+                        .with_message("second mutable borrow occurs here"),
+                    Label::secondary(file_id1, 64..65)
+                        .with_message("first borrow later used by call"),
+                    Label::secondary(file_id1, 66..70)
+                        .with_message("first mutable borrow occurs here"),
+                ]),
+            Diagnostic::error()
+                .with_message("aborting due to previous error")
+                .with_notes(vec![
+                    "For more information about this error, try `rustc --explain E0499`."
+                        .to_owned(),
+                ]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -182,30 +183,34 @@ mod same_line {
 mod overlapping {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id1 = files.add(
-                "nested_impl_trait.rs",
-                unindent::unindent(r#"
+        let file_id1 = files.add(
+            "nested_impl_trait.rs",
+            unindent::unindent(
+                r#"
                     use std::fmt::Debug;
 
                     fn fine(x: impl Into<u32>) -> impl Into<u32> { x }
 
                     fn bad_in_ret_position(x: impl Into<u32>) -> impl Into<impl Debug> { x }
-                "#),
-            );
-            let file_id2 = files.add(
-                "typeck_type_placeholder_item.rs",
-                unindent::unindent(r#"
+                "#,
+            ),
+        );
+        let file_id2 = files.add(
+            "typeck_type_placeholder_item.rs",
+            unindent::unindent(
+                r#"
                     fn fn_test1() -> _ { 5 }
                     fn fn_test2(x: i32) -> (_, _) { (x, x) }
-                "#),
-            );
-            let file_id3 = files.add(
-                "libstd/thread/mod.rs",
-                unindent::unindent(r#"
+                "#,
+            ),
+        );
+        let file_id3 = files.add(
+            "libstd/thread/mod.rs",
+            unindent::unindent(
+                r#"
                     #[stable(feature = "rust1", since = "1.0.0")]
                     pub fn spawn<F, T>(self, f: F) -> io::Result<JoinHandle<T>>
                     where
@@ -215,11 +220,13 @@ mod overlapping {
                     {
                         unsafe { self.spawn_unchecked(f) }
                     }
-                "#),
-            );
-            let file_id4 = files.add(
-                "no_send_res_ports.rs",
-                unindent::unindent(r#"
+                "#,
+            ),
+        );
+        let file_id4 = files.add(
+            "no_send_res_ports.rs",
+            unindent::unindent(
+                r#"
                     use std::thread;
                     use std::rc::Rc;
 
@@ -249,10 +256,11 @@ mod overlapping {
                             println!("{:?}", y);
                         });
                     }
-                "#),
-            );
+                "#,
+            ),
+        );
 
-            let diagnostics = vec![
+        let diagnostics = vec![
                 Diagnostic::error()
                     .with_code("E0666")
                     .with_message("nested `impl Trait` is not allowed")
@@ -307,9 +315,8 @@ mod overlapping {
                     ]),
             ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -323,8 +330,8 @@ mod overlapping {
 mod message {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let files = SimpleFiles::new();
 
             let diagnostics = vec![
@@ -335,8 +342,7 @@ mod message {
             ];
 
             TestData { files, diagnostics }
-        };
-    }
+        });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -350,20 +356,27 @@ mod message {
 mod message_and_notes {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let files = SimpleFiles::new();
 
             let diagnostics = vec![
-                Diagnostic::error().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::warning().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::note().with_message("a message").with_notes(vec!["a note".to_owned()]),
-                Diagnostic::help().with_message("a message").with_notes(vec!["a note".to_owned()]),
+                Diagnostic::error()
+                    .with_message("a message")
+                    .with_notes(vec!["a note".to_owned()]),
+                Diagnostic::warning()
+                    .with_message("a message")
+                    .with_notes(vec!["a note".to_owned()]),
+                Diagnostic::note()
+                    .with_message("a message")
+                    .with_notes(vec!["a note".to_owned()]),
+                Diagnostic::help()
+                    .with_message("a message")
+                    .with_notes(vec!["a note".to_owned()]),
             ];
 
             TestData { files, diagnostics }
-        };
-    }
+        });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -377,24 +390,39 @@ mod message_and_notes {
 mod message_errorcode {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let files = SimpleFiles::new();
 
             let diagnostics = vec![
-                Diagnostic::error().with_message("a message").with_code("E0001"),
-                Diagnostic::warning().with_message("a message").with_code("W001"),
-                Diagnostic::note().with_message("a message").with_code("N0815"),
-                Diagnostic::help().with_message("a message").with_code("H4711"),
-                Diagnostic::error().with_message("where did my errorcode go?").with_code(""),
-                Diagnostic::warning().with_message("where did my errorcode go?").with_code(""),
-                Diagnostic::note().with_message("where did my errorcode go?").with_code(""),
-                Diagnostic::help().with_message("where did my errorcode go?").with_code(""),
+                Diagnostic::error()
+                    .with_message("a message")
+                    .with_code("E0001"),
+                Diagnostic::warning()
+                    .with_message("a message")
+                    .with_code("W001"),
+                Diagnostic::note()
+                    .with_message("a message")
+                    .with_code("N0815"),
+                Diagnostic::help()
+                    .with_message("a message")
+                    .with_code("H4711"),
+                Diagnostic::error()
+                    .with_message("where did my errorcode go?")
+                    .with_code(""),
+                Diagnostic::warning()
+                    .with_message("where did my errorcode go?")
+                    .with_code(""),
+                Diagnostic::note()
+                    .with_message("where did my errorcode go?")
+                    .with_code(""),
+                Diagnostic::help()
+                    .with_message("where did my errorcode go?")
+                    .with_code(""),
             ];
 
             TestData { files, diagnostics }
-        };
-    }
+        });
 
     test_emit!(rich_no_color);
     test_emit!(short_no_color);
@@ -404,8 +432,8 @@ mod message_errorcode {
 mod empty_ranges {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let file = SimpleFile::new("hello", "Hello world!\nBye world!\n   ");
             let eof = file.source().len();
 
@@ -421,12 +449,16 @@ mod empty_ranges {
                     .with_labels(vec![Label::primary((), 23..23).with_message("end of line")]),
                 Diagnostic::note()
                     .with_message("end of file")
-                    .with_labels(vec![Label::primary((), eof..eof).with_message("end of file")]),
+                    .with_labels(vec![
+                        Label::primary((), eof..eof).with_message("end of file")
+                    ]),
             ];
 
-            TestData { files: file, diagnostics }
-        };
-    }
+            TestData {
+                files: file,
+                diagnostics,
+            }
+        });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -440,22 +472,22 @@ mod empty_ranges {
 mod same_ranges {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, &'static str>> = {
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, &'static str>> =
+        LazyLock::new(|| {
             let file = SimpleFile::new("same_range", "::S { }");
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_message("Unexpected token")
-                    .with_labels(vec![
-                        Label::primary((), 4..4).with_message("Unexpected '{'"),
-                        Label::secondary((), 4..4).with_message("Expected '('"),
-                    ]),
-            ];
+            let diagnostics = vec![Diagnostic::error()
+                .with_message("Unexpected token")
+                .with_labels(vec![
+                    Label::primary((), 4..4).with_message("Unexpected '{'"),
+                    Label::secondary((), 4..4).with_message("Expected '('"),
+                ])];
 
-            TestData { files: file, diagnostics }
-        };
-    }
+            TestData {
+                files: file,
+                diagnostics,
+            }
+        });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -469,14 +501,13 @@ mod same_ranges {
 mod multifile {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id1 = files.add(
-                "Data/Nat.fun",
-                unindent::unindent(
-                    "
+        let file_id1 = files.add(
+            "Data/Nat.fun",
+            unindent::unindent(
+                "
                         module Data.Nat where
 
                         data Nat : Type where
@@ -496,53 +527,57 @@ mod multifile {
                         zero    - succ n₂ = zero
                         succ n₁ - succ n₂ = n₁ - n₂
                     ",
-                ),
-            );
+            ),
+        );
 
-            let file_id2 = files.add(
-                "Test.fun",
-                unindent::unindent(
-                    r#"
+        let file_id2 = files.add(
+            "Test.fun",
+            unindent::unindent(
+                r#"
                         module Test where
 
                         _ : Nat
                         _ = 123 + "hello"
                     "#,
-                ),
-            );
+            ),
+        );
 
-            let diagnostics = vec![
-                // Unknown builtin error
-                Diagnostic::error()
-                    .with_message("unknown builtin: `NATRAL`")
-                    .with_labels(vec![Label::primary(file_id1, 96..102).with_message("unknown builtin")])
-                    .with_notes(vec![
-                        "there is a builtin with a similar name: `NATURAL`".to_owned(),
-                    ]),
-                // Unused parameter warning
-                Diagnostic::warning()
-                    .with_message("unused parameter pattern: `n₂`")
-                    .with_labels(vec![Label::primary(file_id1, 285..289).with_message("unused parameter")])
-                    .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
-                // Unexpected type error
-                Diagnostic::error()
-                    .with_message("unexpected type in application of `_+_`")
-                    .with_code("E0001")
-                    .with_labels(vec![
-                        Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
-                        Label::secondary(file_id1, 130..155).with_message("based on the definition of `_+_`"),
-                    ])
-                    .with_notes(vec![unindent::unindent(
-                        "
+        let diagnostics = vec![
+            // Unknown builtin error
+            Diagnostic::error()
+                .with_message("unknown builtin: `NATRAL`")
+                .with_labels(vec![
+                    Label::primary(file_id1, 96..102).with_message("unknown builtin")
+                ])
+                .with_notes(vec![
+                    "there is a builtin with a similar name: `NATURAL`".to_owned()
+                ]),
+            // Unused parameter warning
+            Diagnostic::warning()
+                .with_message("unused parameter pattern: `n₂`")
+                .with_labels(vec![
+                    Label::primary(file_id1, 285..289).with_message("unused parameter")
+                ])
+                .with_notes(vec!["consider using a wildcard pattern: `_`".to_owned()]),
+            // Unexpected type error
+            Diagnostic::error()
+                .with_message("unexpected type in application of `_+_`")
+                .with_code("E0001")
+                .with_labels(vec![
+                    Label::primary(file_id2, 37..44).with_message("expected `Nat`, found `String`"),
+                    Label::secondary(file_id1, 130..155)
+                        .with_message("based on the definition of `_+_`"),
+                ])
+                .with_notes(vec![unindent::unindent(
+                    "
                             expected type `Nat`
                                found type `String`
                         ",
-                    )]),
-            ];
+                )]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -556,14 +591,13 @@ mod multifile {
 mod fizz_buzz {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id = files.add(
-                "FizzBuzz.fun",
-                unindent::unindent(
-                    r#"
+        let file_id = files.add(
+            "FizzBuzz.fun",
+            unindent::unindent(
+                r#"
                         module FizzBuzz where
 
                         fizz₁ : Nat → String
@@ -581,48 +615,56 @@ mod fizz_buzz {
                                 _ 0 => "Buzz"
                                 _ _ => num
                     "#,
-                ),
-            );
+            ),
+        );
 
-            let diagnostics = vec![
-                // Incompatible match clause error
-                Diagnostic::error()
-                    .with_message("`case` clauses have incompatible types")
-                    .with_code("E0308")
-                    .with_labels(vec![
-                        Label::primary(file_id, 163..166).with_message("expected `String`, found `Nat`"),
-                        Label::secondary(file_id, 62..166).with_message("`case` clauses have incompatible types"),
-                        Label::secondary(file_id, 41..47).with_message("expected type `String` found here"),
-                    ])
-                    .with_notes(vec![unindent::unindent(
-                        "
+        let diagnostics = vec![
+            // Incompatible match clause error
+            Diagnostic::error()
+                .with_message("`case` clauses have incompatible types")
+                .with_code("E0308")
+                .with_labels(vec![
+                    Label::primary(file_id, 163..166)
+                        .with_message("expected `String`, found `Nat`"),
+                    Label::secondary(file_id, 62..166)
+                        .with_message("`case` clauses have incompatible types"),
+                    Label::secondary(file_id, 41..47)
+                        .with_message("expected type `String` found here"),
+                ])
+                .with_notes(vec![unindent::unindent(
+                    "
                             expected type `String`
                                found type `Nat`
                         ",
-                    )]),
-                // Incompatible match clause error
-                Diagnostic::error()
-                    .with_message("`case` clauses have incompatible types")
-                    .with_code("E0308")
-                    .with_labels(vec![
-                        Label::primary(file_id, 328..331).with_message("expected `String`, found `Nat`"),
-                        Label::secondary(file_id, 211..331).with_message("`case` clauses have incompatible types"),
-                        Label::secondary(file_id, 258..268).with_message("this is found to be of type `String`"),
-                        Label::secondary(file_id, 284..290).with_message("this is found to be of type `String`"),
-                        Label::secondary(file_id, 306..312).with_message("this is found to be of type `String`"),
-                        Label::secondary(file_id, 186..192).with_message("expected type `String` found here"),
-                    ])
-                    .with_notes(vec![unindent::unindent(
-                        "
+                )]),
+            // Incompatible match clause error
+            Diagnostic::error()
+                .with_message("`case` clauses have incompatible types")
+                .with_code("E0308")
+                .with_labels(vec![
+                    Label::primary(file_id, 328..331)
+                        .with_message("expected `String`, found `Nat`"),
+                    Label::secondary(file_id, 211..331)
+                        .with_message("`case` clauses have incompatible types"),
+                    Label::secondary(file_id, 258..268)
+                        .with_message("this is found to be of type `String`"),
+                    Label::secondary(file_id, 284..290)
+                        .with_message("this is found to be of type `String`"),
+                    Label::secondary(file_id, 306..312)
+                        .with_message("this is found to be of type `String`"),
+                    Label::secondary(file_id, 186..192)
+                        .with_message("expected type `String` found here"),
+                ])
+                .with_notes(vec![unindent::unindent(
+                    "
                             expected type `String`
                                found type `Nat`
                         ",
-                    )]),
-            ];
+                )]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -636,44 +678,49 @@ mod fizz_buzz {
 mod multiline_overlapping {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
-            let file = SimpleFile::new(
-                "codespan/src/file.rs",
-                [
-                    "        match line_index.compare(self.last_line_index()) {",
-                    "            Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),",
-                    "            Ordering::Equal => Ok(self.source_span().end()),",
-                    "            Ordering::Greater => LineIndexOutOfBoundsError {",
-                    "                given: line_index,",
-                    "                max: self.last_line_index(),",
-                    "            },",
-                    "        }",
-                ].join("\n"),
-            );
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, String>> = LazyLock::new(|| {
+        let file = SimpleFile::new(
+            "codespan/src/file.rs",
+            unindent::unindent("
+                match line_index.compare(self.last_line_index()) {
+                    Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
+                    Ordering::Equal => Ok(self.source_span().end()),
+                    Ordering::Greater => LineIndexOutOfBoundsError {
+                        given: line_index,
+                        max: self.last_line_index(),
+                    },
+                }",
+            ),
+        );
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_message("match arms have incompatible types")
-                    .with_code("E0308")
-                    .with_labels(vec![
-                        // this secondary label is before the primary label to test the locus calculation (see issue #259)
-                        Label::secondary((), 89..134).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
-                        Label::primary((), 230..351).with_message("expected enum `Result`, found struct `LineIndexOutOfBoundsError`"),
-                        Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
-                        Label::secondary((), 167..195).with_message("this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`"),
-                    ])
-                    .with_notes(vec![unindent::unindent(
-                        "
+        let diagnostics = vec![Diagnostic::error()
+            .with_message("match arms have incompatible types")
+            .with_code("E0308")
+            .with_labels(vec![
+                // this secondary label is before the primary label to test the locus calculation (see issue #259)
+                Label::secondary((), 89..134).with_message(
+                    "this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`",
+                ),
+                Label::primary((), 230..351).with_message(
+                    "expected enum `Result`, found struct `LineIndexOutOfBoundsError`",
+                ),
+                Label::secondary((), 8..362).with_message("`match` arms have incompatible types"),
+                Label::secondary((), 167..195).with_message(
+                    "this is found to be of type `Result<ByteIndex, LineIndexOutOfBoundsError>`",
+                ),
+            ])
+            .with_notes(vec![unindent::unindent(
+                "
                             expected type `Result<ByteIndex, LineIndexOutOfBoundsError>`
                                found type `LineIndexOutOfBoundsError`
                         ",
-                    )]),
-            ];
+            )])];
 
-            TestData { files: file, diagnostics }
-        };
-    }
+        TestData {
+            files: file,
+            diagnostics,
+        }
+    });
 
     test_emit!(rich_color);
     test_emit!(medium_color);
@@ -687,37 +734,40 @@ mod multiline_overlapping {
 mod tabbed {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id = files.add(
-                "tabbed",
-                [
-                    "Entity:",
-                    "\tArmament:",
-                    "\t\tWeapon: DogJaw",
-                    "\t\tReloadingCondition:\tattack-cooldown",
-                    "\tFoo: Bar",
-                ]
-                .join("\n"),
-            );
+        let file_id = files.add(
+            "tabbed",
+            unindent::unindent("
+                Entity:
+                \tArmament:
+                \tWeapon: DogJaw
+                \tReloadingCondition:\tattack-cooldown
+                \tFoo: Bar",
+            ),
+        );
 
-            let diagnostics = vec![
-                Diagnostic::warning()
-                    .with_message("unknown weapon `DogJaw`")
-                    .with_labels(vec![Label::primary(file_id, 29..35).with_message("the weapon")]),
-                Diagnostic::warning()
-                    .with_message("unknown condition `attack-cooldown`")
-                    .with_labels(vec![Label::primary(file_id, 58..73).with_message("the condition")]),
-                Diagnostic::warning()
-                    .with_message("unknown field `Foo`")
-                    .with_labels(vec![Label::primary(file_id, 75..78).with_message("the field")]),
-            ];
+        let diagnostics = vec![
+            Diagnostic::warning()
+                .with_message("unknown weapon `DogJaw`")
+                .with_labels(vec![
+                    Label::primary(file_id, 29..35).with_message("the weapon")
+                ]),
+            Diagnostic::warning()
+                .with_message("unknown condition `attack-cooldown`")
+                .with_labels(vec![
+                    Label::primary(file_id, 58..73).with_message("the condition")
+                ]),
+            Diagnostic::warning()
+                .with_message("unknown field `Foo`")
+                .with_labels(vec![
+                    Label::primary(file_id, 75..78).with_message("the field")
+                ]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     #[test]
     fn tab_width_default_no_color() {
@@ -750,40 +800,34 @@ mod tabbed {
 mod tab_columns {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let source = [
-                "\thello",
-                "∙\thello",
-                "∙∙\thello",
-                "∙∙∙\thello",
-                "∙∙∙∙\thello",
-                "∙∙∙∙∙\thello",
-                "∙∙∙∙∙∙\thello",
-            ].join("\n");
-            let hello_ranges = source
-                .match_indices("hello")
-                .map(|(start, hello)| start..(start+hello.len()))
-                .collect::<Vec<_>>();
+        let source = unindent::unindent(
+            "\thello
+                ∙\thello
+                ∙∙\thello
+                ∙∙∙\thello
+                ∙∙∙∙\thello
+                ∙∙∙∙∙\thello
+                ∙∙∙∙∙∙\thello",
+        );
+        let hello_ranges = source
+            .match_indices("hello")
+            .map(|(start, hello)| start..(start + hello.len()))
+            .collect::<Vec<_>>();
 
-            let file_id = files.add("tab_columns", source);
+        let file_id = files.add("tab_columns", source);
 
-            let diagnostics = vec![
-                Diagnostic::warning()
-                    .with_message("tab test")
-                    .with_labels(
-                        hello_ranges
-                            .into_iter()
-                            .map(|range| Label::primary(file_id, range))
-                            .collect(),
-                    ),
-            ];
+        let diagnostics = vec![Diagnostic::warning().with_message("tab test").with_labels(
+            hello_ranges
+                .into_iter()
+                .map(|range| Label::primary(file_id, range))
+                .collect(),
+        )];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     #[test]
     fn tab_width_default_no_color() {
@@ -828,27 +872,24 @@ mod tab_columns {
 mod unicode {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
-            let prefix = r#"extern "#;
-            let abi = r#""路濫狼á́́""#;
-            let suffix = r#" fn foo() {}"#;
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, String>> = LazyLock::new(|| {
+        let prefix = r#"extern "#;
+        let abi = r#""路濫狼á́́""#;
+        let suffix = r#" fn foo() {}"#;
 
-            let file = SimpleFile::new(
-                "unicode.rs",
-                format!("{}{}{}", prefix, abi, suffix),
-            );
+        let file = SimpleFile::new("unicode.rs", format!("{}{}{}", prefix, abi, suffix));
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_code("E0703")
-                    .with_message("invalid ABI: found `路濫狼á́́`")
-                    .with_labels(vec![
-                        Label::primary((), prefix.len()..(prefix.len() + abi.len()))
-                            .with_message("invalid ABI"),
-                    ])
-                    .with_notes(vec![unindent::unindent(
-                        "
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_code("E0703")
+                .with_message("invalid ABI: found `路濫狼á́́`")
+                .with_labels(vec![Label::primary(
+                    (),
+                    prefix.len()..(prefix.len() + abi.len()),
+                )
+                .with_message("invalid ABI")])
+                .with_notes(vec![unindent::unindent(
+                    "
                             valid ABIs:
                               - aapcs
                               - amdgpu-kernel
@@ -871,17 +912,20 @@ mod unicode {
                               - win64
                               - x86-interrupt
                         ",
-                    )]),
-                Diagnostic::error()
-                    .with_message("aborting due to previous error")
-                    .with_notes(vec![
-                        "For more information about this error, try `rustc --explain E0703`.".to_owned(),
-                    ]),
-            ];
+                )]),
+            Diagnostic::error()
+                .with_message("aborting due to previous error")
+                .with_notes(vec![
+                    "For more information about this error, try `rustc --explain E0703`."
+                        .to_owned(),
+                ]),
+        ];
 
-            TestData { files: file, diagnostics }
-        };
-    }
+        TestData {
+            files: file,
+            diagnostics,
+        }
+    });
 
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
@@ -891,48 +935,42 @@ mod unicode {
 mod unicode_spans {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
-            let moon_phases = r#"🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄"#.to_string();
-            let invalid_start = 1;
-            let invalid_end = "🐄".len() - 1;
-            assert!(!moon_phases.is_char_boundary(invalid_start));
-            assert!(!moon_phases.is_char_boundary(invalid_end));
-            assert_eq!("🐄".len(), 4);
-            let file = SimpleFile::new(
-                "moon_jump.rs",
-                moon_phases,
-            );
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_code("E01")
-                    .with_message("cow may not jump during new moon.")
-                    .with_labels(vec![
-                        Label::primary((), invalid_start..invalid_end)
-                            .with_message("Invalid jump"),
-                    ]),
-                Diagnostic::note()
-                    .with_message("invalid unicode range")
-                    .with_labels(vec![
-                        Label::secondary((), invalid_start.."🐄".len())
-                            .with_message("Cow range does not start at boundary."),
-                    ]),
-                Diagnostic::note()
-                    .with_message("invalid unicode range")
-                    .with_labels(vec![
-                        Label::secondary((), "🐄🌑".len().."🐄🌑🐄".len() - 1)
-                            .with_message("Cow range does not end at boundary."),
-                    ]),
-                Diagnostic::note()
-                    .with_message("invalid unicode range")
-                    .with_labels(vec![
-                        Label::secondary((), invalid_start.."🐄🌑🐄".len() - 1)
-                            .with_message("Cow does not start or end at boundary."),
-                    ]),
-            ];
-            TestData{files: file, diagnostics }
-        };
-    }
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, String>> = LazyLock::new(|| {
+        let moon_phases = r#"🐄🌑🐄🌒🐄🌓🐄🌔🐄🌕🐄🌖🐄🌗🐄🌘🐄"#.to_string();
+        let invalid_start = 1;
+        let invalid_end = "🐄".len() - 1;
+        assert!(!moon_phases.is_char_boundary(invalid_start));
+        assert!(!moon_phases.is_char_boundary(invalid_end));
+        assert_eq!("🐄".len(), 4);
+        let file = SimpleFile::new("moon_jump.rs", moon_phases);
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_code("E01")
+                .with_message("cow may not jump during new moon.")
+                .with_labels(vec![
+                    Label::primary((), invalid_start..invalid_end).with_message("Invalid jump")
+                ]),
+            Diagnostic::note()
+                .with_message("invalid unicode range")
+                .with_labels(vec![Label::secondary((), invalid_start.."🐄".len())
+                    .with_message("Cow range does not start at boundary.")]),
+            Diagnostic::note()
+                .with_message("invalid unicode range")
+                .with_labels(vec![Label::secondary((), "🐄🌑".len().."🐄🌑🐄".len() - 1)
+                    .with_message("Cow range does not end at boundary.")]),
+            Diagnostic::note()
+                .with_message("invalid unicode range")
+                .with_labels(vec![Label::secondary(
+                    (),
+                    invalid_start.."🐄🌑🐄".len() - 1,
+                )
+                .with_message("Cow does not start or end at boundary.")]),
+        ];
+        TestData {
+            files: file,
+            diagnostics,
+        }
+    });
 
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
@@ -942,20 +980,19 @@ mod unicode_spans {
 mod position_indicator {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_DATA: TestData<'static, SimpleFile<&'static str, String>> = {
-            let file = SimpleFile::new(
-                "tests/main.js",
-                [
-                    "\"use strict\";",
-                    "let zero=0;",
-                    "function foo() {",
-                    "  \"use strict\";",
-                    "  one=1;",
-                    "}",
-                ].join("\n"),
-            );
-            let diagnostics = vec![
+    static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, String>> = LazyLock::new(|| {
+        let file = SimpleFile::new(
+            "tests/main.js",
+            unindent::unindent(
+                "\"use strict\";
+                    let zero=0;
+                    function foo() {
+                      \"use strict\";
+                      one=1;
+                    }",
+            ),
+        );
+        let diagnostics = vec![
                 Diagnostic::warning()
                     .with_code("ParserWarning")
                     .with_message("The strict mode declaration in the body of function `foo` is redundant, as the outer scope is already in strict mode")
@@ -966,9 +1003,11 @@ mod position_indicator {
                             .with_message("Strict mode is first declared here"),
                     ]),
             ];
-            TestData{files: file, diagnostics }
-        };
-    }
+        TestData {
+            files: file,
+            diagnostics,
+        }
+    });
 
     test_emit!(rich_no_color);
     test_emit!(medium_no_color);
@@ -979,75 +1018,73 @@ mod position_indicator {
 mod multiline_omit {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_CONFIG: Config = Config {
-            styles: Styles::with_blue(Color::Blue),
-            start_context_lines: 2,
-            end_context_lines: 1,
-            ..Config::default()
-        };
+    static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
+        styles: Styles::with_blue(Color::Blue),
+        start_context_lines: 2,
+        end_context_lines: 1,
+        ..Config::default()
+    });
 
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-            let file_id1 = files.add(
-                "empty_if_comments.lua",
-                [
-                    "elseif 3 then", // primary label starts here
-                    "",              // context line
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",     // context line
-                    "else", // primary label ends here
-                ]
-                .join("\n"),
-            );
+        let file_id1 = files.add(
+            "empty_if_comments.lua",
+            [
+                "elseif 3 then", // primary label starts here
+                "",              // context line
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",     // context line
+                "else", // primary label ends here
+            ]
+            .join("\n"),
+        );
 
-            let file_id2 = files.add(
-                "src/lib.rs",
-                [
-                    "fn main() {",
-                    "    1",   // primary label starts here
-                    "    + 1", // context line
-                    "    + 1", // skip
-                    "    + 1", // skip
-                    "    + 1", // skip
-                    "    +1",  // secondary label here
-                    "    + 1", // this single line will not be skipped; the previously filtered out label must be retrieved
-                    "    + 1", // context line
-                    "    + 1", // primary label ends here
-                    "}",
-                ]
-                .join("\n"),
-            );
+        let file_id2 = files.add(
+            "src/lib.rs",
+            [
+                "fn main() {",
+                "    1",   // primary label starts here
+                "    + 1", // context line
+                "    + 1", // skip
+                "    + 1", // skip
+                "    + 1", // skip
+                "    +1",  // secondary label here
+                "    + 1", // this single line will not be skipped; the previously filtered out label must be retrieved
+                "    + 1", // context line
+                "    + 1", // primary label ends here
+                "}",
+            ]
+            .join("\n"),
+        );
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_message("empty elseif block")
-                    .with_code("empty_if")
-                    .with_labels(vec![
-                        Label::primary(file_id1, 0..23),
-                        Label::secondary(file_id1, 15..21).with_message("content should be in here"),
-                    ]),
-                Diagnostic::error()
-                    .with_message("mismatched types")
-                    .with_code("E0308")
-                    .with_labels(vec![
-                        Label::primary(file_id2, 17..80).with_message("expected (), found integer"),
-                        Label::secondary(file_id2, 55..55).with_message("missing whitespace"),
-                    ])
-                    .with_notes(vec![
-                        "note:\texpected type `()`\n\tfound type `{integer}`".to_owned()
-                    ]),
-            ];
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_message("empty elseif block")
+                .with_code("empty_if")
+                .with_labels(vec![
+                    Label::primary(file_id1, 0..23),
+                    Label::secondary(file_id1, 15..21).with_message("content should be in here"),
+                ]),
+            Diagnostic::error()
+                .with_message("mismatched types")
+                .with_code("E0308")
+                .with_labels(vec![
+                    Label::primary(file_id2, 17..80).with_message("expected (), found integer"),
+                    Label::secondary(file_id2, 55..55).with_message("missing whitespace"),
+                ])
+                .with_notes(vec![
+                    "note:\texpected type `()`\n\tfound type `{integer}`".to_owned()
+                ]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_no_color);
 }
@@ -1055,20 +1092,20 @@ mod multiline_omit {
 mod surrounding_lines {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_CONFIG: Config = Config {
-            styles: Styles::with_blue(Color::Blue),
-            before_label_lines: 2,
-            after_label_lines: 1,
-            ..Config::default()
-        };
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
+        styles: Styles::with_blue(Color::Blue),
+        before_label_lines: 2,
+        after_label_lines: 1,
+        ..Config::default()
+    });
 
-            let file_id = files.add(
-                "surroundingLines.fun",
-                unindent::unindent(
-                    r#"
+    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
+
+        let file_id = files.add(
+            "surroundingLines.fun",
+            unindent::unindent(
+                r#"
                     #[foo]
                     fn main() {
                         println!(
@@ -1078,31 +1115,32 @@ mod surrounding_lines {
                     }
 
                     struct Foo"#,
-                ),
-            );
+            ),
+        );
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_message("Unknown attribute macro")
-                    .with_labels(vec![
-                        Label::primary(file_id, 2..5).with_message("No attribute macro `foo` known"),
-                    ]),
-                Diagnostic::error()
-                    .with_message("Missing argument for format")
-                    .with_labels(vec![
-                        Label::primary(file_id, 55..58).with_message("No instance of std::fmt::Display exists for type Foo"),
-                        Label::secondary(file_id, 42..44).with_message("Unable to use `{}`-directive to display `Foo`"),
-                    ]),
-                Diagnostic::error()
-                    .with_message("Syntax error")
-                    .with_labels(vec![
-                        Label::primary(file_id, 79..79).with_message("Missing a semicolon"),
-                    ]),
-            ];
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_message("Unknown attribute macro")
+                .with_labels(vec![
+                    Label::primary(file_id, 2..5).with_message("No attribute macro `foo` known")
+                ]),
+            Diagnostic::error()
+                .with_message("Missing argument for format")
+                .with_labels(vec![
+                    Label::primary(file_id, 55..58)
+                        .with_message("No instance of std::fmt::Display exists for type Foo"),
+                    Label::secondary(file_id, 42..44)
+                        .with_message("Unable to use `{}`-directive to display `Foo`"),
+                ]),
+            Diagnostic::error()
+                .with_message("Syntax error")
+                .with_labels(vec![
+                    Label::primary(file_id, 79..79).with_message("Missing a semicolon")
+                ]),
+        ];
 
-            TestData { files, diagnostics }
-        };
-    }
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_no_color);
 }
