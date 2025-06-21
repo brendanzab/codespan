@@ -111,51 +111,51 @@ pub enum DisplayStyle {
 pub struct Styles {
     /// The style to use when rendering bug headers.
     /// Defaults to `fg:red bold intense`.
-    header_bug: ColorSpec,
+    pub header_bug: ColorSpec,
     /// The style to use when rendering error headers.
     /// Defaults to `fg:red bold intense`.
-    header_error: ColorSpec,
+    pub header_error: ColorSpec,
     /// The style to use when rendering warning headers.
     /// Defaults to `fg:yellow bold intense`.
-    header_warning: ColorSpec,
+    pub header_warning: ColorSpec,
     /// The style to use when rendering note headers.
     /// Defaults to `fg:green bold intense`.
-    header_note: ColorSpec,
+    pub header_note: ColorSpec,
     /// The style to use when rendering help headers.
     /// Defaults to `fg:cyan bold intense`.
-    header_help: ColorSpec,
+    pub header_help: ColorSpec,
     /// The style to use when the main diagnostic message.
     /// Defaults to `bold intense`.
     pub header_message: ColorSpec,
 
     /// The style to use when rendering bug labels.
     /// Defaults to `fg:red`.
-    primary_label_bug: ColorSpec,
+    pub primary_label_bug: ColorSpec,
     /// The style to use when rendering error labels.
     /// Defaults to `fg:red`.
-    primary_label_error: ColorSpec,
+    pub primary_label_error: ColorSpec,
     /// The style to use when rendering warning labels.
     /// Defaults to `fg:yellow`.
-    primary_label_warning: ColorSpec,
+    pub primary_label_warning: ColorSpec,
     /// The style to use when rendering note labels.
     /// Defaults to `fg:green`.
-    primary_label_note: ColorSpec,
+    pub primary_label_note: ColorSpec,
     /// The style to use when rendering help labels.
     /// Defaults to `fg:cyan`.
-    primary_label_help: ColorSpec,
+    pub primary_label_help: ColorSpec,
     /// The style to use when rendering secondary labels.
     /// Defaults `fg:blue` (or `fg:cyan` on windows).
-    secondary_label: ColorSpec,
+    pub secondary_label: ColorSpec,
 
     /// The style to use when rendering the line numbers.
     /// Defaults `fg:blue` (or `fg:cyan` on windows).
-    line_number: ColorSpec,
+    pub line_number: ColorSpec,
     /// The style to use when rendering the source code borders.
     /// Defaults `fg:blue` (or `fg:cyan` on windows).
-    source_border: ColorSpec,
+    pub source_border: ColorSpec,
     /// The style to use when rendering the note bullets.
     /// Defaults `fg:blue` (or `fg:cyan` on windows).
-    note_bullet: ColorSpec,
+    pub note_bullet: ColorSpec,
 }
 
 #[cfg(feature = "termcolor")]
