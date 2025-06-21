@@ -7,11 +7,7 @@ mod support;
 use self::support::TestData;
 
 lazy_static::lazy_static! {
-    static ref TEST_CONFIG: Config = Config {
-        // Always use blue so tests are consistent across platforms
-        styles: Styles::with_blue(Color::Blue),
-        ..Config::default()
-    };
+    static ref TEST_CONFIG: Config = Config::default();
 }
 
 macro_rules! test_emit {
@@ -981,7 +977,6 @@ mod multiline_omit {
 
     lazy_static::lazy_static! {
         static ref TEST_CONFIG: Config = Config {
-            styles: Styles::with_blue(Color::Blue),
             start_context_lines: 2,
             end_context_lines: 1,
             ..Config::default()
@@ -1057,7 +1052,6 @@ mod surrounding_lines {
 
     lazy_static::lazy_static! {
         static ref TEST_CONFIG: Config = Config {
-            styles: Styles::with_blue(Color::Blue),
             before_label_lines: 2,
             after_label_lines: 1,
             ..Config::default()

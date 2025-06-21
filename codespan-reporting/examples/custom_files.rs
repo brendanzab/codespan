@@ -10,8 +10,8 @@
 //! ```
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use codespan_reporting::term::{self};
 use core::ops::Range;
 
 fn main() -> anyhow::Result<()> {
@@ -32,8 +32,12 @@ fn main() -> anyhow::Result<()> {
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = term::Config::default();
     for message in &messages {
-        let writer = &mut writer.lock();
-        term::emit(writer, &config, &files, &message.to_diagnostic())?;
+        term::emit(
+            &mut writer.lock(),
+            &config,
+            &files,
+            &message.to_diagnostic(),
+        )?;
     }
 
     Ok(())
