@@ -13,6 +13,7 @@ type WriteResult = io::Result<()>;
 #[cfg(not(feature = "std"))]
 use core::fmt::{Arguments, Result as WriteResult, Write};
 
+/// A writer that can apply and reset styling for different parts of a diagnostic renderer.
 pub trait WriteStyle: Write {
     fn set_header(&mut self, severity: Severity) -> WriteResult;
 

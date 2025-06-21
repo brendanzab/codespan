@@ -311,6 +311,46 @@ impl<'a, W: WriteColor> WriteStyle for StylesWriter<'a, W> {
     }
 }
 
+#[cfg(feature = "termcolor")]
+lazy_static::lazy_static! {
+    static ref GLOBAL_STYLES: Styles = Styles::default();
+}
+
+#[cfg(feature = "termcolor")]
+impl<T> WriteStyle for T
+where
+    T: WriteColor,
+{
+    fn set_header(&mut self, severity: Severity) -> io::Result<()> {
+        self.set_color(GLOBAL_STYLES.header(severity))
+    }
+
+    fn set_header_message(&mut self) -> io::Result<()> {
+        self.set_color(&GLOBAL_STYLES.header_message)
+    }
+
+    fn set_line_number(&mut self) -> io::Result<()> {
+        self.set_color(&GLOBAL_STYLES.line_number)
+    }
+
+    fn set_note_bullet(&mut self) -> io::Result<()> {
+        self.set_color(&GLOBAL_STYLES.note_bullet)
+    }
+
+    fn set_source_border(&mut self) -> io::Result<()> {
+        self.set_color(&GLOBAL_STYLES.source_border)
+    }
+
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> io::Result<()> {
+        let spec = GLOBAL_STYLES.label(severity, label_style);
+        self.set_color(spec)
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
+        self.reset()
+    }
+}
+
 /// Characters to use when rendering the diagnostic.
 ///
 /// By using [`Chars::ascii()`] you can switch to an ASCII-only format suitable
