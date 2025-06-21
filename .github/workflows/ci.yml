@@ -11,7 +11,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
@@ -86,7 +86,7 @@ jobs:
           args: --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
@@ -125,7 +125,7 @@ jobs:
           args: --manifest-path "codespan-lsp/Cargo.toml"
 
   fmt:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: ["1.67.0", "stable", "beta", "nightly"]
@@ -147,7 +147,7 @@ jobs:
           args: --all -- --check
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: ["stable"]
