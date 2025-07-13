@@ -681,16 +681,14 @@ mod multiline_overlapping {
     static TEST_DATA: LazyTestData<'static, SimpleFile<&'static str, String>> = LazyLock::new(|| {
         let file = SimpleFile::new(
             "codespan/src/file.rs",
-            unindent::unindent("
-                match line_index.compare(self.last_line_index()) {
-                    Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
-                    Ordering::Equal => Ok(self.source_span().end()),
-                    Ordering::Greater => LineIndexOutOfBoundsError {
-                        given: line_index,
-                        max: self.last_line_index(),
-                    },
-                }",
-            ),
+"        match line_index.compare(self.last_line_index()) {
+            Ordering::Less => Ok(self.line_starts()[line_index.to_usize()]),
+            Ordering::Equal => Ok(self.source_span().end()),
+            Ordering::Greater => LineIndexOutOfBoundsError {
+                given: line_index,
+                max: self.last_line_index(),
+            },
+        }".to_owned(),
         );
 
         let diagnostics = vec![Diagnostic::error()
@@ -742,8 +740,8 @@ mod tabbed {
             unindent::unindent("
                 Entity:
                 \tArmament:
-                \tWeapon: DogJaw
-                \tReloadingCondition:\tattack-cooldown
+                \t\tWeapon: DogJaw
+                \t\tReloadingCondition:\tattack-cooldown
                 \tFoo: Bar",
             ),
         );
