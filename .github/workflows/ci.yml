@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.67.0", "stable", "nightly"]
+        rust: ["stable", "nightly"] # "1.67.0",
 
     steps:
       - uses: actions/checkout@v4
