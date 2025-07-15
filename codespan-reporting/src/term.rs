@@ -28,8 +28,8 @@ pub use self::views::{RichDiagnostic, ShortDiagnostic};
 /// * a file was removed from the file database.
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
-pub fn emit<'files, F: Files<'files> + ?Sized>(
-    writer: &mut dyn WriteStyle,
+pub fn emit<'files, F: Files<'files> + ?Sized, W: WriteStyle>(
+    writer: &mut W,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
