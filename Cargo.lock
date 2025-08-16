@@ -286,6 +286,7 @@ name = "libredox"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1580801010e535496706ba011c15f8532df6b42297d2e471fec38ceadd8c0638"
+
 dependencies = [
  "bitflags 2.9.1",
  "libc",
