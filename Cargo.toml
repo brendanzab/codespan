@@ -1,5 +1,9 @@
 [workspace]
-members = ["./codespan", "./codespan-reporting", "./codespan-lsp"]
+members = [
+	"./codespan",
+	"./codespan-reporting",
+	"./codespan-lsp"
+]
 resolver = "2"
 
 [workspace.lints.clippy]
