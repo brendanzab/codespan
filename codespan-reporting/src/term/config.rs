@@ -12,8 +12,6 @@ use {
     termcolor::{Color, ColorSpec},
 };
 
-use std::sync::LazyLock;
-
 #[cfg(not(feature = "std"))]
 use core::fmt::{Arguments, Result as WriteResult, Write};
 
@@ -231,13 +229,7 @@ impl Styles {
 #[cfg(feature = "termcolor")]
 impl Default for Styles {
     fn default() -> Styles {
-        // Blue is really difficult to see on the standard windows command line
-        #[cfg(windows)]
-        const BLUE: Color = Color::Cyan;
-        #[cfg(not(windows))]
-        const BLUE: Color = Color::Blue;
-
-        Self::with_blue(BLUE)
+        Self::with_blue(Color::Cyan)
     }
 }
 
@@ -315,35 +307,33 @@ impl<'a, W: WriteColor> WriteStyle for StylesWriter<'a, W> {
 }
 
 #[cfg(feature = "termcolor")]
-static GLOBAL_STYLES: LazyLock<Styles> = LazyLock::new(Styles::default);
-
-#[cfg(feature = "termcolor")]
 impl<T> WriteStyle for T
 where
     T: WriteColor,
 {
     fn set_header(&mut self, severity: Severity) -> io::Result<()> {
-        self.set_color(GLOBAL_STYLES.header(severity))
+        self.set_color(Styles::default().header(severity))
     }
 
     fn set_header_message(&mut self) -> io::Result<()> {
-        self.set_color(&GLOBAL_STYLES.header_message)
+        self.set_color(&Styles::default().header_message)
     }
 
     fn set_line_number(&mut self) -> io::Result<()> {
-        self.set_color(&GLOBAL_STYLES.line_number)
+        self.set_color(&Styles::default().line_number)
     }
 
     fn set_note_bullet(&mut self) -> io::Result<()> {
-        self.set_color(&GLOBAL_STYLES.note_bullet)
+        self.set_color(&Styles::default().note_bullet)
     }
 
     fn set_source_border(&mut self) -> io::Result<()> {
-        self.set_color(&GLOBAL_STYLES.source_border)
+        self.set_color(&Styles::default().source_border)
     }
 
     fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> io::Result<()> {
-        let spec = GLOBAL_STYLES.label(severity, label_style);
+        let styles = Styles::default();
+        let spec = styles.label(severity, label_style);
         self.set_color(spec)
     }
 
