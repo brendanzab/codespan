@@ -1108,13 +1108,14 @@ mod surrounding_lines {
         ..Config::default()
     });
 
-    static TEST_DATA: LazyLock<TestData<'static, SimpleFiles<&'static str, String>>> = LazyLock::new(|| {
-        let mut files = SimpleFiles::new();
+    static TEST_DATA: LazyLock<TestData<'static, SimpleFiles<&'static str, String>>> =
+        LazyLock::new(|| {
+            let mut files = SimpleFiles::new();
 
-        let file_id = files.add(
-            "surroundingLines.fun",
-            unindent::unindent(
-                r#"
+            let file_id = files.add(
+                "surroundingLines.fun",
+                unindent::unindent(
+                    r#"
                 #[foo]
                 fn main() {
                     println!(
@@ -1124,31 +1125,31 @@ mod surrounding_lines {
                 }
 
                 struct Foo"#,
-            ),
-        );
+                ),
+            );
 
-        let diagnostics = vec![
-            Diagnostic::error()
-                .with_message("Unknown attribute macro")
-                .with_labels(vec![Label::primary(file_id, 2..5)
-                    .with_message("No attribute macro `foo` known")]),
-            Diagnostic::error()
-                .with_message("Missing argument for format")
-                .with_labels(vec![
-                    Label::primary(file_id, 55..58)
-                        .with_message("No instance of std::fmt::Display exists for type Foo"),
-                    Label::secondary(file_id, 42..44)
-                        .with_message("Unable to use `{}`-directive to display `Foo`"),
-                ]),
-            Diagnostic::error()
-                .with_message("Syntax error")
-                .with_labels(vec![
-                    Label::primary(file_id, 79..79).with_message("Missing a semicolon")
-                ]),
-        ];
+            let diagnostics = vec![
+                Diagnostic::error()
+                    .with_message("Unknown attribute macro")
+                    .with_labels(vec![Label::primary(file_id, 2..5)
+                        .with_message("No attribute macro `foo` known")]),
+                Diagnostic::error()
+                    .with_message("Missing argument for format")
+                    .with_labels(vec![
+                        Label::primary(file_id, 55..58)
+                            .with_message("No instance of std::fmt::Display exists for type Foo"),
+                        Label::secondary(file_id, 42..44)
+                            .with_message("Unable to use `{}`-directive to display `Foo`"),
+                    ]),
+                Diagnostic::error()
+                    .with_message("Syntax error")
+                    .with_labels(vec![
+                        Label::primary(file_id, 79..79).with_message("Missing a semicolon")
+                    ]),
+            ];
 
-        TestData { files, diagnostics }
-    });
+            TestData { files, diagnostics }
+        });
 
     test_emit!(rich_no_color);
 }
