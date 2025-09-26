@@ -21,7 +21,9 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write 
+      id-token: write
+      # For `git push`ing the updated `Cargo.toml`
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
