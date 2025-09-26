@@ -19,28 +19,29 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      # For `git push`ing the updated `Cargo.toml`
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
-      - name: Set git credentials
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
 
       - name: Crates publish
-        uses: kaleidawave/crates-release-gh-action@main
+        uses: kaleidawave/crates-release-gh-action@improvements
         id: release
         with:
-          version: |
-            {
-              "codespan": "${{ github.event.inputs.version }}", 
-              "codespan-reporting": "${{ github.event.inputs.lsp-version }}",
-              "codespan-lsp": "${{ github.event.inputs.reporting-version }}"
-            }
-          crates-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          version: codespan=${{ github.event.inputs.version }},codespan-reporting=${{ github.event.inputs.lsp-version }},codespan-lsp=${{ github.event.inputs.reporting-version }}
+          crates-token: ${{ steps.auth.outputs.token }}
 
       - name: Push updated Cargo.toml
         run: |
-          git add .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u
           git commit -m "Release: ${{ steps.release.outputs.new-versions-description }}"
           echo '${{ steps.release.outputs.new-versions }}' | jq -r '.[]' | while read -r update; do
             git tag "release/$update"

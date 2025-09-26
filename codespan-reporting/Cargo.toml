@@ -16,13 +16,11 @@ rust-version = "1.67"
 serde = { version = "1", default-features = false, optional = true, features = ["derive", "alloc"] }
 termcolor = { version = "1.0.4", optional = true }
 unicode-width = ">=0.1,<0.3"
-lazy_static = "1.4"
 
 [dev-dependencies]
 pico-args = "0.5.0"
 anyhow = "1"
 insta = "1.6.3"
-lazy_static = "1.4"
 peg = "0.7"
 rustyline = "6"
 unindent = "0.1"

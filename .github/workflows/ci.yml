@@ -1,169 +1,143 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - master
-
-  pull_request:
-    branches:
-      - master
+  push: { 'branches': [master] }
+  pull_request: { 'branches': ["*"] }
 
 jobs:
   check:
-    runs-on: ubuntu-20.04
+    name: Check ${{ matrix.rust }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.67.0", "stable", "beta", "nightly"]
-    name: Check (${{ matrix.rust }})
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install minimal ${{ matrix.rust }}
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      # Check each crate individually to work around rust-lang/cargo#4942
-      - name: Run cargo check for codespan-reporting
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
-      - name: Run cargo check for codespan
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - name: Run cargo check for codespan-lsp
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan-lsp/Cargo.toml"
-      - name: Switch to minimal lsp-types version for codespan-lsp
-        uses: actions-rs/cargo@v1
-        with:
-          command: update
-          # NOTE: Keep up to date with the minimum version of `lsp-types`
-          # specified in `codespan-lsp/Cargo.toml`
-          args: --precise 0.84.0 -p lsp-types
-      - name: Run cargo test for codespan-lsp
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan-lsp/Cargo.toml"
+        rust: ["stable", "nightly"] # "1.67.0",
 
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      # TODO features here
+
+      - name: Run cargo check for codespan
+        run: cargo check --manifest-path "codespan/Cargo.toml" --features "serialization"
+
+      - name: Run cargo check for codespan-reporting
+        run: cargo check --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
+      
+      - name: Run cargo check for codespan-lsp
+        run: cargo check --manifest-path "codespan-lsp/Cargo.toml"
+      
   check-no-std:
-    name: Check
+    needs: check
+
+    name: Check no_std ${{ matrix.rust }} / ${{ matrix.target }}
+
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
-        rust: 
-          - "1.84.0"
-          - "stable"
-          - "beta"
-          - "nightly"
-        target:
-          - "x86_64-unknown-none"
-          - "wasm32v1-none"
-          - "thumbv6m-none-eabi"
+        rust: ["stable", "nightly"]
+        target: ["x86_64-unknown-none", "wasm32v1-none", "thumbv6m-none-eabi"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: '${{ matrix.rust }}', targets: '${{ matrix.target }}' }
+      
+      - name: Run cargo check for codespan-reporting
+        run: cargo check --manifest-path "codespan-reporting/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+      
+      - name: Run cargo check for codespan
+        run: cargo check --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+
+  test:
+    needs: check
+
+    name: Test Suite (${{ matrix.rust }})
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["stable", "nightly"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: '${{ matrix.rust }}' }
+          
+      # Test each crate individually to work around rust-lang/cargo#4942
+      - name: Run cargo test for codespan
+        run: cargo test -p codespan --features "serialization"
+
+      - name: Run cargo test for codespan-reporting
+        run: cargo test -p codespan-reporting --features "serialization"
+
+      - name: Run cargo test for codespan-lsp
+        run: cargo test -p codespan-lsp
+
+  fmt:
+    name: rustfmt
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["stable"]
+
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ matrix.rust }}
-          targets: ${{ matrix.target }}
-      - name: Run cargo check for codespan-reporting
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan-reporting/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
-      - name: Run cargo check for codespan
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
+        with: { toolchain: '${{ matrix.rust }}', components: 'rustfmt' }
 
-  test:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        rust: ["1.67.0", "stable", "beta", "nightly"]
-      fail-fast: false
-    name: Test Suite (${{ matrix.rust }})
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install minimal ${{ matrix.rust }}
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      # Test each crate individually to work around rust-lang/cargo#4942
-      - name: Run cargo test for codespan-reporting
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
-      - name: Run cargo test for codespan
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path "codespan/Cargo.toml" --features "serialization"
-      - name: Switch to minimal lsp-types version for codespan-lsp
-        uses: actions-rs/cargo@v1
-        with:
-          command: update
-          # NOTE: Keep up to date with the minimum version of `lsp-types`
-          # specified in `codespan-lsp/Cargo.toml`
-          args: --precise 0.84.0 lsp-types
-      - name: Run cargo test for codespan-lsp
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path "codespan-lsp/Cargo.toml"
-
-  fmt:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        rust: ["1.67.0", "stable", "beta", "nightly"]
-      fail-fast: false
-    name: Rustfmt (${{ matrix.rust }})
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install minimal ${{ matrix.rust }} with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt
       - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
+
+      - uses: kaleidawave/release-downloader@improvements
+        with: { items: 'kaleidawave/simple-toml-parser@canary[format]' }
+
+      - name: Check 'Cargo.toml' formatting
+        run: format cargo --check
 
   lint:
-    runs-on: ubuntu-20.04
+    needs: check
+
+    name: clippy (${{ matrix.rust }})
+
+    runs-on: ubuntu-latest
+
     strategy:
+      fail-fast: false
       matrix:
         rust: ["stable"]
-      fail-fast: false
-    name: Rustfmt (${{ matrix.rust }})
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Install minimal ${{ matrix.rust }} with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: '${{ matrix.rust }}', components: 'clippy' }
+
       - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all
+        run: cargo clippy --all
+
+  publish-ability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with: { filters: "{ 'manifests': ['**/*.toml'] }" }
+
+      - uses: kaleidawave/release-downloader@improvements
+        if: steps.changes.outputs.manifests == 'true'
+        with: { items: 'kaleidawave/crates-release-gh-action@assets[crates-release]' }
+          
+      - name: Check that it will publish to crates.io
+        if: steps.changes.outputs.manifests == 'true'
+        run: crates-release verify
