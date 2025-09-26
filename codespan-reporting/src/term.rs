@@ -14,6 +14,7 @@ pub use self::config::{Chars, Config, DisplayStyle};
 
 #[cfg(feature = "termcolor")]
 pub use self::config::Styles;
+
 #[cfg(feature = "termcolor")]
 pub use config::StylesWriter;
 

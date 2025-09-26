@@ -1,17 +1,13 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::{SimpleFile, SimpleFiles};
-use codespan_reporting::term::{termcolor::Color, Chars, Config, DisplayStyle, Styles};
+use codespan_reporting::term::{Chars, Config, DisplayStyle};
 use std::sync::LazyLock;
 
 mod support;
 
 use self::support::TestData;
 
-static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
-    // Always use blue so tests are consistent across platforms
-    styles: Styles::with_blue(Color::Blue),
-    ..Config::default()
-});
+static TEST_CONFIG: LazyLock<Config> = LazyLock::new(Config::default);
 
 type LazyTestData<'a, T> = LazyLock<TestData<'a, T>>;
 
@@ -1031,12 +1027,11 @@ mod position_indicator {
 mod multiline_omit {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_CONFIG: Config = Config {
-            start_context_lines: 2,
-            end_context_lines: 1,
-            ..Config::default()
-        };
+    static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
+        start_context_lines: 2,
+        end_context_lines: 1,
+        ..Config::default()
+    });
 
     static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> =
         LazyLock::new(|| {
@@ -1107,53 +1102,53 @@ mod multiline_omit {
 mod surrounding_lines {
     use super::*;
 
-    lazy_static::lazy_static! {
-        static ref TEST_CONFIG: Config = Config {
-            before_label_lines: 2,
-            after_label_lines: 1,
-            ..Config::default()
-        };
-        static ref TEST_DATA: TestData<'static, SimpleFiles<&'static str, String>> = {
-            let mut files = SimpleFiles::new();
+    static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
+        start_context_lines: 2,
+        end_context_lines: 1,
+        ..Config::default()
+    });
 
-            let file_id = files.add(
-                "surroundingLines.fun",
-                unindent::unindent(
-                    r#"
-                    #[foo]
-                    fn main() {
-                        println!(
-                            "{}",
-                            Foo
-                        );
-                    }
+    static TEST_DATA: LazyLock<TestData<'static, SimpleFiles<&'static str, String>>> = LazyLock::new(|| {
+        let mut files = SimpleFiles::new();
 
-                    struct Foo"#,
-                ),
-            );
+        let file_id = files.add(
+            "surroundingLines.fun",
+            unindent::unindent(
+                r#"
+                #[foo]
+                fn main() {
+                    println!(
+                        "{}",
+                        Foo
+                    );
+                }
 
-            let diagnostics = vec![
-                Diagnostic::error()
-                    .with_message("Unknown attribute macro")
-                    .with_labels(vec![Label::primary(file_id, 2..5)
-                        .with_message("No attribute macro `foo` known")]),
-                Diagnostic::error()
-                    .with_message("Missing argument for format")
-                    .with_labels(vec![
-                        Label::primary(file_id, 55..58)
-                            .with_message("No instance of std::fmt::Display exists for type Foo"),
-                        Label::secondary(file_id, 42..44)
-                            .with_message("Unable to use `{}`-directive to display `Foo`"),
-                    ]),
-                Diagnostic::error()
-                    .with_message("Syntax error")
-                    .with_labels(vec![
-                        Label::primary(file_id, 79..79).with_message("Missing a semicolon")
-                    ]),
-            ];
+                struct Foo"#,
+            ),
+        );
 
-            TestData { files, diagnostics }
-        });
+        let diagnostics = vec![
+            Diagnostic::error()
+                .with_message("Unknown attribute macro")
+                .with_labels(vec![Label::primary(file_id, 2..5)
+                    .with_message("No attribute macro `foo` known")]),
+            Diagnostic::error()
+                .with_message("Missing argument for format")
+                .with_labels(vec![
+                    Label::primary(file_id, 55..58)
+                        .with_message("No instance of std::fmt::Display exists for type Foo"),
+                    Label::secondary(file_id, 42..44)
+                        .with_message("Unable to use `{}`-directive to display `Foo`"),
+                ]),
+            Diagnostic::error()
+                .with_message("Syntax error")
+                .with_labels(vec![
+                    Label::primary(file_id, 79..79).with_message("Missing a semicolon")
+                ]),
+        ];
+
+        TestData { files, diagnostics }
+    });
 
     test_emit!(rich_no_color);
 }

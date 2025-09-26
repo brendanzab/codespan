@@ -12,8 +12,11 @@ use {
     termcolor::{Color, ColorSpec},
 };
 
+use std::sync::LazyLock;
+
 #[cfg(not(feature = "std"))]
 use core::fmt::{Arguments, Result as WriteResult, Write};
+
 #[cfg(feature = "std")]
 use std::io;
 
@@ -312,9 +315,7 @@ impl<'a, W: WriteColor> WriteStyle for StylesWriter<'a, W> {
 }
 
 #[cfg(feature = "termcolor")]
-lazy_static::lazy_static! {
-    static ref GLOBAL_STYLES: Styles = Styles::default();
-}
+static GLOBAL_STYLES: LazyLock<Styles> = LazyLock::new(Styles::default);
 
 #[cfg(feature = "termcolor")]
 impl<T> WriteStyle for T
