@@ -1,17 +1,13 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::{SimpleFile, SimpleFiles};
-use codespan_reporting::term::{termcolor::Color, Chars, Config, DisplayStyle, Styles};
+use codespan_reporting::term::{Chars, Config, DisplayStyle};
 use std::sync::LazyLock;
 
 mod support;
 
 use self::support::TestData;
 
-static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
-    // Always use blue so tests are consistent across platforms
-    styles: Styles::with_blue(Color::Blue),
-    ..Config::default()
-});
+static TEST_CONFIG: LazyLock<Config> = LazyLock::new(Config::default);
 
 type LazyTestData<'a, T> = LazyLock<TestData<'a, T>>;
 
@@ -1032,7 +1028,6 @@ mod multiline_omit {
     use super::*;
 
     static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
-        styles: Styles::with_blue(Color::Blue),
         start_context_lines: 2,
         end_context_lines: 1,
         ..Config::default()
@@ -1108,13 +1103,12 @@ mod surrounding_lines {
     use super::*;
 
     static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
-        styles: Styles::with_blue(Color::Blue),
-        before_label_lines: 2,
-        after_label_lines: 1,
+        start_context_lines: 2,
+        end_context_lines: 1,
         ..Config::default()
     });
 
-    static TEST_DATA: LazyTestData<'static, SimpleFiles<&'static str, String>> =
+    static TEST_DATA: LazyLock<TestData<'static, SimpleFiles<&'static str, String>>> =
         LazyLock::new(|| {
             let mut files = SimpleFiles::new();
 
@@ -1122,15 +1116,15 @@ mod surrounding_lines {
                 "surroundingLines.fun",
                 unindent::unindent(
                     r#"
-                    #[foo]
-                    fn main() {
-                        println!(
-                            "{}",
-                            Foo
-                        );
-                    }
+                #[foo]
+                fn main() {
+                    println!(
+                        "{}",
+                        Foo
+                    );
+                }
 
-                    struct Foo"#,
+                struct Foo"#,
                 ),
             );
 

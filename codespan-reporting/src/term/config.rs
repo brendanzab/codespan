@@ -1,10 +1,22 @@
 use alloc::string::String;
 
 #[cfg(feature = "termcolor")]
+use termcolor::WriteColor;
+
+#[cfg(feature = "termcolor")]
+use super::renderer::WriteStyle;
+
+#[cfg(feature = "termcolor")]
 use {
     crate::diagnostic::{LabelStyle, Severity},
     termcolor::{Color, ColorSpec},
 };
+
+#[cfg(not(feature = "std"))]
+use core::fmt::{Arguments, Result as WriteResult, Write};
+
+#[cfg(feature = "std")]
+use std::io;
 
 /// Configures how a diagnostic is rendered.
 #[derive(Clone, Debug)]
@@ -17,9 +29,7 @@ pub struct Config {
     /// Column width of tabs.
     /// Defaults to: `4`.
     pub tab_width: usize,
-    /// Styles to use when rendering the diagnostic.
-    #[cfg(feature = "termcolor")]
-    pub styles: Styles,
+
     /// Characters to use when rendering the diagnostic.
     pub chars: Chars,
     /// The minimum number of lines to be shown after the line on which a multiline [`Label`] begins.
@@ -49,8 +59,6 @@ impl Default for Config {
         Config {
             display_style: DisplayStyle::Rich,
             tab_width: 4,
-            #[cfg(feature = "termcolor")]
-            styles: Styles::default(),
             chars: Chars::default(),
             start_context_lines: 3,
             end_context_lines: 1,
@@ -164,6 +172,22 @@ impl Styles {
         }
     }
 
+    pub fn header_message(&self) -> &ColorSpec {
+        &self.header_message
+    }
+
+    pub fn line_number(&self) -> &ColorSpec {
+        &self.line_number
+    }
+
+    pub fn note_bullet(&self) -> &ColorSpec {
+        &self.note_bullet
+    }
+
+    pub fn source_border(&self) -> &ColorSpec {
+        &self.source_border
+    }
+
     /// The style used to mark a primary or secondary label at a given severity.
     pub fn label(&self, severity: Severity, label_style: LabelStyle) -> &ColorSpec {
         match (label_style, severity) {
@@ -205,13 +229,116 @@ impl Styles {
 #[cfg(feature = "termcolor")]
 impl Default for Styles {
     fn default() -> Styles {
-        // Blue is really difficult to see on the standard windows command line
-        #[cfg(windows)]
-        const BLUE: Color = Color::Cyan;
-        #[cfg(not(windows))]
-        const BLUE: Color = Color::Blue;
+        Self::with_blue(Color::Cyan)
+    }
+}
 
-        Self::with_blue(BLUE)
+#[cfg(feature = "termcolor")]
+pub struct StylesWriter<'a, W> {
+    writer: W,
+    style: &'a Styles,
+}
+
+#[cfg(feature = "termcolor")]
+impl<'a, W> StylesWriter<'a, W> {
+    pub fn new(writer: W, style: &'a Styles) -> Self {
+        Self { writer, style }
+    }
+}
+
+#[cfg(feature = "termcolor")]
+#[cfg(feature = "std")]
+impl<'a, W: WriteColor> io::Write for StylesWriter<'a, W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.writer.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
+    }
+}
+
+#[cfg(feature = "termcolor")]
+#[cfg(not(feature = "std"))]
+impl Write for StylesWriter<'_, '_> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.writer.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.writer.write_char(c)
+    }
+
+    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+        self.writer.write_fmt(args)
+    }
+}
+
+#[cfg(feature = "termcolor")]
+impl<'a, W: WriteColor> WriteStyle for StylesWriter<'a, W> {
+    fn set_header(&mut self, severity: Severity) -> io::Result<()> {
+        self.writer.set_color(self.style.header(severity))
+    }
+
+    fn set_header_message(&mut self) -> io::Result<()> {
+        self.writer.set_color(&self.style.header_message)
+    }
+
+    fn set_line_number(&mut self) -> io::Result<()> {
+        self.writer.set_color(&self.style.line_number)
+    }
+
+    fn set_note_bullet(&mut self) -> io::Result<()> {
+        self.writer.set_color(&self.style.note_bullet)
+    }
+
+    fn set_source_border(&mut self) -> io::Result<()> {
+        self.writer.set_color(&self.style.source_border)
+    }
+
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> io::Result<()> {
+        let spec = self.style.label(severity, label_style);
+        self.writer.set_color(spec)
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
+        self.writer.reset()
+    }
+}
+
+#[cfg(feature = "termcolor")]
+impl<T> WriteStyle for T
+where
+    T: WriteColor,
+{
+    fn set_header(&mut self, severity: Severity) -> io::Result<()> {
+        self.set_color(Styles::default().header(severity))
+    }
+
+    fn set_header_message(&mut self) -> io::Result<()> {
+        self.set_color(&Styles::default().header_message)
+    }
+
+    fn set_line_number(&mut self) -> io::Result<()> {
+        self.set_color(&Styles::default().line_number)
+    }
+
+    fn set_note_bullet(&mut self) -> io::Result<()> {
+        self.set_color(&Styles::default().note_bullet)
+    }
+
+    fn set_source_border(&mut self) -> io::Result<()> {
+        self.set_color(&Styles::default().source_border)
+    }
+
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> io::Result<()> {
+        let styles = Styles::default();
+        let spec = styles.label(severity, label_style);
+        self.set_color(spec)
+    }
+
+    fn reset(&mut self) -> io::Result<()> {
+        self.reset()
     }
 }
 

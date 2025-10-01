@@ -1,8 +1,5 @@
 //! Terminal back-end for emitting diagnostics.
 
-#[cfg(feature = "termcolor")]
-use termcolor::WriteColor;
-
 use crate::diagnostic::Diagnostic;
 use crate::files::Files;
 
@@ -18,23 +15,26 @@ pub use self::config::{Chars, Config, DisplayStyle};
 #[cfg(feature = "termcolor")]
 pub use self::config::Styles;
 
+#[cfg(feature = "termcolor")]
+pub use config::StylesWriter;
+
+pub use self::renderer::WriteStyle;
+
+pub use self::renderer::{Renderer, Writer};
+pub use self::views::{RichDiagnostic, ShortDiagnostic};
+
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
 /// The return value covers all error cases. These error case can arise if:
 /// * a file was removed from the file database.
 /// * a file was changed so that it is too small to have an index
 /// * IO fails
-pub fn emit<'files, F: Files<'files> + ?Sized>(
-    #[cfg(feature = "termcolor")] writer: &mut dyn WriteColor,
-    #[cfg(all(not(feature = "termcolor"), feature = "std"))] writer: &mut dyn std::io::Write,
-    #[cfg(all(not(feature = "termcolor"), not(feature = "std")))] writer: &mut dyn core::fmt::Write,
+pub fn emit<'files, F: Files<'files> + ?Sized, W: WriteStyle>(
+    writer: &mut W,
     config: &Config,
     files: &'files F,
     diagnostic: &Diagnostic<F::FileId>,
 ) -> Result<(), super::files::Error> {
-    use self::renderer::Renderer;
-    use self::views::{RichDiagnostic, ShortDiagnostic};
-
     let mut renderer = Renderer::new(writer, config);
     match config.display_style {
         DisplayStyle::Rich => RichDiagnostic::new(diagnostic, config).render(files, &mut renderer),
