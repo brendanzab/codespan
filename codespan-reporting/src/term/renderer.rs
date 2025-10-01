@@ -30,6 +30,66 @@ pub trait WriteStyle: Write {
     fn reset(&mut self) -> WriteResult;
 }
 
+pub struct Writer<W: Write> {
+    w: W,
+}
+
+#[cfg(not(feature = "std"))]
+impl<W: Write> Write for Writer<W> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.w.write_str(s)
+    }
+
+    fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.w.write_char(c)
+    }
+
+    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+        self.w.write_fmt(args)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<W: Write> Write for Writer<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.w.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.w.flush()
+    }
+}
+
+impl<W: Write> WriteStyle for Writer<W> {
+    fn set_header(&mut self, _severity: Severity) -> WriteResult {
+        Ok(())
+    }
+
+    fn set_header_message(&mut self) -> WriteResult {
+        Ok(())
+    }
+
+    fn set_line_number(&mut self) -> WriteResult {
+        Ok(())
+    }
+
+    fn set_note_bullet(&mut self) -> WriteResult {
+        Ok(())
+    }
+
+    fn set_source_border(&mut self) -> WriteResult {
+        Ok(())
+    }
+
+    fn set_label(&mut self, _severity: Severity, _label_style: LabelStyle) -> WriteResult {
+        Ok(())
+    }
+
+    fn reset(&mut self) -> WriteResult {
+        Ok(())
+    }
+}
+
 /// The 'location focus' of a source code snippet.
 pub struct Locus {
     /// The user-facing name of the file.

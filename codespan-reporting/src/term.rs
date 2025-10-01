@@ -20,7 +20,7 @@ pub use config::StylesWriter;
 
 pub use self::renderer::WriteStyle;
 
-pub use self::renderer::Renderer;
+pub use self::renderer::{Renderer, Writer};
 pub use self::views::{RichDiagnostic, ShortDiagnostic};
 
 /// Emit a diagnostic using the given writer, context, config, and files.
