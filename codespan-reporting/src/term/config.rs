@@ -234,6 +234,9 @@ impl Default for Styles {
 }
 
 #[cfg(feature = "termcolor")]
+/// A [`WriteStyle`](crate::term::renderer::WriteStyle) implementation that applies custom [`Styles`].
+///
+/// Use this to render diagnostics with custom colors and formatting.
 pub struct StylesWriter<'a, W> {
     writer: W,
     style: &'a Styles,
@@ -241,6 +244,7 @@ pub struct StylesWriter<'a, W> {
 
 #[cfg(feature = "termcolor")]
 impl<'a, W> StylesWriter<'a, W> {
+    /// Creates a new `StylesWriter` with the given writer and styles.
     pub fn new(writer: W, style: &'a Styles) -> Self {
         Self { writer, style }
     }

@@ -13,7 +13,13 @@ type WriteResult = io::Result<()>;
 #[cfg(not(feature = "std"))]
 use core::fmt::{Arguments, Result as WriteResult, Write};
 
-/// A writer that can apply and reset styling for different parts of a diagnostic renderer.
+/// A writer that can apply styling for different parts of a diagnostic renderer.
+///
+/// # Implementations
+///
+/// - [`Writer<W>`](Writer) - no-op styling, plain text output
+/// - [`StylesWriter<W>`](crate::term::StylesWriter) - custom styles (requires `termcolor` feature)
+/// - `T: WriteColor` - blanket impl using default styles (requires `termcolor` feature)
 pub trait WriteStyle: Write {
     fn set_header(&mut self, severity: Severity) -> WriteResult;
 
@@ -30,8 +36,15 @@ pub trait WriteStyle: Write {
     fn reset(&mut self) -> WriteResult;
 }
 
+/// A [`WriteStyle`] implementation that ignores all styling calls. useful for non color output.
 pub struct Writer<W: Write> {
     w: W,
+}
+
+impl<W: Write> Writer<W> {
+    pub fn new(writer: W) -> Self {
+        Self { w: writer }
+    }
 }
 
 #[cfg(not(feature = "std"))]
