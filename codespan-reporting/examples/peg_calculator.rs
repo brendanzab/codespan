@@ -64,9 +64,7 @@ fn main() -> anyhow::Result<()> {
                 let start = error.location.offset;
                 let diagnostic = Diagnostic::error()
                     .with_message("parse error")
-                    .with_labels(vec![
-                        Label::primary((), start..start).with_message("parse error")
-                    ])
+                    .with_label(Label::primary((), start..start).with_message("parse error"))
                     .with_notes(vec![format!("expected: {}", error.expected)]);
 
                 term::emit_to_write_style(&mut writer.lock(), &config, &file, &diagnostic)?;

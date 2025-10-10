@@ -137,7 +137,7 @@ mod tests {
 
         let id = files.add("test", "");
         let zero_range = 0..0;
-        let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, zero_range)]);
+        let diagnostic = Diagnostic::bug().with_label(Label::primary(id, zero_range));
         emit_into_string(&Config::default(), &files, &diagnostic).unwrap();
     }
 }
