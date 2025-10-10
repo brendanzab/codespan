@@ -95,6 +95,9 @@ pub mod styles {
     use crate::diagnostic::{LabelStyle, Severity};
     use termcolor::{Color, ColorSpec, WriteColor};
 
+    // re-export
+    pub use termcolor;
+
     /// Styles to use when rendering the diagnostic.
     #[derive(Clone, Debug)]
     pub struct Styles {
@@ -186,9 +189,35 @@ pub mod styles {
                 (LabelStyle::Secondary, _) => &self.secondary_label,
             }
         }
+    }
 
-        #[doc(hidden)]
-        pub fn with_blue(blue: Color) -> Styles {
+    impl Styles {
+        pub fn no_color() -> Styles {
+            Styles {
+                header_bug: ColorSpec::new(),
+                header_error: ColorSpec::new(),
+                header_warning: ColorSpec::new(),
+                header_note: ColorSpec::new(),
+                header_help: ColorSpec::new(),
+                header_message: ColorSpec::new(),
+
+                primary_label_bug: ColorSpec::new(),
+                primary_label_error: ColorSpec::new(),
+                primary_label_warning: ColorSpec::new(),
+                primary_label_note: ColorSpec::new(),
+                primary_label_help: ColorSpec::new(),
+                secondary_label: ColorSpec::new(),
+
+                line_number: ColorSpec::new(),
+                source_border: ColorSpec::new(),
+                note_bullet: ColorSpec::new(),
+            }
+        }
+    }
+
+    impl Default for Styles {
+        fn default() -> Styles {
+            // Default style
             let header = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
             Styles {
@@ -204,24 +233,19 @@ pub mod styles {
                 primary_label_warning: ColorSpec::new().set_fg(Some(Color::Yellow)).clone(),
                 primary_label_note: ColorSpec::new().set_fg(Some(Color::Green)).clone(),
                 primary_label_help: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
-                secondary_label: ColorSpec::new().set_fg(Some(blue)).clone(),
+                secondary_label: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
 
-                line_number: ColorSpec::new().set_fg(Some(blue)).clone(),
-                source_border: ColorSpec::new().set_fg(Some(blue)).clone(),
-                note_bullet: ColorSpec::new().set_fg(Some(blue)).clone(),
+                line_number: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
+                source_border: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
+                note_bullet: ColorSpec::new().set_fg(Some(Color::Cyan)).clone(),
             }
         }
     }
 
-    impl Default for Styles {
-        fn default() -> Styles {
-            Self::with_blue(Color::Cyan)
-        }
-    }
-
-    /// A [`WriteStyle`](crate::term::renderer::WriteStyle) implementation that applies custom [`Styles`].
+    /// A [`WriteStyle`](crate::term::renderer::WriteStyle) implementation that applies custom [`Styles`]
+    /// using termcolor.
     ///
-    /// Use this to render diagnostics with custom colors and formatting.
+    /// Use this to render diagnostics with custom colors
     pub struct StylesWriter<'a, W> {
         writer: W,
         style: &'a Styles,
@@ -234,7 +258,7 @@ pub mod styles {
         }
     }
 
-    #[cfg(feature = "std")]
+    // Always true here #[cfg(feature = "std")]
     impl<'a, W: WriteColor> std::io::Write for StylesWriter<'a, W> {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
             self.writer.write(buf)
@@ -242,21 +266,6 @@ pub mod styles {
 
         fn flush(&mut self) -> std::io::Result<()> {
             self.writer.flush()
-        }
-    }
-
-    #[cfg(not(feature = "std"))]
-    impl core::fmt::Write for StylesWriter<'_, '_> {
-        fn write_str(&mut self, s: &str) -> core::fmt::Result {
-            self.writer.write_str(s)
-        }
-
-        fn write_char(&mut self, c: char) -> core::fmt::Result {
-            self.writer.write_char(c)
-        }
-
-        fn write_fmt(&mut self, args: core::fmt::Arguments<'_>) -> core::fmt::Result {
-            self.writer.write_fmt(args)
         }
     }
 

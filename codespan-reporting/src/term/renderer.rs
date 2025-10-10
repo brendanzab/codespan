@@ -6,13 +6,13 @@ use crate::files::{Error, Location};
 use crate::term::{Chars, Config};
 
 #[cfg(feature = "std")]
-pub(crate) use std::io::Write as GeneralWrite;
+pub use std::io::Write as GeneralWrite;
 
 #[cfg(feature = "std")]
 pub type GeneralWriteResult = std::io::Result<()>;
 
 #[cfg(not(feature = "std"))]
-pub(crate) use core::fmt::Write as GeneralWrite;
+pub use core::fmt::Write as GeneralWrite;
 
 #[cfg(not(feature = "std"))]
 pub use core::fmt::Result as GeneralWriteResult;
@@ -41,6 +41,7 @@ pub trait WriteStyle: GeneralWrite {
 }
 
 /// A [`WriteStyle`] implementation that ignores all styling calls. useful for non color output.
+/// Available on all targets
 pub struct PlainWriter<W: GeneralWrite> {
     w: W,
 }
