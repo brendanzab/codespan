@@ -9,8 +9,8 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label, LabelStyle, Severity};
 use codespan_reporting::files::SimpleFile;
+use codespan_reporting::term;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self};
 use std::io::{self, Write};
 
 #[derive(Debug)]

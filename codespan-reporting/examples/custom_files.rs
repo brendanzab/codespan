@@ -11,7 +11,7 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term::{self};
+use codespan_reporting::term;
 use core::ops::Range;
 
 fn main() -> anyhow::Result<()> {
