@@ -9,15 +9,19 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label, LabelStyle, Severity};
 use codespan_reporting::files::SimpleFile;
-use codespan_reporting::term;
+use codespan_reporting::term::{self, Config};
+
+use codespan_reporting::term::{GeneralWrite, GeneralWriteResult};
+
+#[cfg(feature = "termcolor")]
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use std::io::{self, Write};
 
 #[derive(Debug)]
 pub enum Opts {
     /// Render SVG output
     Svg,
     /// Render Stderr output
+    #[cfg(feature = "termcolor")]
     Stderr {
         /// Configure coloring of output
         color: ColorChoice,
@@ -29,6 +33,7 @@ fn parse_args() -> Result<Opts, pico_args::Error> {
     match pargs.subcommand()? {
         Some(value) => match value.as_str() {
             "svg" => Ok(Opts::Svg),
+            #[cfg(feature = "termcolor")]
             "stderr" => {
                 let color = pargs
                     .opt_value_from_str("--color")?
@@ -91,10 +96,10 @@ fn main() -> anyhow::Result<()> {
         Opts::Svg => {
             let mut buffer = Vec::new();
             let mut writer = SvgWriter::new(&mut buffer);
-            let config = codespan_reporting::term::Config::default();
+            let config = Config::default();
 
             for diagnostic in &diagnostics {
-                term::emit(&mut writer, &config, &file, diagnostic)?;
+                term::emit_to_write_style(&mut writer, &config, &file, diagnostic)?;
             }
 
             let num_lines = buffer.iter().filter(|byte| **byte == b'\n').count() + 1;
@@ -204,11 +209,12 @@ fn main() -> anyhow::Result<()> {
 "
             )?;
         }
+        #[cfg(feature = "termcolor")]
         Opts::Stderr { color } => {
             let writer = StandardStream::stderr(color);
-            let config = codespan_reporting::term::Config::default();
+            let config = Config::default();
             for diagnostic in &diagnostics {
-                term::emit(&mut writer.lock(), &config, &file, diagnostic)?;
+                term::emit_to_write_style(&mut writer.lock(), &config, &file, diagnostic)?;
             }
         }
     }
@@ -221,7 +227,7 @@ pub struct SvgWriter<W> {
     span_open: bool,
 }
 
-impl<W: Write> SvgWriter<W> {
+impl<W: GeneralWrite> SvgWriter<W> {
     pub fn new(upstream: W) -> Self {
         SvgWriter {
             upstream,
@@ -230,7 +236,7 @@ impl<W: Write> SvgWriter<W> {
     }
 
     /// Close any open span
-    fn close_span(&mut self) -> io::Result<()> {
+    fn close_span(&mut self) -> GeneralWriteResult {
         if self.span_open {
             write!(self.upstream, "</span>")?;
             self.span_open = false;
@@ -239,7 +245,7 @@ impl<W: Write> SvgWriter<W> {
     }
 
     /// Open a new span with the given CSS class
-    fn open_span(&mut self, class: &str) -> io::Result<()> {
+    fn open_span(&mut self, class: &str) -> GeneralWriteResult {
         // close existing first
         self.close_span()?;
         write!(self.upstream, "<span class=\"{}\">", class)?;
@@ -248,8 +254,9 @@ impl<W: Write> SvgWriter<W> {
     }
 }
 
-impl<W: Write> Write for SvgWriter<W> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+#[cfg(feature = "std")]
+impl<W: std::io::Write> std::io::Write for SvgWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let mut last = 0;
         for (i, &b) in buf.iter().enumerate() {
             let escape = match b {
@@ -265,13 +272,35 @@ impl<W: Write> Write for SvgWriter<W> {
         self.upstream.write_all(&buf[last..])?;
         Ok(buf.len())
     }
-    fn flush(&mut self) -> io::Result<()> {
+
+    fn flush(&mut self) -> std::io::Result<()> {
         self.upstream.flush()
     }
 }
 
-impl<W: Write> codespan_reporting::term::WriteStyle for SvgWriter<W> {
-    fn set_header(&mut self, severity: Severity) -> io::Result<()> {
+#[cfg(not(feature = "std"))]
+impl<W: core::fmt::Write> core::fmt::Write for SvgWriter<W> {
+    fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
+        let mut last = 0;
+        // TODO match indices
+        for (i, &b) in s.chars().enumerate() {
+            let escape = match b {
+                '<' => "&lt;",
+                '>' => "&gt;",
+                '&' => "&amp;",
+                _ => continue,
+            };
+            self.upstream.write_str(&buf[last..i])?;
+            self.upstream.write_str(escape)?;
+            last = i + 1;
+        }
+        self.upstream.write_str(&buf[last..])?;
+        Ok(buf.len())
+    }
+}
+
+impl<W: GeneralWrite> codespan_reporting::term::WriteStyle for SvgWriter<W> {
+    fn set_header(&mut self, severity: Severity) -> GeneralWriteResult {
         let class = match severity {
             Severity::Bug => "header-bug",
             Severity::Error => "header-error",
@@ -282,23 +311,23 @@ impl<W: Write> codespan_reporting::term::WriteStyle for SvgWriter<W> {
         self.open_span(class)
     }
 
-    fn set_header_message(&mut self) -> io::Result<()> {
+    fn set_header_message(&mut self) -> GeneralWriteResult {
         self.open_span("header-message")
     }
 
-    fn set_line_number(&mut self) -> io::Result<()> {
+    fn set_line_number(&mut self) -> GeneralWriteResult {
         self.open_span("line-number")
     }
 
-    fn set_note_bullet(&mut self) -> io::Result<()> {
+    fn set_note_bullet(&mut self) -> GeneralWriteResult {
         self.open_span("note-bullet")
     }
 
-    fn set_source_border(&mut self) -> io::Result<()> {
+    fn set_source_border(&mut self) -> GeneralWriteResult {
         self.open_span("source-border")
     }
 
-    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> io::Result<()> {
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> GeneralWriteResult {
         let sev = match severity {
             Severity::Bug => "bug",
             Severity::Error => "error",
@@ -313,7 +342,7 @@ impl<W: Write> codespan_reporting::term::WriteStyle for SvgWriter<W> {
         self.open_span(&format!("label-{}-{}", typ, sev))
     }
 
-    fn reset(&mut self) -> io::Result<()> {
+    fn reset(&mut self) -> GeneralWriteResult {
         self.close_span()
     }
 }

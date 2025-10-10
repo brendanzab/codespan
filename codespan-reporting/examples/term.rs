@@ -7,24 +7,31 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term;
+use codespan_reporting::term::{self, Config};
 
-#[derive(Debug)]
-pub struct Opts {
-    /// Configure coloring of output
-    pub color: ColorChoice,
+#[cfg(not(feature = "termcolor"))]
+fn main() {
+    panic!("this example requires termcolor feature");
 }
 
-fn parse_args() -> Result<Opts, pico_args::Error> {
-    let mut pargs = pico_args::Arguments::from_env();
-    let color = pargs
-        .opt_value_from_str("--color")?
-        .unwrap_or(ColorChoice::Auto);
-    Ok(Opts { color })
-}
-
+#[cfg(feature = "termcolor")]
 fn main() -> anyhow::Result<()> {
+    use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+
+    #[derive(Debug)]
+    pub struct Opts {
+        /// Configure coloring of output
+        pub color: ColorChoice,
+    }
+
+    fn parse_args() -> Result<Opts, pico_args::Error> {
+        let mut pargs = pico_args::Arguments::from_env();
+        let color = pargs
+            .opt_value_from_str("--color")?
+            .unwrap_or(ColorChoice::Auto);
+        Ok(Opts { color })
+    }
+
     let Opts { color } = parse_args()?;
 
     let mut files = SimpleFiles::new();
@@ -166,9 +173,9 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let writer = StandardStream::stderr(color);
-    let config = codespan_reporting::term::Config::default();
+    let config = Config::default();
     for diagnostic in &diagnostics {
-        term::emit(&mut writer.lock(), &config, &files, diagnostic)?;
+        term::emit_to_write_style(&mut writer.lock(), &config, &files, diagnostic)?;
     }
 
     Ok(())

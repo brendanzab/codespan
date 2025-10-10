@@ -9,8 +9,8 @@
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFile;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term;
+use codespan_reporting::term::{self, Config};
+
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
@@ -36,9 +36,17 @@ peg::parser! {
     }
 }
 
+#[cfg(not(feature = "termcolor"))]
+fn main() {
+    panic!("this example requires termcolor feature");
+}
+
+#[cfg(feature = "termcolor")]
 fn main() -> anyhow::Result<()> {
+    use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+
     let writer = StandardStream::stderr(ColorChoice::Always);
-    let config = codespan_reporting::term::Config::default();
+    let config = Config::default();
     let mut editor = Editor::<()>::new();
 
     loop {
@@ -61,7 +69,7 @@ fn main() -> anyhow::Result<()> {
                     ])
                     .with_notes(vec![format!("expected: {}", error.expected)]);
 
-                term::emit(&mut writer.lock(), &config, &file, &diagnostic)?;
+                term::emit_to_write_style(&mut writer.lock(), &config, &file, &diagnostic)?;
             }
         }
     }

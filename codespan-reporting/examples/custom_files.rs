@@ -10,11 +10,18 @@
 //! ```
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
-use codespan_reporting::term;
+use codespan_reporting::term::{self, Config};
 use core::ops::Range;
 
+#[cfg(not(feature = "termcolor"))]
+fn main() {
+    panic!("this example requires termcolor feature");
+}
+
+#[cfg(feature = "termcolor")]
 fn main() -> anyhow::Result<()> {
+    use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+
     let mut files = files::Files::new();
 
     let file_id0 = files.add("0.greeting", "hello world!").unwrap();
@@ -30,9 +37,9 @@ fn main() -> anyhow::Result<()> {
     ];
 
     let writer = StandardStream::stderr(ColorChoice::Always);
-    let config = term::Config::default();
+    let config = Config::default();
     for message in &messages {
-        term::emit(
+        term::emit_to_write_style(
             &mut writer.lock(),
             &config,
             &files,
