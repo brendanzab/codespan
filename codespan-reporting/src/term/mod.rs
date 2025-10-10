@@ -14,9 +14,9 @@ pub use config::{Chars, Config, DisplayStyle};
 
 // re-export
 #[cfg(feature = "termcolor")]
-pub use config::styles::{Styles, StylesWriter, termcolor};
+pub use config::styles::{termcolor, Styles, StylesWriter};
 
-pub use renderer::{Renderer, WriteStyle, GeneralWrite, GeneralWriteResult};
+pub use renderer::{GeneralWrite, GeneralWriteResult, Renderer, WriteStyle};
 pub use views::{RichDiagnostic, ShortDiagnostic};
 
 pub fn emit_into_string<'files, F: Files<'files> + ?Sized>(
