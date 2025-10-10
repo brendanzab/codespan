@@ -86,7 +86,7 @@ pub fn emit_to_write_style<'files, F: Files<'files> + ?Sized, W: WriteStyle>(
     emit_with_style(writer, config, files, diagnostic)
 }
 
-#[deprecated(since = "0.12.0", note = "Use emit_to_io_write instead")]
+#[deprecated(since = "0.12.0", note = "Use `emit_to_write_style` instead")]
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
 /// The return value covers all error cases. These error case can arise if:
@@ -121,7 +121,7 @@ fn emit_with_style<'files, F: Files<'files> + ?Sized, W: WriteStyle>(
     }
 }
 
-#[cfg(all(test, feature = "termcolor"))]
+#[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
 
@@ -130,14 +130,14 @@ mod tests {
     use crate::diagnostic::Label;
     use crate::files::SimpleFiles;
 
+    /// Test range of 0 to 0 and check does not crash
     #[test]
     fn unsized_emit() {
         let mut files = SimpleFiles::new();
 
         let id = files.add("test", "");
-        let mut writer = termcolor::NoColor::new(Vec::<u8>::new());
-        let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, 0..0)]);
-
-        emit(&mut writer, &Config::default(), &files, &diagnostic).unwrap();
+        let zero_range = 0..0;
+        let diagnostic = Diagnostic::bug().with_labels(vec![Label::primary(id, zero_range)]);
+        emit_into_string(&Config::default(), &files, &diagnostic).unwrap();
     }
 }

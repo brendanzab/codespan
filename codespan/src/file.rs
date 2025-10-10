@@ -450,7 +450,7 @@ mod test {
     #[test]
     fn interoperability() {
         extern crate termcolor;
-        use codespan_reporting::{diagnostic::*, term::emit};
+        use codespan_reporting::{diagnostic::*, term::emit_to_write_style};
         use termcolor::{ColorChoice, StandardStream};
 
         let mut files = Files::<String>::new();
@@ -462,6 +462,6 @@ mod test {
 
         let config = codespan_reporting::term::Config::default();
         let writer = StandardStream::stdout(ColorChoice::Auto);
-        emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
+        emit_to_write_style(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
 }
