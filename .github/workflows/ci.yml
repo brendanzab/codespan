@@ -6,8 +6,10 @@ on:
 
 jobs:
   check:
-    name: Check ${{ matrix.rust }}
+    name: Check (${{ matrix.rust }})
+
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         rust: ["stable", "nightly"] # "1.67.0",
@@ -46,27 +48,24 @@ jobs:
       - name: Run cargo test for codespan
         run: cargo test -p codespan
 
-      - name: Run cargo test for codespan-reporting
-        run: cargo test -p codespan-reporting
-
       - name: Run cargo test for codespan-reporting (no features)
         run: cargo test -p codespan-reporting --no-default-features
         
       - name: Run cargo test for codespan-reporting (only std feature)
         run: cargo test -p codespan-reporting --no-default-features --features std
 
+      - name: Run cargo test for codespan-reporting (all default features)
+        run: cargo test -p codespan-reporting
+
       - name: Run cargo test for codespan-lsp
         run: cargo test -p codespan-lsp
 
   format:
-    name: rustfmt
-
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
-      matrix:
-        rust: ["stable"]
+      matrix: { rust: ["stable"] }
 
     steps:
       - uses: actions/checkout@v4
