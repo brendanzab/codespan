@@ -86,7 +86,10 @@ pub fn emit_to_write_style<'files, F: Files<'files> + ?Sized, W: WriteStyle>(
     emit_with_style(writer, config, files, diagnostic)
 }
 
-#[deprecated(since = "0.12.0", note = "Use `emit_to_write_style` instead or depending on the writer use `emit_to_io_write` or `emit_to_string`")]
+#[deprecated(
+    since = "0.13.0",
+    note = "Use `emit_to_write_style` instead or depending on the writer use `emit_to_io_write` or `emit_to_string`"
+)]
 /// Emit a diagnostic using the given writer, context, config, and files.
 ///
 /// The return value covers all error cases. These error case can arise if:
