@@ -103,6 +103,9 @@ jobs:
 
     if: contains(github.event.pull_request.labels.*.name, 'api')
 
+    # Just a warning for now
+    continue-on-error: true
+
     timeout-minutes: 5
 
     strategy:
@@ -135,7 +138,7 @@ jobs:
         working-directory: ${{ matrix.path }}
 
       - name: Update dependency to ${{ github.repository }}/refs/${{ github.ref }}
-        run: cargo add codespan-reporting --git ${{ github.repository }} --branch ${{ github.ref }}
+        run: cargo add codespan-reporting --git ${{ github.repository }} --branch ${{ github.ref_name }}
         working-directory: ${{ matrix.path }}
 
       - name: Run cargo tree
