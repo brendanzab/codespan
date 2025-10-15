@@ -1,9 +1,9 @@
 //! Diagnostic data structures.
 
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
+use core::fmt::Display;
 use core::ops::Range;
 
 #[cfg(feature = "serialization")]
@@ -90,7 +90,7 @@ impl<FileId> Label<FileId> {
     }
 
     /// Add a message to the diagnostic.
-    pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
+    pub fn with_message(mut self, message: &impl Display) -> Label<FileId> {
         self.message = message.to_string();
         self
     }
@@ -170,13 +170,13 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Set the error code of the diagnostic.
-    pub fn with_code(mut self, code: impl ToString) -> Diagnostic<FileId> {
+    pub fn with_code(mut self, code: &impl Display) -> Diagnostic<FileId> {
         self.code = Some(code.to_string());
         self
     }
 
     /// Set the message of the diagnostic.
-    pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
+    pub fn with_message(mut self, message: &impl Display) -> Diagnostic<FileId> {
         self.message = message.to_string();
         self
     }
@@ -203,7 +203,7 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Add a note to the diagnostic.
-    pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
+    pub fn with_note(mut self, note: &impl ToString) -> Diagnostic<FileId> {
         self.notes.push(note.to_string());
         self
     }

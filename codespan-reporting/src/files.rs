@@ -324,7 +324,7 @@ where
             Ordering::Less => Ok(self
                 .line_starts
                 .get(line_index)
-                .cloned()
+                .copied()
                 .expect("failed despite previous check")),
             Ordering::Equal => Ok(self.source.as_ref().len()),
             Ordering::Greater => Err(Error::LineTooLarge {

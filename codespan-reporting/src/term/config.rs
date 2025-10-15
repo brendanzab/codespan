@@ -269,7 +269,7 @@ pub mod styles {
         }
     }
 
-    impl<'a, W: WriteColor> WriteStyle for StylesWriter<'a, W> {
+    impl<W: WriteColor> WriteStyle for StylesWriter<'_, W> {
         fn set_header(&mut self, severity: Severity) -> renderer::GeneralWriteResult {
             self.writer.set_color(self.style.header(severity))
         }

@@ -1,8 +1,6 @@
-use alloc::{
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::num::NonZeroU32;
 
 use codespan_reporting::files::Error;
@@ -30,6 +28,7 @@ impl FileId {
     /// `Option<FileId>` is 4 bytes)
     const OFFSET: u32 = 1;
 
+    #[must_use]
     fn new(index: usize) -> FileId {
         FileId(NonZeroU32::new(index as u32 + Self::OFFSET).expect("file index cannot be stored"))
     }
@@ -84,7 +83,7 @@ where
     /// This will mean that any outstanding byte indexes will now point to
     /// invalid locations.
     pub fn update(&mut self, file_id: FileId, source: Source) {
-        self.get_mut(file_id).update(source)
+        self.get_mut(file_id).update(source);
     }
 
     /// Get a the source file using the file id.
@@ -111,6 +110,7 @@ where
     ///
     /// assert_eq!(files.name(file_id), name);
     /// ```
+    #[must_use]
     pub fn name(&self, file_id: FileId) -> &OsStr {
         self.get(file_id).name()
     }
@@ -197,6 +197,7 @@ where
     ///
     /// assert_eq!(*files.source(file_id), source);
     /// ```
+    #[must_use]
     pub fn source(&self, file_id: FileId) -> &Source {
         self.get(file_id).source()
     }

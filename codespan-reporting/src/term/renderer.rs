@@ -137,7 +137,7 @@ pub enum MultiLabel<'diagnostic> {
     /// Can also be rendered at the beginning of the line
     /// if there is only whitespace before the label starts.
     ///
-    /// /// ```text
+    /// ```text
     /// ╭
     /// ```
     Top(usize),
@@ -209,7 +209,7 @@ type Underline = (LabelStyle, VerticalBound);
 ///         empty ── │
 /// ```
 ///
-/// > Filler text from http://www.cupcakeipsum.com
+/// > Filler text from <http://www.cupcakeipsum.com>
 pub struct Renderer<'writer, 'config> {
     writer: &'writer mut dyn WriteStyle,
     config: &'config Config,
@@ -524,7 +524,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 let current_label_style = single_labels
                     .iter()
                     .filter(|(_, range, _)| is_overlapping(range, &column_range))
-                    .map(|(label_style, _, _)| *label_style)
+                    .map(|(label_style, _, _)| label_style.clone())
                     .max_by_key(label_priority_key);
 
                 // Update writer style if necessary
@@ -666,7 +666,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                             }
                             MultiLabel::Top(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Top));
-                                self.label_multi_top_left(severity, label_style)?
+                                self.label_multi_top_left(severity, label_style)?;
                             }
                             MultiLabel::Bottom(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Bottom));
@@ -686,7 +686,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             match bottom_message {
                 None => self.label_multi_top_caret(severity, label_style, source, *range)?,
                 Some(message) => {
-                    self.label_multi_bottom_caret(severity, label_style, source, *range, message)?
+                    self.label_multi_bottom_caret(severity, label_style, source, *range, message)?;
                 }
             }
         }
@@ -847,7 +847,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
             let label_style = hanging_labels(single_labels, trailing_label)
                 .filter(|(_, range, _)| column_range.contains(&range.start))
-                .map(|(label_style, _, _)| *label_style)
+                .map(|(label_style, _, _)| label_style.clone())
                 .max_by_key(label_priority_key);
 
             let mut spaces = match label_style {
