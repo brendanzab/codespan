@@ -6,15 +6,7 @@ on:
       version:
         description: "major/minor/patch or semver"
         required: false
-        default: "patch"
-      lsp-version:
-        description: "major/minor/patch or semver for codespan-lsp crate (or none if not releasing derive crate)"
-        required: false
-        default: "none"
-      reporting-version:
-        description: "major/minor/patch or semver for codespan-reporting crate (or none if not releasing derive crate)"
-        required: false
-        default: "none"
+        default: patch
 
 jobs:
   publish:
@@ -34,7 +26,7 @@ jobs:
         uses: kaleidawave/crates-release-gh-action@improvements
         id: release
         with:
-          version: codespan=${{ github.event.inputs.version }},codespan-reporting=${{ github.event.inputs.lsp-version }},codespan-lsp=${{ github.event.inputs.reporting-version }}
+          version: codespan=${{ github.event.inputs.version }},codespan-reporting=${{ github.event.inputs.version }},codespan-lsp=${{ github.event.inputs.version }}
           crates-token: ${{ steps.auth.outputs.token }}
 
       - name: Push updated Cargo.toml
