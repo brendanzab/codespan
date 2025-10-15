@@ -6,36 +6,65 @@ use crate::files::{Error, Location};
 use crate::term::{Chars, Config};
 
 #[cfg(feature = "std")]
-use std::io::{self, Write};
+pub use std::io::Write as GeneralWrite;
+
 #[cfg(feature = "std")]
-type WriteResult = io::Result<()>;
+pub type GeneralWriteResult = std::io::Result<()>;
 
 #[cfg(not(feature = "std"))]
-use core::fmt::{Arguments, Result as WriteResult, Write};
+pub use core::fmt::Write as GeneralWrite;
 
-/// A writer that can apply and reset styling for different parts of a diagnostic renderer.
-pub trait WriteStyle: Write {
-    fn set_header(&mut self, severity: Severity) -> WriteResult;
+#[cfg(not(feature = "std"))]
+pub use core::fmt::Result as GeneralWriteResult;
 
-    fn set_header_message(&mut self) -> WriteResult;
+/// A writer that can apply styling for different parts of a diagnostic renderer.
+///
+/// # Implementations
+///
+/// - [`PlainWriter<W>`](PlainWriter) - no-op styling, plain text output
+/// - [`StylesWriter<W>`](crate::term::StylesWriter) - custom styles (requires `termcolor` feature)
+/// - `T: WriteColor` - blanket impl using default styles (requires `termcolor` feature)
+pub trait WriteStyle: GeneralWrite {
+    fn set_header(&mut self, severity: Severity) -> GeneralWriteResult;
 
-    fn set_line_number(&mut self) -> WriteResult;
+    fn set_header_message(&mut self) -> GeneralWriteResult;
 
-    fn set_note_bullet(&mut self) -> WriteResult;
+    fn set_line_number(&mut self) -> GeneralWriteResult;
 
-    fn set_source_border(&mut self) -> WriteResult;
+    fn set_note_bullet(&mut self) -> GeneralWriteResult;
 
-    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> WriteResult;
+    fn set_source_border(&mut self) -> GeneralWriteResult;
 
-    fn reset(&mut self) -> WriteResult;
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> GeneralWriteResult;
+
+    fn reset(&mut self) -> GeneralWriteResult;
 }
 
-pub struct Writer<W: Write> {
+/// A [`WriteStyle`] implementation that ignores all styling calls. useful for non color output.
+/// Available on all targets
+pub struct PlainWriter<W: GeneralWrite> {
     w: W,
 }
 
+impl<W: GeneralWrite> PlainWriter<W> {
+    pub fn new(writer: W) -> Self {
+        Self { w: writer }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<W: std::io::Write> std::io::Write for PlainWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.w.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.w.flush()
+    }
+}
+
 #[cfg(not(feature = "std"))]
-impl<W: Write> Write for Writer<W> {
+impl<W: core::fmt::Write> core::fmt::Write for PlainWriter<W> {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.w.write_str(s)
     }
@@ -44,48 +73,37 @@ impl<W: Write> Write for Writer<W> {
         self.w.write_char(c)
     }
 
-    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+    fn write_fmt(&mut self, args: core::fmt::Arguments<'_>) -> core::fmt::Result {
         self.w.write_fmt(args)
     }
 }
 
-#[cfg(feature = "std")]
-impl<W: Write> Write for Writer<W> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.w.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.w.flush()
-    }
-}
-
-impl<W: Write> WriteStyle for Writer<W> {
-    fn set_header(&mut self, _severity: Severity) -> WriteResult {
+impl<W: GeneralWrite> WriteStyle for PlainWriter<W> {
+    fn set_header(&mut self, _severity: Severity) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn set_header_message(&mut self) -> WriteResult {
+    fn set_header_message(&mut self) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn set_line_number(&mut self) -> WriteResult {
+    fn set_line_number(&mut self) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn set_note_bullet(&mut self) -> WriteResult {
+    fn set_note_bullet(&mut self) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn set_source_border(&mut self) -> WriteResult {
+    fn set_source_border(&mut self) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn set_label(&mut self, _severity: Severity, _label_style: LabelStyle) -> WriteResult {
+    fn set_label(&mut self, _severity: Severity, _label_style: LabelStyle) -> GeneralWriteResult {
         Ok(())
     }
 
-    fn reset(&mut self) -> WriteResult {
+    fn reset(&mut self) -> GeneralWriteResult {
         Ok(())
     }
 }
@@ -119,7 +137,7 @@ pub enum MultiLabel<'diagnostic> {
     /// Can also be rendered at the beginning of the line
     /// if there is only whitespace before the label starts.
     ///
-    /// /// ```text
+    /// ```text
     /// ╭
     /// ```
     Top(usize),
@@ -191,7 +209,7 @@ type Underline = (LabelStyle, VerticalBound);
 ///         empty ── │
 /// ```
 ///
-/// Filler text from http://www.cupcakeipsum.com
+/// > Filler text from <http://www.cupcakeipsum.com>
 pub struct Renderer<'writer, 'config> {
     writer: &'writer mut dyn WriteStyle,
     config: &'config Config,
@@ -506,7 +524,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 let current_label_style = single_labels
                     .iter()
                     .filter(|(_, range, _)| is_overlapping(range, &column_range))
-                    .map(|(label_style, _, _)| *label_style)
+                    .map(|(label_style, _, _)| label_style.clone())
                     .max_by_key(label_priority_key);
 
                 // Update writer style if necessary
@@ -648,7 +666,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                             }
                             MultiLabel::Top(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Top));
-                                self.label_multi_top_left(severity, label_style)?
+                                self.label_multi_top_left(severity, label_style)?;
                             }
                             MultiLabel::Bottom(..) if multi_label_index == *i => {
                                 underline = Some((*ls, VerticalBound::Bottom));
@@ -668,7 +686,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             match bottom_message {
                 None => self.label_multi_top_caret(severity, label_style, source, *range)?,
                 Some(message) => {
-                    self.label_multi_bottom_caret(severity, label_style, source, *range, message)?
+                    self.label_multi_bottom_caret(severity, label_style, source, *range, message)?;
                 }
             }
         }
@@ -829,7 +847,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
             let label_style = hanging_labels(single_labels, trailing_label)
                 .filter(|(_, range, _)| column_range.contains(&range.start))
-                .map(|(label_style, _, _)| *label_style)
+                .map(|(label_style, _, _)| label_style.clone())
                 .max_by_key(label_priority_key);
 
             let mut spaces = match label_style {
@@ -1035,8 +1053,19 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::io::Write for Renderer<'_, '_> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.writer.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.writer.flush()
+    }
+}
+
 #[cfg(not(feature = "std"))]
-impl Write for Renderer<'_, '_> {
+impl core::fmt::Write for Renderer<'_, '_> {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.writer.write_str(s)
     }
@@ -1045,47 +1074,36 @@ impl Write for Renderer<'_, '_> {
         self.writer.write_char(c)
     }
 
-    fn write_fmt(&mut self, args: Arguments<'_>) -> core::fmt::Result {
+    fn write_fmt(&mut self, args: core::fmt::Arguments<'_>) -> core::fmt::Result {
         self.writer.write_fmt(args)
     }
 }
 
-#[cfg(feature = "std")]
-impl Write for Renderer<'_, '_> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.writer.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
-    }
-}
-
 impl WriteStyle for Renderer<'_, '_> {
-    fn set_header(&mut self, severity: Severity) -> WriteResult {
+    fn set_header(&mut self, severity: Severity) -> GeneralWriteResult {
         self.writer.set_header(severity)
     }
 
-    fn set_header_message(&mut self) -> WriteResult {
+    fn set_header_message(&mut self) -> GeneralWriteResult {
         self.writer.set_header_message()
     }
 
-    fn set_line_number(&mut self) -> WriteResult {
+    fn set_line_number(&mut self) -> GeneralWriteResult {
         self.writer.set_line_number()
     }
 
-    fn set_note_bullet(&mut self) -> WriteResult {
+    fn set_note_bullet(&mut self) -> GeneralWriteResult {
         self.writer.set_note_bullet()
     }
 
-    fn set_source_border(&mut self) -> WriteResult {
+    fn set_source_border(&mut self) -> GeneralWriteResult {
         self.writer.set_source_border()
     }
 
-    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> WriteResult {
+    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> GeneralWriteResult {
         self.writer.set_label(severity, label_style)
     }
-    fn reset(&mut self) -> WriteResult {
+    fn reset(&mut self) -> GeneralWriteResult {
         self.writer.reset()
     }
 }

@@ -14,6 +14,7 @@ type LazyTestData<'a, T> = LazyLock<TestData<'a, T>>;
 macro_rules! test_emit {
     (rich_color) => {
         #[test]
+        #[cfg(feature = "termcolor")]
         fn rich_color() {
             let config = Config {
                 display_style: DisplayStyle::Rich,
@@ -25,6 +26,7 @@ macro_rules! test_emit {
     };
     (medium_color) => {
         #[test]
+        #[cfg(feature = "termcolor")]
         fn medium_color() {
             let config = Config {
                 display_style: DisplayStyle::Medium,
@@ -36,6 +38,7 @@ macro_rules! test_emit {
     };
     (short_color) => {
         #[test]
+        #[cfg(feature = "termcolor")]
         fn short_color() {
             let config = Config {
                 display_style: DisplayStyle::Short,
@@ -1103,8 +1106,8 @@ mod surrounding_lines {
     use super::*;
 
     static TEST_CONFIG: LazyLock<Config> = LazyLock::new(|| Config {
-        start_context_lines: 2,
-        end_context_lines: 1,
+        before_label_lines: 2,
+        after_label_lines: 1,
         ..Config::default()
     });
 

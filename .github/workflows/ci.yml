@@ -1,58 +1,32 @@
 name: ci
 
 on:
-  push: { 'branches': [master] }
-  pull_request: { 'branches': ["*"] }
+  push: { branches: [master] }
+  pull_request: { branches: ["**"] }
 
 jobs:
   check:
-    name: Check ${{ matrix.rust }}
+    name: Check (${{ matrix.rust }})
+
     runs-on: ubuntu-latest
+
     strategy:
-      matrix:
-        rust: ["stable", "nightly"] # "1.67.0",
+      matrix: { rust: ["stable", "nightly"] } # "1.67.0",
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-
-      # TODO features here
+        with: { toolchain: "${{ matrix.rust }}" }
 
       - name: Run cargo check for codespan
-        run: cargo check --manifest-path "codespan/Cargo.toml" --features "serialization"
+        run: cargo check
 
       - name: Run cargo check for codespan-reporting
-        run: cargo check --manifest-path "codespan-reporting/Cargo.toml" --features "serialization"
+        run: cargo check -p codespan-reporting
       
       - name: Run cargo check for codespan-lsp
-        run: cargo check --manifest-path "codespan-lsp/Cargo.toml"
+        run: cargo check -p codespan-lsp
       
-  check-no-std:
-    needs: check
-
-    name: Check no_std ${{ matrix.rust }} / ${{ matrix.target }}
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: ["stable", "nightly"]
-        target: ["x86_64-unknown-none", "wasm32v1-none", "thumbv6m-none-eabi"]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with: { toolchain: '${{ matrix.rust }}', targets: '${{ matrix.target }}' }
-      
-      - name: Run cargo check for codespan-reporting
-        run: cargo check --manifest-path "codespan-reporting/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
-      
-      - name: Run cargo check for codespan
-        run: cargo check --manifest-path "codespan/Cargo.toml" --no-default-features --features "serialization" --target ${{ matrix.target }}
-
   test:
     needs: check
 
@@ -62,33 +36,34 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        rust: ["stable", "nightly"]
+      matrix: { rust: ["stable", "nightly"] }
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with: { toolchain: '${{ matrix.rust }}' }
           
-      # Test each crate individually to work around rust-lang/cargo#4942
       - name: Run cargo test for codespan
-        run: cargo test -p codespan --features "serialization"
+        run: cargo test -p codespan
 
-      - name: Run cargo test for codespan-reporting
-        run: cargo test -p codespan-reporting --features "serialization"
+      - name: Run cargo test for codespan-reporting (no features)
+        run: cargo test -p codespan-reporting --no-default-features
+        
+      - name: Run cargo test for codespan-reporting (only std feature)
+        run: cargo test -p codespan-reporting --no-default-features --features std
+
+      - name: Run cargo test for codespan-reporting (all default features)
+        run: cargo test -p codespan-reporting
 
       - name: Run cargo test for codespan-lsp
         run: cargo test -p codespan-lsp
 
-  fmt:
-    name: rustfmt
-
+  format:
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
-      matrix:
-        rust: ["stable"]
+      matrix: { rust: ["stable"] }
 
     steps:
       - uses: actions/checkout@v4
@@ -113,19 +88,70 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        rust: ["stable"]
+      matrix: { rust: ["stable"] }
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
-        with: { toolchain: '${{ matrix.rust }}', components: 'clippy' }
+        with: { toolchain: "${{ matrix.rust }}", components: 'clippy' }
 
       - name: Run cargo clippy
         run: cargo clippy --all
+        
+  dependants:
+    runs-on: ubuntu-latest
+
+    if: contains(github.event.pull_request.labels.*.name, 'api')
+
+    # Just a warning for now
+    continue-on-error: true
+
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        # Test dependenents of the codespan project that 
+        repository:
+          - dtolnay/cxx
+          - gfx-rs/wgpu
+          - bevyengine/bevy
+          - EmbarkStudios/toml-span
+          - bevyengine/naga_oil
+        include:
+          - repository: gfx-rs/wgpu
+            path: naga
+          - repository: bevyengine/bevy
+            path: crates/bevy_render
+          - repository: EmbarkStudios/toml-span
+            path: toml-span
+      fail-fast: false
+
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with: { repository: "${{ matrix.repository }}" }
+
+      - name: Run check that it works
+        run: cargo locate-project
+        working-directory: ${{ matrix.path }}
+
+      - name: Update dependency to ${{ github.repository }} on ${{ github.head_ref }}
+        run: cargo add codespan-reporting --git https://github.com/${{ github.repository }} --branch ${{ github.head_ref }}
+        working-directory: ${{ matrix.path }}
+
+      - name: Run cargo tree
+        run: cargo tree
+        working-directory: ${{ matrix.path }}
+
+      - name: Run check
+        run: cargo check; cargo check --examples
+        working-directory: ${{ matrix.path }}
 
   publish-ability:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

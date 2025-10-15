@@ -1,8 +1,6 @@
-use alloc::{
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
@@ -100,44 +98,41 @@ where
             // NOTE: This could be made more efficient by using an associative
             // data structure like a hashmap or B-tree,  but we use a vector to
             // preserve the order that unique files appear in the list of labels.
-            let labeled_file = match labeled_files
+            let labeled_file = labeled_files
                 .iter_mut()
-                .find(|labeled_file| label.file_id == labeled_file.file_id)
-            {
-                Some(labeled_file) => {
-                    // another diagnostic also referenced this file
-                    if labeled_file.max_label_style > label.style
-                        || (labeled_file.max_label_style == label.style
-                            && labeled_file.start > label.range.start)
-                    {
-                        // this label has a higher style or has the same style but starts earlier
-                        labeled_file.start = label.range.start;
-                        labeled_file.location = files.location(label.file_id, label.range.start)?;
-                        labeled_file.max_label_style = label.style;
-                    }
-                    labeled_file
+                .find(|labeled_file| label.file_id == labeled_file.file_id);
+            let labeled_file = if let Some(labeled_file) = labeled_file {
+                // another diagnostic also referenced this file
+                if labeled_file.max_label_style > label.style
+                    || (labeled_file.max_label_style == label.style
+                        && labeled_file.start > label.range.start)
+                {
+                    // this label has a higher style or has the same style but starts earlier
+                    labeled_file.start = label.range.start;
+                    labeled_file.location = files.location(label.file_id, label.range.start)?;
+                    labeled_file.max_label_style = label.style;
                 }
-                None => {
-                    // no other diagnostic referenced this file yet
-                    labeled_files.push(LabeledFile {
-                        file_id: label.file_id,
-                        start: label.range.start,
-                        name: files.name(label.file_id)?.to_string(),
-                        location: files.location(label.file_id, label.range.start)?,
-                        num_multi_labels: 0,
-                        lines: BTreeMap::new(),
-                        max_label_style: label.style,
-                    });
-                    // this unwrap should never fail because we just pushed an element
-                    labeled_files
-                        .last_mut()
-                        .expect("just pushed an element that disappeared")
-                }
+                labeled_file
+            } else {
+                // no other diagnostic referenced this file yet
+                labeled_files.push(LabeledFile {
+                    file_id: label.file_id,
+                    start: label.range.start,
+                    name: files.name(label.file_id)?.to_string(),
+                    location: files.location(label.file_id, label.range.start)?,
+                    num_multi_labels: 0,
+                    lines: BTreeMap::new(),
+                    max_label_style: label.style,
+                });
+                // this unwrap should never fail because we just pushed an element
+                labeled_files
+                    .last_mut()
+                    .expect("just pushed an element that disappeared")
             };
 
             // insert context lines before label
             // start from 1 because 0 would be the start of the label itself
-            for offset in 1..self.config.before_label_lines + 1 {
+            for offset in 1..=self.config.before_label_lines {
                 let index = if let Some(index) = start_line_index.checked_sub(offset) {
                     index
                 } else {
@@ -158,7 +153,7 @@ where
 
             // insert context lines after label
             // start from 1 because 0 would be the end of the label itself
-            for offset in 1..self.config.after_label_lines + 1 {
+            for offset in 1..=self.config.after_label_lines {
                 let index = end_line_index
                     .checked_add(offset)
                     .expect("line index too big");
@@ -445,6 +440,7 @@ impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
 where
     FileId: Copy + PartialEq,
 {
+    #[must_use]
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
         show_notes: bool,
