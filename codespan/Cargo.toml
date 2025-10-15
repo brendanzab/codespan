@@ -1,6 +1,6 @@
 [package]
 name = "codespan"
-version = "0.12.0"
+version = "0.13.0"
 readme = "README.md"
 license = "Apache-2.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
@@ -12,7 +12,7 @@ edition = "2021"
 rust-version = "1.67"
 
 [dependencies]
-codespan-reporting = { path = "../codespan-reporting", version = "0.12.0", default-features = false }
+codespan-reporting = { path = "../codespan-reporting", version = "0.13.0", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = ["derive", "alloc"] }
 
 [dev-dependencies]

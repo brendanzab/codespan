@@ -1,6 +1,6 @@
 [package]
 name = "codespan-lsp"
-version = "0.11.1"
+version = "0.13.0"
 license = "Apache-2.0"
 authors = ["Markus Westerlind <marwes91@gmail.com>"]
 description = "Conversions between codespan types and Language Server Protocol types"
@@ -11,7 +11,7 @@ edition = "2021"
 rust-version = "1.67"
 
 [dependencies]
-codespan-reporting = { version = "0.12.0", path = "../codespan-reporting", features = ["std", "termcolor"] }
+codespan-reporting = { version = "0.13.0", path = "../codespan-reporting", features = ["std", "termcolor"] }
 
 # WARNING: Be extremely careful when expanding this version range.
 # We should be confident that all of the uses of `lsp-types` in `codespan-lsp`
