@@ -308,7 +308,7 @@ pub mod styles {
 #[cfg(feature = "termcolor")]
 impl<T> super::renderer::WriteStyle for T
 where
-    T: termcolor::WriteColor,
+    T: termcolor::WriteColor + ?Sized,
 {
     fn set_header(
         &mut self,
