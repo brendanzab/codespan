@@ -90,7 +90,7 @@ impl<FileId> Label<FileId> {
     }
 
     /// Add a message to the diagnostic.
-    pub fn with_message(mut self, message: &impl Display) -> Label<FileId> {
+    pub fn with_message(mut self, message: impl Display) -> Label<FileId> {
         self.message = message.to_string();
         self
     }
@@ -170,13 +170,13 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Set the error code of the diagnostic.
-    pub fn with_code(mut self, code: &impl Display) -> Diagnostic<FileId> {
+    pub fn with_code(mut self, code: impl Display) -> Diagnostic<FileId> {
         self.code = Some(code.to_string());
         self
     }
 
     /// Set the message of the diagnostic.
-    pub fn with_message(mut self, message: &impl Display) -> Diagnostic<FileId> {
+    pub fn with_message(mut self, message: impl Display) -> Diagnostic<FileId> {
         self.message = message.to_string();
         self
     }
