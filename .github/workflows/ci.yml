@@ -11,8 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        rust: ["stable", "nightly"] # "1.67.0",
+      matrix: { rust: ["stable", "nightly"] } # "1.67.0",
 
     steps:
       - uses: actions/checkout@v4
@@ -37,8 +36,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        rust: ["stable", "nightly"]
+      matrix: { rust: ["stable", "nightly"] }
 
     steps:
       - uses: actions/checkout@v4
@@ -95,10 +93,58 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
-        with: { toolchain: '${{ matrix.rust }}', components: 'clippy' }
+        with: { toolchain: "${{ matrix.rust }}", components: 'clippy' }
 
       - name: Run cargo clippy
         run: cargo clippy --all
+        
+  dependants:
+    runs-on: ubuntu-latest
+
+    if: contains(github.event.pull_request.labels.*.name, 'api')
+
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        # Test dependenents of the codespan project that 
+        repository:
+          - dtolnay/cxx
+          - gfx-rs/wgpu
+          - bevyengine/bevy
+          - EmbarkStudios/toml-span
+          - bevyengine/naga_oil
+        include:
+          - repository: gfx-rs/wgpu
+            path: naga
+          - repository: bevyengine/bevy
+            path: crates/bevy_render
+          - repository: EmbarkStudios/toml-span
+            path: toml-span
+      fail-fast: false
+
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with: { repository: "${{ matrix.repository }}" }
+
+      - name: Run check that it works
+        run: cargo locate-project
+        working-directory: ${{ matrix.path }}
+
+      - name: Update dependency to ${{ github.repository }}/refs/${{ github.ref }}
+        run: cargo add codespan-reporting --git ${{ github.repository }} --branch ${{ github.ref }}
+        working-directory: ${{ matrix.path }}
+
+      - name: Run cargo tree
+        run: cargo tree
+        working-directory: ${{ matrix.path }}
+
+      - name: Run check
+        run: cargo check; cargo check --examples
+        working-directory: ${{ matrix.path }}
 
   publish-ability:
     runs-on: ubuntu-latest
