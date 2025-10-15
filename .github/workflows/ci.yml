@@ -137,8 +137,8 @@ jobs:
         run: cargo locate-project
         working-directory: ${{ matrix.path }}
 
-      - name: Update dependency to ${{ github.repository }}/refs/${{ github.ref }}
-        run: cargo add codespan-reporting --git ${{ github.repository }} --branch ${{ github.ref_name }}
+      - name: Update dependency to ${{ github.repository }} on ${{ github.head_ref }}
+        run: cargo add codespan-reporting --git https://github.com/${{ github.repository }} --branch ${{ github.head_ref }}
         working-directory: ${{ matrix.path }}
 
       - name: Run cargo tree
