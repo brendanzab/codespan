@@ -45,7 +45,7 @@ pub fn emit_to_string<'files, F: Files<'files> + ?Sized>(
             files,
             diagnostic,
         )?;
-        let buffer_str: &str = str::from_utf8(&buffer).expect("buffer not utf8");
+        let buffer_str: &str = core::str::from_utf8(&buffer).expect("buffer not utf8");
         writer.push_str(buffer_str);
         Ok(())
     }
