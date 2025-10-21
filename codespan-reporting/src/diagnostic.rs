@@ -203,7 +203,8 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     /// Add a note to the diagnostic.
-    pub fn with_note(mut self, note: &impl ToString) -> Diagnostic<FileId> {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
         self.notes.push(note.to_string());
         self
     }
