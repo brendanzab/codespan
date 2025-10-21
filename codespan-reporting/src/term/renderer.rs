@@ -602,7 +602,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
                 let current_label_style = single_labels
                     .iter()
                     .filter(|(_, range, _)| is_overlapping(range, &column_range))
-                    .map(|(label_style, _, _)| label_style.clone())
+                    .map(|(label_style, _, _)| *label_style)
                     .max_by_key(label_priority_key);
 
                 // Update writer style if necessary
@@ -925,7 +925,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
             let column_range = metrics.byte_index..(metrics.byte_index + ch.len_utf8());
             let label_style = hanging_labels(single_labels, trailing_label)
                 .filter(|(_, range, _)| column_range.contains(&range.start))
-                .map(|(label_style, _, _)| label_style.clone())
+                .map(|(label_style, _, _)| *label_style)
                 .max_by_key(label_priority_key);
 
             let mut spaces = match label_style {
@@ -1199,6 +1199,7 @@ fn is_overlapping(range0: &Range<usize>, range1: &Range<usize>) -> bool {
 }
 
 /// For prioritizing primary labels over secondary labels when rendering carets.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn label_priority_key(label_style: &LabelStyle) -> u8 {
     match label_style {
         LabelStyle::Secondary => 0,
