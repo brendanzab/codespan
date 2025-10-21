@@ -5,6 +5,7 @@ members = [
 	"./codespan-lsp"
 ]
 resolver = "2"
+metadata.version_sync = true
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }

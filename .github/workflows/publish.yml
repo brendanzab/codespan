@@ -18,15 +18,17 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: rust-lang/crates-io-auth-action@v1
-        id: auth
+      - id: checkout
+        uses: actions/checkout@v4
+
+      - id: auth
+        uses: rust-lang/crates-io-auth-action@v1
 
       - name: Crates publish
         uses: kaleidawave/crates-release-gh-action@improvements
         id: release
         with:
-          version: codespan=${{ github.event.inputs.version }},codespan-reporting=${{ github.event.inputs.version }},codespan-lsp=${{ github.event.inputs.version }}
+          version: ${{ github.event.inputs.version }}
           crates-token: ${{ steps.auth.outputs.token }}
 
       - name: Push updated Cargo.toml
@@ -38,4 +40,4 @@ jobs:
           echo '${{ steps.release.outputs.new-versions }}' | jq -r '.[]' | while read -r update; do
             git tag "release/$update"
           done
-          git push --tags origin main
+          git push --tags origin ${{ steps.checkout.outputs.ref }}
