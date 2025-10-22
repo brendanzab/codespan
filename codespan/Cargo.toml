@@ -8,6 +8,8 @@ description = "Data structures for tracking locations in source code"
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan"
+categories = ["compilers", "encoding"]
+keywords = ["source-location", "serialization", "structures", "diagnostics", "tracking"]
 edition = "2021"
 rust-version = "1.67"
 

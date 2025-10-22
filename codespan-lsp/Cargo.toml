@@ -7,6 +7,8 @@ description = "Conversions between codespan types and Language Server Protocol t
 homepage = "https://github.com/brendanzab/codespan"
 repository = "https://github.com/brendanzab/codespan"
 documentation = "https://docs.rs/codespan-lsp"
+categories = ["compilers", "encoding"]
+keywords = ["lsp", "codespan"]
 edition = "2021"
 rust-version = "1.67"
 

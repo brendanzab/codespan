@@ -11,12 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix: { rust: ["stable", "nightly"] } # "1.67.0",
+      matrix: { rust: [stable, nightly] } # "1.67.0",
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
-        with: { toolchain: "${{ matrix.rust }}" }
+        with: { toolchain: '${{ matrix.rust }}' }
 
       - name: Run cargo check for codespan
         run: cargo check
@@ -36,7 +36,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: { rust: ["stable", "nightly"] }
+      matrix: { rust: [stable, nightly] }
 
     steps:
       - uses: actions/checkout@v4
@@ -63,17 +63,18 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: { rust: ["stable"] }
+      matrix: { rust: [stable] }
 
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with: { toolchain: '${{ matrix.rust }}', components: 'rustfmt' }
+        with: { toolchain: '${{ matrix.rust }}', components: rustfmt }
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
       - uses: kaleidawave/release-downloader@improvements
+        env: { GH_TOKEN: '${{ env.GH_TOKEN }}' }
         with: { items: 'kaleidawave/simple-toml-parser@canary[format]' }
 
       - name: Check 'Cargo.toml' formatting
@@ -88,7 +89,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: { rust: ["stable"] }
+      matrix: { rust: [stable] }
 
     steps:
       - uses: actions/checkout@v4
@@ -131,14 +132,15 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with: { repository: "${{ matrix.repository }}" }
+        with: { repository: '${{ matrix.repository }}' }
 
       - name: Run check that it works
         run: cargo locate-project
         working-directory: ${{ matrix.path }}
 
       - name: Update dependency to ${{ github.repository }} on ${{ github.head_ref }}
-        run: cargo add codespan-reporting --git https://github.com/${{ github.repository }} --branch ${{ github.head_ref }}
+        run: | 
+          cargo add codespan-reporting --git https://github.com/${{ github.repository }} --branch ${{ github.head_ref }}
         working-directory: ${{ matrix.path }}
 
       - name: Run cargo tree
@@ -162,6 +164,7 @@ jobs:
 
       - uses: kaleidawave/release-downloader@improvements
         if: steps.changes.outputs.manifests == 'true'
+        env: { GH_TOKEN: '${{ env.GH_TOKEN }}' }
         with: { items: 'kaleidawave/crates-release-gh-action@assets[crates-release]' }
           
       - name: Check that it will publish to crates.io
