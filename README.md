@@ -33,7 +33,7 @@ welcome!
 ```rust
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use codespan_reporting::term::{self, termcolor::{ColorChoice, StandardStream}};
 
 // `files::SimpleFile` and `files::SimpleFiles` help you get up and running with
 // `codespan-reporting` quickly! More complicated use cases can be supported
@@ -93,7 +93,7 @@ let diagnostic = Diagnostic::error()
 let writer = StandardStream::stderr(ColorChoice::Always);
 let config = codespan_reporting::term::Config::default();
 
-term::emit(&mut writer.lock(), &config, &files, &diagnostic)?;
+term::emit_to_write_style(&mut writer.lock(), &config, &files, &diagnostic)?;
 ```
 
 ## Running the CLI example
