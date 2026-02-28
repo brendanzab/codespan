@@ -94,6 +94,8 @@ let writer = StandardStream::stderr(ColorChoice::Always);
 let config = codespan_reporting::term::Config::default();
 
 term::emit_to_write_style(&mut writer.lock(), &config, &files, &diagnostic)?;
+
+Ok::<(), codespan_reporting::files::Error>(())
 ```
 
 ## Running the CLI example
