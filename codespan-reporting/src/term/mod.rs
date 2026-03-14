@@ -14,9 +14,9 @@ use alloc::string::String;
 pub use config::{Chars, Config, DisplayStyle};
 
 // re-export
-pub use html::HtmlWriter;
 #[cfg(feature = "termcolor")]
 pub use config::styles::{termcolor, Styles, StylesWriter};
+pub use html::HtmlWriter;
 
 pub use renderer::{GeneralWrite, GeneralWriteResult, Renderer, WriteStyle};
 pub use views::{RichDiagnostic, ShortDiagnostic};
