@@ -7,10 +7,11 @@
 //! cargo run --example readme_preview svg > codespan-reporting/assets/readme_preview.svg
 //! ```
 
-use codespan_reporting::diagnostic::{Diagnostic, Label, LabelStyle, Severity};
+use std::io::Write;
+
+use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFile;
-use codespan_reporting::term::{self, Config};
-use codespan_reporting::term::{GeneralWrite, GeneralWriteResult};
+use codespan_reporting::term::{self, Config, HtmlWriter};
 
 #[cfg(feature = "termcolor")]
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
@@ -99,22 +100,22 @@ fn main() -> anyhow::Result<()> {
 
     match parse_args()? {
         Opts::Svg => {
-            let mut writer = SvgWriter::new();
             let config = Config::default();
+            let mut writer = HtmlWriter::new(Vec::new());
 
             for diagnostic in &diagnostics {
                 term::emit_to_write_style(&mut writer, &config, &file, diagnostic)?;
             }
 
-            let num_lines = writer.line_count();
+            let num_lines = writer.get_ref().iter().filter(|&&b| b == b'\n').count() + 1;
+            let buffer = writer.into_inner()?;
+            let content = String::from_utf8(buffer)?;
 
             let padding = 10;
             let font_size = 12;
             let line_spacing = 3;
             let width = 882;
             let height = padding + num_lines * (font_size + line_spacing) + padding;
-
-            let content = writer.into_string();
 
             let stdout = std::io::stdout();
             let writer = &mut stdout.lock();
@@ -218,155 +219,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-// This whole example requires the std feature, but below is feature agnostic for reference
-
-#[cfg(feature = "std")]
-type WriterBuffer = Vec<u8>;
-
-#[cfg(not(feature = "std"))]
-type WriterBuffer = String;
-
-pub struct SvgWriter {
-    buffer: WriterBuffer,
-    span_open: bool,
-}
-
-impl SvgWriter {
-    pub fn new() -> Self {
-        SvgWriter {
-            buffer: WriterBuffer::default(),
-            span_open: false,
-        }
-    }
-
-    #[cfg(feature = "std")]
-    pub fn into_string(self) -> String {
-        String::from_utf8(self.buffer).unwrap()
-    }
-
-    #[cfg(not(feature = "std"))]
-    pub fn into_string(self) -> String {
-        self.buffer
-    }
-
-    #[cfg(feature = "std")]
-    pub fn line_count(&self) -> usize {
-        self.buffer.iter().filter(|byte| **byte == b'\n').count() + 1
-    }
-
-    #[cfg(not(feature = "std"))]
-    pub fn line_count(&self) -> usize {
-        self.buffer.lines().count()
-    }
-
-    /// Close any open span
-    fn close_span(&mut self) -> GeneralWriteResult {
-        if self.span_open {
-            write!(self.buffer, "</span>")?;
-            self.span_open = false;
-        }
-        Ok(())
-    }
-
-    /// Open a new span with the given CSS class
-    fn open_span(&mut self, class: &str) -> GeneralWriteResult {
-        // close existing first
-        self.close_span()?;
-        write!(self.buffer, "<span class=\"{}\">", class)?;
-        self.span_open = true;
-        Ok(())
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::io::Write for SvgWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut last = 0;
-        for (i, &b) in buf.iter().enumerate() {
-            let escape = match b {
-                b'<' => b"&lt;"[..].as_ref(),
-                b'>' => b"&gt;"[..].as_ref(),
-                b'&' => b"&amp;"[..].as_ref(),
-                _ => continue,
-            };
-            self.buffer.write_all(&buf[last..i])?;
-            self.buffer.write_all(escape)?;
-            last = i + 1;
-        }
-        self.buffer.write_all(&buf[last..])?;
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.buffer.flush()
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl core::fmt::Write for SvgWriter {
-    fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
-        let mut last = 0;
-        // TODO match indices
-        for (i, b) in s.chars().enumerate() {
-            let escape = match b {
-                '<' => "&lt;",
-                '>' => "&gt;",
-                '&' => "&amp;",
-                _ => continue,
-            };
-            self.buffer.write_str(&s[last..i])?;
-            self.buffer.write_str(escape)?;
-            last = i + 1;
-        }
-        self.buffer.write_str(&s[last..])?;
-        Ok(())
-    }
-}
-
-impl codespan_reporting::term::WriteStyle for SvgWriter {
-    fn set_header(&mut self, severity: Severity) -> GeneralWriteResult {
-        let class = match severity {
-            Severity::Bug => "header-bug",
-            Severity::Error => "header-error",
-            Severity::Warning => "header-warning",
-            Severity::Note => "header-note",
-            Severity::Help => "header-help",
-        };
-        self.open_span(class)
-    }
-
-    fn set_header_message(&mut self) -> GeneralWriteResult {
-        self.open_span("header-message")
-    }
-
-    fn set_line_number(&mut self) -> GeneralWriteResult {
-        self.open_span("line-number")
-    }
-
-    fn set_note_bullet(&mut self) -> GeneralWriteResult {
-        self.open_span("note-bullet")
-    }
-
-    fn set_source_border(&mut self) -> GeneralWriteResult {
-        self.open_span("source-border")
-    }
-
-    fn set_label(&mut self, severity: Severity, label_style: LabelStyle) -> GeneralWriteResult {
-        let sev = match severity {
-            Severity::Bug => "bug",
-            Severity::Error => "error",
-            Severity::Warning => "warning",
-            Severity::Note => "note",
-            Severity::Help => "help",
-        };
-        let typ = match label_style {
-            LabelStyle::Primary => "primary",
-            LabelStyle::Secondary => "secondary",
-        };
-        self.open_span(&format!("label-{}-{}", typ, sev))
-    }
-
-    fn reset(&mut self) -> GeneralWriteResult {
-        self.close_span()
-    }
-}

@@ -4,6 +4,7 @@ use crate::diagnostic::Diagnostic;
 use crate::files::Files;
 
 mod config;
+mod html;
 mod renderer;
 mod views;
 
@@ -13,6 +14,7 @@ use alloc::string::String;
 pub use config::{Chars, Config, DisplayStyle};
 
 // re-export
+pub use html::HtmlWriter;
 #[cfg(feature = "termcolor")]
 pub use config::styles::{termcolor, Styles, StylesWriter};
 
