@@ -4,6 +4,7 @@ use crate::diagnostic::Diagnostic;
 use crate::files::Files;
 
 mod config;
+mod html;
 mod renderer;
 mod views;
 
@@ -15,6 +16,7 @@ pub use config::{Chars, Config, DisplayStyle};
 // re-export
 #[cfg(feature = "termcolor")]
 pub use config::styles::{termcolor, Styles, StylesWriter};
+pub use html::HtmlWriter;
 
 pub use renderer::{GeneralWrite, GeneralWriteResult, Renderer, WriteStyle};
 pub use views::{RichDiagnostic, ShortDiagnostic};

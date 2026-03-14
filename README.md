@@ -95,6 +95,13 @@ let config = codespan_reporting::term::Config::default();
 
 term::emit_to_write_style(&mut writer.lock(), &config, &files, &diagnostic)?;
 
+// For HTML output (e.g. embedding in SVG), use `HtmlWriter`. Access the inner
+// buffer with `get_ref()` / `get_mut()`, and recover it with `into_inner()`.
+let mut html = term::HtmlWriter::new(Vec::new());
+term::emit_to_write_style(&mut html, &config, &files, &diagnostic)?;
+let num_lines = html.get_ref().iter().filter(|&&b| b == b'\n').count() + 1;
+let _html_bytes = html.into_inner()?;
+
 Ok::<(), codespan_reporting::files::Error>(())
 ```
 
