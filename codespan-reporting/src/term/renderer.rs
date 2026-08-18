@@ -867,9 +867,18 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
 
     /// Location focus.
     fn snippet_locus(&mut self, locus: &Locus) -> Result<(), Error> {
+        let hyper_s = format!(
+            "\x1b]8;;{name}:{line_number}:{column_number}\x1b\\",
+            name = locus.name,
+            line_number = locus.location.line_number,
+            column_number = locus.location.column_number,
+        );
+        let hyper_e = "\x1b]8;;\x1b\\";
         write!(
             self,
-            "{name}:{line_number}:{column_number}",
+            "{hyper_s}{name}:{line_number}:{column_number}{hyper_e}",
+            hyper_s = hyper_s,
+            hyper_e = hyper_e,
             name = locus.name,
             line_number = locus.location.line_number,
             column_number = locus.location.column_number,
