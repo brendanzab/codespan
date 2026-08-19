@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
 
 /// A module containing the file implementation
 mod files {
-    use codespan_reporting::files;
+    use codespan_reporting::files::{self, Location};
     use core::ops::Range;
 
     /// A file that is backed by an `Arc<String>`.
@@ -81,6 +81,18 @@ mod files {
                     max: self.line_starts.len() - 1,
                 }),
             }
+        }
+
+        /// not working example
+        fn uri(&self, location: Location) -> Option<String> {
+            let hyper = format!(
+                "file://{host}/tmp/{name}:{line}:{column}",
+                host = "hostname",
+                name = self.name,
+                line = location.line_number,
+                column = location.column_number
+            );
+            Some(hyper)
         }
     }
 
@@ -160,6 +172,13 @@ mod files {
             let next_line_start = file.line_start(line_index + 1)?;
 
             Ok(line_start..next_line_start)
+        }
+
+        fn uri(&self, file_id: FileId, location: Location) -> Option<String> {
+            match self.get(file_id) {
+                Ok(file) => file.uri(location),
+                Err(_) => None,
+            }
         }
     }
 }

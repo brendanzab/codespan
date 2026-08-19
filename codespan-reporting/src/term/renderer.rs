@@ -317,7 +317,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         code: Option<&str>,
         message: &str,
-        uri: Option<&str>,
+        uri: Option<String>,
     ) -> Result<(), Error> {
         // Write locus
         //
@@ -381,7 +381,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &mut self,
         outer_padding: usize,
         locus: &Locus,
-        uri: Option<&str>,
+        uri: Option<String>,
     ) -> Result<(), Error> {
         self.outer_gutter(outer_padding)?;
 
@@ -868,13 +868,9 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 
     /// Location focus.
-    fn snippet_locus(&mut self, locus: &Locus, uri: Option<&str>) -> Result<(), Error> {
+    fn snippet_locus(&mut self, locus: &Locus, uri: Option<String>) -> Result<(), Error> {
         let (hyper_s, hyper_e) = if let Some(hyper_url) = uri {
-            let start = format!(
-                "\x1b]8;;{hyper_url}:{line_number}:{column_number}\x1b\\",
-                line_number = locus.location.line_number,
-                column_number = locus.location.column_number,
-            );
+            let start = format!("\x1b]8;;{hyper_url}\x1b\\");
             let end = "\x1b]8;;\x1b\\";
             (start, end)
         } else {

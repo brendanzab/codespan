@@ -330,7 +330,7 @@ where
                         name: labeled_file.name,
                         location: labeled_file.location,
                     },
-                    files.uri(labeled_file.file_id),
+                    files.uri(labeled_file.file_id, labeled_file.location),
                 )?;
                 renderer.render_snippet_empty(
                     outer_padding,
@@ -480,7 +480,10 @@ where
                 self.diagnostic.severity,
                 self.diagnostic.code.as_deref(),
                 self.diagnostic.message.as_str(),
-                files.uri(label.file_id),
+                files.uri(
+                    label.file_id,
+                    files.location(label.file_id, label.range.start)?,
+                ),
             )?;
         }
 

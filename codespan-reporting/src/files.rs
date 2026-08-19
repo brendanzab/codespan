@@ -119,7 +119,7 @@ pub trait Files<'a> {
     fn source(&'a self, id: Self::FileId) -> Result<Self::Source, Error>;
 
     /// The URI of a file.
-    fn uri(&'a self, _: Self::FileId) -> Option<&'a str> {
+    fn uri(&'a self, _: Self::FileId, _: Location) -> Option<String> {
         None
     }
 
