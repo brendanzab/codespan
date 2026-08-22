@@ -118,6 +118,11 @@ pub trait Files<'a> {
     /// The source code of a file.
     fn source(&'a self, id: Self::FileId) -> Result<Self::Source, Error>;
 
+    /// The URI of a file.
+    fn uri(&'a self, _: Self::FileId, _: Option<Location>) -> Option<String> {
+        None
+    }
+
     /// The index of the line at the given byte index.
     /// If the byte index is past the end of the file, returns the maximum line index in the file.
     /// This means that this function only fails if the file is not present.

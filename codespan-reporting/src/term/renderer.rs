@@ -317,6 +317,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         severity: Severity,
         code: Option<&str>,
         message: &str,
+        uri: Option<String>,
     ) -> Result<(), Error> {
         // Write locus
         //
@@ -324,7 +325,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         // test:2:9:
         // ```
         if let Some(locus) = locus {
-            self.snippet_locus(locus)?;
+            self.snippet_locus(locus, uri)?;
             write!(self, ": ")?;
         }
 
@@ -380,6 +381,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         &mut self,
         outer_padding: usize,
         locus: &Locus,
+        uri: Option<String>,
     ) -> Result<(), Error> {
         self.outer_gutter(outer_padding)?;
 
@@ -388,7 +390,7 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
         self.reset()?;
 
         write!(self, " ")?;
-        self.snippet_locus(locus)?;
+        self.snippet_locus(locus, uri)?;
 
         writeln!(self)?;
 
@@ -866,10 +868,20 @@ impl<'writer, 'config> Renderer<'writer, 'config> {
     }
 
     /// Location focus.
-    fn snippet_locus(&mut self, locus: &Locus) -> Result<(), Error> {
+    fn snippet_locus(&mut self, locus: &Locus, uri: Option<String>) -> Result<(), Error> {
+        let (hyper_s, hyper_e) = if let Some(hyper_url) = uri {
+            let start = format!("\x1b]8;;{hyper_url}\x1b\\");
+            let end = "\x1b]8;;\x1b\\";
+            (start, end)
+        } else {
+            ("".to_string(), "")
+        };
+
         write!(
             self,
-            "{name}:{line_number}:{column_number}",
+            "{hyper_s}{name}:{line_number}:{column_number}{hyper_e}",
+            hyper_s = hyper_s,
+            hyper_e = hyper_e,
             name = locus.name,
             line_number = locus.location.line_number,
             column_number = locus.location.column_number,
