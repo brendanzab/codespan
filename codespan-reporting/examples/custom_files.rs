@@ -84,14 +84,18 @@ mod files {
         }
 
         /// not working example
-        fn uri(&self, location: Location) -> Option<String> {
-            let hyper = format!(
-                "file://{host}/tmp/{name}:{line}:{column}",
-                host = "hostname",
-                name = self.name,
-                line = location.line_number,
-                column = location.column_number
-            );
+        fn uri(&self, location: Option<Location>) -> Option<String> {
+            if let Some(loc) = location {
+                let hyper = format!(
+                    "file://{host}/tmp/{name}:{line}:{column}",
+                    host = "hostname",
+                    name = self.name,
+                    line = loc.line_number,
+                    column = loc.column_number
+                );
+                return Some(hyper);
+            }
+            let hyper = format!("{name}", name = self.name,);
             Some(hyper)
         }
     }
@@ -174,7 +178,7 @@ mod files {
             Ok(line_start..next_line_start)
         }
 
-        fn uri(&self, file_id: FileId, location: Location) -> Option<String> {
+        fn uri(&self, file_id: FileId, location: Option<Location>) -> Option<String> {
             match self.get(file_id) {
                 Ok(file) => file.uri(location),
                 Err(_) => None,
