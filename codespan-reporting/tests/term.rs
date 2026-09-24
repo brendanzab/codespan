@@ -1156,3 +1156,88 @@ mod surrounding_lines {
 
     test_emit!(rich_no_color);
 }
+
+mod context_digit_boundary {
+    use super::*;
+
+    fn render(source: String, range: std::ops::Range<usize>, after_label_lines: usize) -> String {
+        let file = SimpleFile::new("boundary.rs", source);
+        let diagnostic = Diagnostic::error()
+            .with_message("boundary")
+            .with_labels(vec![Label::primary((), range)]);
+        let config = Config {
+            after_label_lines,
+            ..Config::default()
+        };
+        codespan_reporting::term::emit_into_string(&config, &file, &diagnostic).unwrap()
+    }
+
+    #[test]
+    fn single_line_boundary() {
+        let source = (1..=10)
+            .map(|line| format!("line{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let start = source.find("line9").unwrap();
+        let output = render(source, start..start + 5, 1);
+        assert_eq!(
+            output,
+            "error: boundary\n   ┌─ boundary.rs:9:1\n   │\n 9 │ line9\n   │ ^^^^^\n10 │ line10\n\n"
+        );
+    }
+
+    #[test]
+    fn multiline_label_boundary() {
+        let source = (1..=10)
+            .map(|line| format!("line{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let start = source.find("line8").unwrap();
+        let end = source.find("line9").unwrap() + 5;
+        let output = render(source, start..end, 1);
+        assert!(output.contains(" 8 │ ╭ line8\n"));
+        assert!(output.contains(" 9 │ │ line9\n"));
+        assert!(output.contains("   │ ╰─────^\n"));
+        assert!(output.contains("10 │   line10\n"));
+    }
+
+    #[test]
+    fn hundredth_line_boundary() {
+        let source = (1..=100)
+            .map(|line| format!("line{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let start = source.find("line99").unwrap();
+        let output = render(source, start..start + 6, 1);
+        assert_eq!(
+            output,
+            "error: boundary\n    ┌─ boundary.rs:99:1\n    │\n 99 │ line99\n    │ ^^^^^^\n100 │ line100\n\n"
+        );
+    }
+
+    #[test]
+    fn controls_preserve_existing_widths_and_eof() {
+        let source = (1..=10)
+            .map(|line| format!("line{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let line8 = source.find("line8").unwrap();
+        let line9 = source.find("line9").unwrap();
+
+        let no_context = render(source.clone(), line9..line9 + 5, 0);
+        assert!(no_context.lines().any(|line| line == "9 │ line9"));
+        assert!(!no_context.contains("line10"));
+
+        let same_width = render(source.clone(), line8..line8 + 5, 1);
+        assert!(same_width.contains("8 │ line8\n  │ ^^^^^\n9 │ line9\n"));
+
+        let eof_source = (1..=9)
+            .map(|line| format!("line{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let eof_line9 = eof_source.find("line9").unwrap();
+        let eof_context = render(eof_source, eof_line9..eof_line9 + 5, 100);
+        assert!(eof_context.lines().any(|line| line == "9 │ line9"));
+        assert!(!eof_context.contains("10"));
+    }
+}

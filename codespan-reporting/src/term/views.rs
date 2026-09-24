@@ -160,8 +160,9 @@ where
                     .expect("line index too big");
 
                 if let Ok(range) = files.line_range(label.file_id, index) {
-                    let line =
-                        labeled_file.get_or_insert_line(index, range, end_line_number + offset);
+                    let line_number = end_line_number + offset;
+                    outer_padding = core::cmp::max(outer_padding, count_digits(line_number));
+                    let line = labeled_file.get_or_insert_line(index, range, line_number);
                     line.must_render = true;
                 } else {
                     break;

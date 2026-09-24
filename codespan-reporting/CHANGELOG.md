@@ -17,6 +17,8 @@ This is because some dependencies now require this Rust version.
 
 ### Changed
 
+-   Align source gutters when following context crosses a line-number digit boundary.
+
 -   Broken lines are now rendered properly with multiline spans.
 
     We used to render the wrong lines in the gutter when there were multiline spans
