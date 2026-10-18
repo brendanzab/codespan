@@ -12,6 +12,8 @@ This is because some dependencies now require this Rust version.
 
 ### Added
 
+-   Document the diagnostic emitters and how to choose a replacement for `term::emit`.
+
 -   Add the option to display a configurable amount of lines in front of and after any label.
 -   The `Severity` enum now implements full `Ord`. (#335)
 
