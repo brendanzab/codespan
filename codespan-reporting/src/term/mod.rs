@@ -1,4 +1,51 @@
 //! Terminal back-end for emitting diagnostics.
+//!
+//! Choose an emitter based on the output destination:
+//!
+//! - [`emit_to_write_style`] writes with colors and styles to a [`WriteStyle`] writer.
+//!   With the `termcolor` feature, this includes `termcolor::WriteColor` writers.
+//! - `emit_to_io_write` writes plain text to a `std::io::Write` writer and requires
+//!   the `std` feature.
+//! - [`emit_to_string`] appends plain text to an existing [`String`], while
+//!   [`emit_into_string`] returns a new string. Both support `no_std` with `alloc`.
+//!
+//! These functions replace the deprecated [`emit`] function.
+//!
+//! # Example
+//!
+//! ```
+//! use codespan_reporting::diagnostic::{Diagnostic, Label};
+//! use codespan_reporting::files::SimpleFile;
+//! use codespan_reporting::term::{self, Config};
+//!
+//! let file = SimpleFile::new("example", "let x = ;");
+//! let diagnostic = Diagnostic::error()
+//!     .with_message("expected an expression")
+//!     .with_label(Label::primary((), 8..9));
+//! let config = Config::default();
+//!
+//! let rendered = term::emit_into_string(&config, &file, &diagnostic)?;
+//! assert!(rendered.contains("expected an expression"));
+//!
+//! let mut output = String::from("Compiler output:\n");
+//! term::emit_to_string(&mut output, &config, &file, &diagnostic)?;
+//! assert_eq!(output, format!("Compiler output:\n{rendered}"));
+//!
+//! # #[cfg(feature = "std")]
+//! # {
+//! let mut bytes = Vec::new();
+//! term::emit_to_io_write(&mut bytes, &config, &file, &diagnostic)?;
+//! assert_eq!(bytes, rendered.as_bytes());
+//! # }
+//!
+//! # #[cfg(feature = "termcolor")]
+//! # {
+//! let mut colored = term::termcolor::Buffer::ansi();
+//! term::emit_to_write_style(&mut colored, &config, &file, &diagnostic)?;
+//! assert!(colored.as_slice().windows(2).any(|bytes| bytes == b"\x1b["));
+//! # }
+//! # Ok::<(), codespan_reporting::files::Error>(())
+//! ```
 
 use crate::diagnostic::Diagnostic;
 use crate::files::Files;
@@ -19,6 +66,9 @@ pub use config::styles::{termcolor, Styles, StylesWriter};
 pub use renderer::{GeneralWrite, GeneralWriteResult, Renderer, WriteStyle};
 pub use views::{RichDiagnostic, ShortDiagnostic};
 
+/// Renders a diagnostic as plain text in a new string.
+///
+/// Returns an error if the file database cannot resolve a file or source location.
 pub fn emit_into_string<'files, F: Files<'files> + ?Sized>(
     config: &Config,
     files: &'files F,
@@ -29,6 +79,10 @@ pub fn emit_into_string<'files, F: Files<'files> + ?Sized>(
     Ok(writer)
 }
 
+/// Appends a diagnostic as plain text to an existing string.
+///
+/// This function supports `no_std` with `alloc` and does not clear the string first.
+/// Returns an error if the file database cannot resolve a file or source location.
 pub fn emit_to_string<'files, F: Files<'files> + ?Sized>(
     writer: &mut String,
     config: &Config,
@@ -62,6 +116,12 @@ pub fn emit_to_string<'files, F: Files<'files> + ?Sized>(
     }
 }
 
+/// Writes a diagnostic as plain text to an I/O writer.
+///
+/// Requires the `std` feature. To preserve colors and styles, use
+/// [`emit_to_write_style`] instead.
+/// Returns an error if writing fails or the file database cannot resolve a file
+/// or source location.
 #[cfg(feature = "std")]
 pub fn emit_to_io_write<'files, F: Files<'files> + ?Sized, W: std::io::Write + ?Sized>(
     writer: &mut W,
@@ -77,6 +137,12 @@ pub fn emit_to_io_write<'files, F: Files<'files> + ?Sized, W: std::io::Write + ?
     )
 }
 
+/// Writes a diagnostic with colors and styles to a [`WriteStyle`] writer.
+///
+/// With the `termcolor` feature, this accepts `termcolor::WriteColor` writers.
+/// Use `StylesWriter` to customize their styles.
+/// Returns an error if writing fails or the file database cannot resolve a file
+/// or source location.
 pub fn emit_to_write_style<'files, F: Files<'files> + ?Sized, W: WriteStyle + ?Sized>(
     writer: &mut W,
     config: &Config,
