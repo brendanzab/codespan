@@ -66,8 +66,10 @@ where
     Source: AsRef<str>,
 {
     /// Create a new, empty database of files.
-    pub fn new() -> Self {
-        Files::<Source>::default()
+    ///
+    /// This can be used to initialize `static` and `const` values.
+    pub const fn new() -> Self {
+        Self { files: Vec::new() }
     }
 
     /// Add a file to the database, returning the handle that can be used to
@@ -413,6 +415,35 @@ mod test {
     use super::*;
 
     const TEST_SOURCE: &str = "foo\nbar\r\n\nbaz";
+
+    static EMPTY: Files<&'static str> = Files::new();
+
+    #[test]
+    fn const_new() {
+        let mut files = EMPTY.clone();
+        let file_id = files.add("test", TEST_SOURCE);
+
+        assert_eq!(files.name(file_id), "test");
+        assert_eq!(*files.source(file_id), TEST_SOURCE);
+
+        let line_sources = (0..4)
+            .map(|line| {
+                let line_span = files.line_span(file_id, line).unwrap();
+                files.source_slice(file_id, line_span).unwrap()
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(line_sources, ["foo\n", "bar\r\n", "\n", "baz"]);
+    }
+
+    #[test]
+    fn runtime_new_creates_an_empty_database() {
+        let mut files = Files::<&str>::new();
+        let file_id = files.add("runtime", "source");
+
+        assert_eq!(files.name(file_id), "runtime");
+        assert_eq!(*files.source(file_id), "source");
+    }
 
     #[test]
     fn line_starts() {
